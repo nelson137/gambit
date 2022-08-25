@@ -1,0 +1,16 @@
+# NOTE: disable the bevy/dynamic feature when using mold
+
+# See bevy's recommendations for more information:
+# https://github.com/bevyengine/bevy/blob/main/.cargo/config_fast_builds
+
+[target.x86_64-unknown-linux-gnu]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.x86_64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
+
+[target.aarch64-apple-darwin]
+linker = "clang"
+rustflags = ["-C", "link-arg=-fuse-ld=mold"]
