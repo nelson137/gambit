@@ -1,3 +1,9 @@
+use bevy::{audio::AudioPlugin, prelude::*};
+
 fn main() {
-    println!("Hello, world!");
+    App::new()
+        // Plugins
+        .add_plugins_with(DefaultPlugins, |plugins| plugins.disable::<AudioPlugin>())
+        // Run
+        .run();
 }
