@@ -3,6 +3,9 @@ use core::fmt;
 use bevy::prelude::*;
 
 #[derive(Component)]
+pub struct Board;
+
+#[derive(Component)]
 pub struct Location {
     pub file: u8,
     pub rank: u8,
