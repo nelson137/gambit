@@ -6,6 +6,12 @@ use bevy::prelude::*;
 pub struct Board;
 
 #[derive(Component)]
+pub struct Tile;
+
+#[derive(Component)]
+pub struct Piece;
+
+#[derive(Component)]
 pub struct Location {
     pub file: u8,
     pub rank: u8,

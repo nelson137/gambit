@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS},
-    data::{Board, Location},
+    data::{Board, Location, Piece, Tile},
     WIN_HEIGHT, WIN_WIDTH,
 };
 
@@ -30,6 +30,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
                         },
                         ..default()
                     })
+                    .insert(Tile)
                     .insert(Location::new(file, rank, 0.0));
             }
         }
@@ -41,6 +42,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
         for (path, (file, rank)) in pice_paths_and_coords {
             parent
                 .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
+                .insert(Piece)
                 .insert(Location::new(file, rank, 1.0));
         }
     });
