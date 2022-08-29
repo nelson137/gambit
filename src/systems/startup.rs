@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use crate::{
-    assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS},
-    data::{Board, Location, Piece, Tile},
+    assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, TILE_ASSET_SIZE},
+    data::{Board, Location, MainCamera, Piece, Tile},
     WIN_HEIGHT, WIN_WIDTH,
 };
 
@@ -11,7 +11,7 @@ pub fn resize_window(mut windows: ResMut<Windows>) {
 }
 
 pub fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default()); // ::new_with_far(1000.0)
+    commands.spawn_bundle(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
 }
 
 pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
@@ -25,7 +25,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
                             color: if (rank + file) % 2 == 0 { black } else { white },
-                            custom_size: Some(Vec2::splat(150.0)),
+                            custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
                             ..default()
                         },
                         ..default()
