@@ -2,7 +2,11 @@ use bevy::prelude::*;
 
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, TILE_ASSET_SIZE},
-    data::{Board, Location, MainCamera, Piece, Tile, COLOR_BLACK, COLOR_WHITE},
+    data::{
+        Board, Location, MainCamera, Piece, Tile, BOARD_FILE_TEXT_OFFSET_X,
+        BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y,
+        BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_WHITE,
+    },
     WIN_HEIGHT, WIN_WIDTH,
 };
 
@@ -16,19 +20,63 @@ pub fn setup_camera(mut commands: Commands) {
 
 pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn_bundle(SpatialBundle::default()).insert(Board).with_children(|parent| {
+        let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+
         for rank in 0..8_u8 {
             for file in 0..8_u8 {
-                parent
-                    .spawn_bundle(SpriteBundle {
-                        sprite: Sprite {
-                            color: if (rank + file) % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
-                            custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
-                            ..default()
-                        },
+                let location = Location::new(file, rank, 0.0);
+
+                let mut tile = parent.spawn_bundle(SpriteBundle {
+                    sprite: Sprite {
+                        color: if (rank + file) % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
+                        custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
                         ..default()
-                    })
-                    .insert(Tile)
-                    .insert(Location::new(file, rank, 0.0));
+                    },
+                    ..default()
+                });
+
+                tile.insert(Tile);
+                tile.insert(location);
+
+                if rank == 0 {
+                    let style = TextStyle {
+                        color: if file % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                        font_size: BOARD_TEXT_FONT_SIZE,
+                        font: font.clone(),
+                    };
+                    tile.with_children(|cmds| {
+                        cmds.spawn_bundle(Text2dBundle {
+                            text: Text::from_section(location.file_char(), style)
+                                .with_alignment(TextAlignment::CENTER),
+                            transform: Transform::from_translation(Vec3::from_slice(&[
+                                BOARD_FILE_TEXT_OFFSET_X,
+                                BOARD_FILE_TEXT_OFFSET_Y,
+                                0.1,
+                            ])),
+                            ..default()
+                        });
+                    });
+                }
+
+                if file == 0 {
+                    let style = TextStyle {
+                        color: if rank % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                        font_size: BOARD_TEXT_FONT_SIZE,
+                        font: font.clone(),
+                    };
+                    tile.with_children(|cmds| {
+                        cmds.spawn_bundle(Text2dBundle {
+                            text: Text::from_section(location.rank_char(), style)
+                                .with_alignment(TextAlignment::CENTER),
+                            transform: Transform::from_translation(Vec3::new(
+                                BOARD_RANK_TEXT_OFFSET_X,
+                                BOARD_RANK_TEXT_OFFSET_Y,
+                                0.1,
+                            )),
+                            ..default()
+                        });
+                    });
+                }
             }
         }
 
