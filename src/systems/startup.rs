@@ -3,9 +3,9 @@ use bevy::prelude::*;
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, TILE_ASSET_SIZE},
     data::{
-        Board, Location, MainCamera, Piece, Tile, BOARD_FILE_TEXT_OFFSET_X,
-        BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y,
-        BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_WHITE,
+        Board, HighlightTile, Hoverable, Location, MainCamera, Piece, Tile,
+        BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
+        BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
     },
     WIN_HEIGHT, WIN_WIDTH,
 };
@@ -37,6 +37,7 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
 
                 tile.insert(Tile);
                 tile.insert(location);
+                tile.insert(Hoverable);
 
                 if rank == 0 {
                     let style = TextStyle {
@@ -77,6 +78,20 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
                         });
                     });
                 }
+
+                parent
+                    .spawn_bundle(SpriteBundle {
+                        sprite: Sprite {
+                            color: COLOR_HIGHLIGHT,
+                            custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
+                            ..default()
+                        },
+                        visibility: Visibility { is_visible: false },
+                        ..default()
+                    })
+                    .insert(HighlightTile)
+                    .insert(location.with_z(0.2))
+                    .insert(Hoverable);
             }
         }
 
@@ -88,7 +103,8 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             parent
                 .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
                 .insert(Piece)
-                .insert(Location::new(file, rank, 1.0));
+                .insert(Location::new(file, rank, 1.0))
+                .insert(Hoverable);
         }
     });
 }

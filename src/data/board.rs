@@ -5,8 +5,14 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct Board;
 
+/// The color used to highlight tiles.
+pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+
 #[derive(Component)]
 pub struct Tile;
+
+#[derive(Component)]
+pub struct HighlightTile;
 
 /// The "black" bord color.
 ///
@@ -41,27 +47,66 @@ pub struct Piece;
 
 #[derive(Component, Clone, Copy)]
 pub struct Location {
-    pub file: u8,
-    pub rank: u8,
+    file: u8,
+    rank: u8,
     pub z: f32,
+    file_char: char,
+    rank_char: char,
+    pub snap: bool,
 }
 
 impl Location {
+    pub const fn file_to_char(file: u8) -> char {
+        (b'a' + file) as char
+    }
+
+    pub const fn rank_to_char(rank: u8) -> char {
+        (b'0' + rank + 1) as char
+    }
+
     pub const fn new(file: u8, rank: u8, z: f32) -> Self {
-        Self { file, rank, z }
+        Self {
+            file,
+            rank,
+            z,
+            file_char: Self::file_to_char(file),
+            rank_char: Self::rank_to_char(rank),
+            snap: true,
+        }
+    }
+
+    pub fn with_z(mut self, z: f32) -> Self {
+        self.z = z;
+        self
+    }
+
+    pub fn file(&self) -> u8 {
+        self.file
+    }
+
+    pub fn rank(&self) -> u8 {
+        self.rank
     }
 
     pub fn file_char(&self) -> char {
-        (b'a' + self.file) as char
+        self.file_char
     }
 
     pub fn rank_char(&self) -> char {
-        (b'0' + self.rank + 1) as char
+        self.rank_char
     }
 }
 
+impl PartialEq for Location {
+    fn eq(&self, other: &Self) -> bool {
+        self.file == other.file && self.rank == other.rank
+    }
+}
+
+impl Eq for Location {}
+
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!("{}{}", self.file_char(), self.rank_char()))
+        f.write_fmt(format_args!("{}{}", self.file_char, self.rank_char))
     }
 }
