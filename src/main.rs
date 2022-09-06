@@ -5,7 +5,7 @@ mod data;
 mod systems;
 mod window;
 
-use data::{ClickState, LastMouseDownLocation, MouseLocation, MouseWorldPosition};
+use data::{MouseLocation, MouseWorldPosition};
 use systems::{
     click_handler, click_handler2, mouse_hover, mouse_screen_position_to_world,
     mouse_world_position_to_location, resize_window, setup_board, setup_camera,
@@ -25,10 +25,8 @@ fn main() {
             resizable: false,
             ..default()
         })
-        .init_resource::<ClickState>()
         .init_resource::<MouseWorldPosition>()
         .init_resource::<MouseLocation>()
-        .init_resource::<LastMouseDownLocation>()
         // Startup Systems
         .add_startup_system(resize_window)
         .add_startup_system(setup_camera)
