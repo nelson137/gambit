@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, TILE_ASSET_SIZE},
     data::{
-        Board, HighlightTile, Hoverable, Location, MainCamera, Piece, Tile,
+        Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, Piece, Tile,
         BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
         BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
     },
@@ -18,7 +18,11 @@ pub fn setup_camera(mut commands: Commands) {
     commands.spawn_bundle(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
 }
 
-pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn setup_board(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut board_state: ResMut<BoardState>,
+) {
     commands.spawn_bundle(SpatialBundle::default()).insert(Board).with_children(|parent| {
         let font = asset_server.load("fonts/FiraMono-Medium.ttf");
 
@@ -99,10 +103,15 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
             .zip(PIECE_ASSET_COORDS)
             .flat_map(|(paths, coords)| paths.iter().copied().zip(coords.iter().copied()));
         for (path, (file, rank)) in pice_paths_and_coords {
+            let location = Location::new(file, rank, 1.0);
+            assert!(
+                board_state.pieces.insert(location, BoardPiece).is_none(),
+                "Failed to insert board piece into state: piece already at this location"
+            );
             parent
                 .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
                 .insert(Piece)
-                .insert(Location::new(file, rank, 1.0))
+                .insert(location)
                 .insert(Hoverable);
         }
     });

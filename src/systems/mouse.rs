@@ -3,8 +3,8 @@ use bevy::prelude::*;
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
-        Dragging, Dropped, HighlightTile, Hover, Hoverable, Location, MainCamera, MouseLocation,
-        MouseWorldPosition, Piece, Selected, Selecting, Tile,
+        BoardState, Dragging, Dropped, HighlightTile, Hover, Hoverable, Location, MainCamera,
+        MouseLocation, MouseWorldPosition, Piece, Selected, Selecting, Tile,
     },
 };
 
@@ -87,7 +87,7 @@ pub fn click_handler(
     mut commands: Commands,
     mouse_buttons: Res<Input<MouseButton>>,
     mouse_loc: Res<MouseLocation>,
-    q_piece_locs: Query<&Location, With<Piece>>,
+    mut board_state: ResMut<BoardState>,
     mut q_prev_select: Query<
         (Entity, Option<&HighlightTile>, &mut Visibility),
         (With<Selected>, Without<Hover>, Without<Selecting>),
@@ -101,6 +101,7 @@ pub fn click_handler(
         Entity,
         Option<&HighlightTile>,
         &mut Visibility,
+        &mut Location,
         &Selecting,
         Option<&Selected>,
     )>,
@@ -116,17 +117,17 @@ pub fn click_handler(
         }
 
         // Highlight and begin dragging the current hover target
-        // TODO: introduce HasPiece component which, when present, means that loc has piece
         if let Some(mouse_loc) = mouse_loc.0 {
             // For each entity (pieces & highlight tiles) that are being hovered
             for (entity, piece, loc, mut vis) in &mut q_new_select {
+                // Start select
                 let mut cmds = commands.entity(entity);
                 cmds.insert(Selecting::new(mouse_loc));
 
                 if piece.is_some() {
                     // Insert Dragging if it's a piece
                     cmds.insert(Dragging);
-                } else if q_piece_locs.iter().any(|piece_loc| *piece_loc == *loc) {
+                } else if board_state.pieces.contains_key(loc) {
                     // Show if it's a highlight tile and it has a piece
                     vis.is_visible = true;
                 }
@@ -135,27 +136,39 @@ pub fn click_handler(
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
-        // For each entity (piece) that is Dragging, insert Dropped
-        q_dragging.for_each(|entity| drop(commands.entity(entity).insert(Dropped)));
-
         if let Some(mouse_loc) = mouse_loc.0 {
+            // For each entity (piece) that is Dragging, insert Dropped
+            q_dragging.for_each(|entity| drop(commands.entity(entity).insert(Dropped)));
+
             // For each entity (pieces & highlight tiles) that is Selecting
-            for (entity, hl_tile, mut vis, selecting, selected) in &mut q_selecting {
+            for (entity, hl_tile, mut vis, mut loc, selecting, selected) in &mut q_selecting {
                 let mut cmds = commands.entity(entity);
                 cmds.remove::<Selecting>();
 
-                // If already Selected
-                if selected.is_some() {
-                    // If the current mouse location is the same as the last mouse down location
-                    if mouse_loc == selecting.mouse_down_location {
+                // If the mouse up is in the same location as the mouse down
+                if mouse_loc == selecting.mouse_down_location {
+                    // Un-select
+                    if selected.is_some() {
                         cmds.remove::<Selected>();
                         if hl_tile.is_some() {
-                            // Hide if it's a highlight tile
+                            // Hide highlight tile
                             vis.is_visible = false;
+                        }
+                    } else {
+                        if board_state.pieces.contains_key(&loc) {
+                            cmds.insert(Selected);
                         }
                     }
                 } else {
-                    cmds.insert(Selected);
+                    // Finish select
+                    if hl_tile.is_some() {
+                        // Hide highlight tile
+                        vis.is_visible = false;
+                    } else {
+                        // Move piece location
+                        board_state.move_piece(*loc, mouse_loc);
+                        loc.move_to(mouse_loc);
+                    }
                 }
             }
         }
@@ -165,7 +178,7 @@ pub fn click_handler(
 pub fn click_handler2(
     mut commands: Commands,
     mut q_added_dragging: Query<&mut Location, (Added<Dragging>, Without<Dropped>)>,
-    mut q_added_dropped: Query<(Entity, &mut Location), Added<Dropped>>,
+    mut q_added_dropped: Query<(Entity, &mut Location), With<Dropped>>,
 ) {
     q_added_dragging.for_each_mut(|mut loc| loc.snap = false);
 

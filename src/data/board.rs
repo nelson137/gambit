@@ -1,4 +1,8 @@
 use core::fmt;
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    hash::{Hash, Hasher},
+};
 
 use bevy::prelude::*;
 
@@ -45,7 +49,7 @@ pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
 #[derive(Component)]
 pub struct Piece;
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Debug)]
 pub struct Location {
     file: u8,
     rank: u8,
@@ -95,6 +99,13 @@ impl Location {
     pub fn rank_char(&self) -> char {
         self.rank_char
     }
+
+    pub fn move_to(&mut self, location: Location) {
+        self.file = location.file;
+        self.rank = location.rank;
+        self.file_char = Self::file_to_char(location.file);
+        self.rank_char = Self::rank_to_char(location.rank);
+    }
 }
 
 impl PartialEq for Location {
@@ -105,8 +116,43 @@ impl PartialEq for Location {
 
 impl Eq for Location {}
 
+impl Hash for Location {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.file_char.hash(state);
+        self.rank_char.hash(state);
+    }
+}
+
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_fmt(format_args!("{}{}", self.file_char, self.rank_char))
+    }
+}
+
+#[derive(Debug)]
+pub struct BoardPiece;
+
+#[derive(Default)]
+pub struct BoardState {
+    pub pieces: HashMap<Location, BoardPiece>,
+}
+
+impl BoardState {
+    pub fn move_piece(&mut self, from: Location, to: Location) {
+        let (_old_loc, piece) = self
+            .pieces
+            .remove_entry(&from)
+            .expect("Failed to move board state piece: no piece found at source location");
+        match self.pieces.entry(to) {
+            Entry::Occupied(entry) => {
+                panic!(
+                    "Failed to move board state piece: piece already at destination location {}",
+                    entry.key()
+                )
+            }
+            Entry::Vacant(entry) => {
+                entry.insert(piece);
+            }
+        }
     }
 }
