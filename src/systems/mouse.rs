@@ -1,13 +1,10 @@
-use bevy::{
-    input::{mouse::MouseButtonInput, ButtonState},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         Dragging, Dropped, HighlightTile, Hover, Hoverable, Location, MainCamera, MouseLocation,
-        MouseWorldPosition, Piece, Selected, Tile,
+        MouseWorldPosition, Piece, Selected, Selecting, Tile,
     },
 };
 
@@ -88,82 +85,78 @@ pub fn mouse_hover(
 
 pub fn click_handler(
     mut commands: Commands,
-    mut mouse_buttons_inputs_reader: EventReader<MouseButtonInput>,
+    mouse_buttons: Res<Input<MouseButton>>,
+    mouse_loc: Res<MouseLocation>,
     q_piece_locs: Query<&Location, With<Piece>>,
-
-    // Entities that are `Selected && !Hover`:
-    //   On press Selected will be removed from them.
-    q_prev_selected: Query<Entity, (With<Selected>, Without<Hover>)>,
-
-    // HighlightTiles that are `Selected && !Hover`:
-    //   On press these will be hidden.
-    mut q_prev_selected_hl_tile: Query<
-        &mut Visibility,
-        (With<HighlightTile>, With<Selected>, Without<Hover>),
+    mut q_prev_select: Query<
+        (Entity, Option<&HighlightTile>, &mut Visibility),
+        (With<Selected>, Without<Hover>, Without<Selecting>),
     >,
-
-    // Entities that are `Selected && Hover`:
-    //   On release Selected will be removed from them.
-    q_curr_selected: Query<Entity, (With<Selected>, With<Hover>)>,
-
-    // HighlightTiles that are `Selected && Hover`:
-    //   On release these will be hidden.
-    mut q_curr_selected_hl_tile: Query<
-        &mut Visibility,
-        (With<HighlightTile>, With<Selected>, With<Hover>),
+    mut q_new_select: Query<
+        (Entity, Option<&Piece>, &Location, &mut Visibility),
+        (With<Hover>, Without<Selecting>),
     >,
-
-    // HighlightTiles and Pieces that are `Hover && !Selected`:
-    //   On release Selected will be added to them.
-    q_next_selected: Query<
-        Entity,
-        (Or<(With<HighlightTile>, With<Piece>)>, With<Hover>, Without<Selected>),
-    >,
-
-    // Pieces that are `Hover && !Selected`:
-    //   On press Dragging will be added to them.
-    q_next_selected_piece: Query<Entity, (With<Piece>, With<Hover>, Without<Selected>)>,
-
-    // HighlightTiles that are `Hover && !Selected`:
-    //   On press these will be shown.
-    mut q_next_selected_hl_tile_vis: Query<
-        (&Location, &mut Visibility),
-        (With<HighlightTile>, With<Hover>, Without<Selected>),
-    >,
-
-    // Entities that are `Dragging`:
-    //   On release Dropped will be added to them.
     q_dragging: Query<Entity, With<Dragging>>,
+    mut q_selecting: Query<(
+        Entity,
+        Option<&HighlightTile>,
+        &mut Visibility,
+        &Selecting,
+        Option<&Selected>,
+    )>,
 ) {
-    for event in mouse_buttons_inputs_reader.iter() {
-        match event.state {
-            ButtonState::Pressed => {
-                q_prev_selected
-                    .for_each(|entity| drop(commands.entity(entity).remove::<Selected>()));
-                for mut vis in &mut q_prev_selected_hl_tile {
-                    vis.is_visible = false;
-                }
-
-                for (hl_tile_loc, mut vis) in &mut q_next_selected_hl_tile_vis {
-                    if q_piece_locs.iter().any(|piece_loc| *piece_loc == *hl_tile_loc) {
-                        vis.is_visible = true;
-                    }
-                }
-
-                q_next_selected_piece
-                    .for_each(|entity| drop(commands.entity(entity).insert(Dragging)));
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        // For each entity (pieces & highlight tiles) that is selected and not being hovered
+        for (entity, hl_tile, mut vis) in &mut q_prev_select {
+            commands.entity(entity).remove::<Selected>();
+            if hl_tile.is_some() {
+                // Hide if it's a highlight tile
+                vis.is_visible = false;
             }
+        }
 
-            ButtonState::Released => {
-                q_dragging.for_each(|entity| drop(commands.entity(entity).insert(Dropped)));
+        // Highlight and begin dragging the current hover target
+        // TODO: introduce HasPiece component which, when present, means that loc has piece
+        if let Some(mouse_loc) = mouse_loc.0 {
+            // For each entity (pieces & highlight tiles) that are being hovered
+            for (entity, piece, loc, mut vis) in &mut q_new_select {
+                let mut cmds = commands.entity(entity);
+                cmds.insert(Selecting::new(mouse_loc));
 
-                q_curr_selected
-                    .for_each(|entity| drop(commands.entity(entity).remove::<Selected>()));
-                for mut vis in &mut q_curr_selected_hl_tile {
-                    vis.is_visible = false;
+                if piece.is_some() {
+                    // Insert Dragging if it's a piece
+                    cmds.insert(Dragging);
+                } else if q_piece_locs.iter().any(|piece_loc| *piece_loc == *loc) {
+                    // Show if it's a highlight tile and it has a piece
+                    vis.is_visible = true;
                 }
+            }
+        }
+    }
 
-                q_next_selected.for_each(|entity| drop(commands.entity(entity).insert(Selected)));
+    if mouse_buttons.just_released(MouseButton::Left) {
+        // For each entity (piece) that is Dragging, insert Dropped
+        q_dragging.for_each(|entity| drop(commands.entity(entity).insert(Dropped)));
+
+        if let Some(mouse_loc) = mouse_loc.0 {
+            // For each entity (pieces & highlight tiles) that is Selecting
+            for (entity, hl_tile, mut vis, selecting, selected) in &mut q_selecting {
+                let mut cmds = commands.entity(entity);
+                cmds.remove::<Selecting>();
+
+                // If already Selected
+                if selected.is_some() {
+                    // If the current mouse location is the same as the last mouse down location
+                    if mouse_loc == selecting.mouse_down_location {
+                        cmds.remove::<Selected>();
+                        if hl_tile.is_some() {
+                            // Hide if it's a highlight tile
+                            vis.is_visible = false;
+                        }
+                    }
+                } else {
+                    cmds.insert(Selected);
+                }
             }
         }
     }

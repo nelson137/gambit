@@ -37,7 +37,6 @@ pub fn setup_board(mut commands: Commands, asset_server: Res<AssetServer>) {
 
                 tile.insert(Tile);
                 tile.insert(location);
-                tile.insert(Hoverable);
 
                 if rank == 0 {
                     let style = TextStyle {

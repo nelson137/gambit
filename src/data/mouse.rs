@@ -15,6 +15,17 @@ pub struct Hoverable;
 pub struct Hover;
 
 #[derive(Component)]
+pub struct Selecting {
+    pub mouse_down_location: Location,
+}
+
+impl Selecting {
+    pub fn new(mouse_down_location: Location) -> Self {
+        Self { mouse_down_location }
+    }
+}
+
+#[derive(Component)]
 pub struct Selected;
 
 #[derive(Component)]
