@@ -62,8 +62,6 @@ pub struct Location {
     file: u8,
     rank: u8,
     pub z: f32,
-    file_char: char,
-    rank_char: char,
     pub snap: bool,
 }
 
@@ -77,14 +75,7 @@ impl Location {
     }
 
     pub const fn new(file: u8, rank: u8, z: f32) -> Self {
-        Self {
-            file,
-            rank,
-            z,
-            file_char: Self::file_to_char(file),
-            rank_char: Self::rank_to_char(rank),
-            snap: true,
-        }
+        Self { file, rank, z, snap: true }
     }
 
     pub fn with_z(mut self, z: f32) -> Self {
@@ -101,18 +92,16 @@ impl Location {
     }
 
     pub fn file_char(&self) -> char {
-        self.file_char
+        Self::file_to_char(self.file)
     }
 
     pub fn rank_char(&self) -> char {
-        self.rank_char
+        Self::rank_to_char(self.rank)
     }
 
     pub fn move_to(&mut self, location: Location) {
         self.file = location.file;
         self.rank = location.rank;
-        self.file_char = Self::file_to_char(location.file);
-        self.rank_char = Self::rank_to_char(location.rank);
     }
 }
 
@@ -126,14 +115,18 @@ impl Eq for Location {}
 
 impl Hash for Location {
     fn hash<H: Hasher>(&self, state: &mut H) {
-        self.file_char.hash(state);
-        self.rank_char.hash(state);
+        Self::file_to_char(self.file).hash(state);
+        Self::rank_to_char(self.rank).hash(state);
     }
 }
 
 impl fmt::Display for Location {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!("{}{}", self.file_char, self.rank_char))
+        f.write_fmt(format_args!(
+            "{}{}",
+            Self::file_to_char(self.file),
+            Self::rank_to_char(self.rank)
+        ))
     }
 }
 
