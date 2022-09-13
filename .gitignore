@@ -1,5 +1,7 @@
 target/
 
-.vscode/
+.vscode/*
+!/.vscode/tasks.json
+!/.vscode/launch.json
 
 .DS_Store
