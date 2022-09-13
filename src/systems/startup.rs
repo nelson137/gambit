@@ -1,12 +1,12 @@
 use bevy::prelude::*;
 
 use crate::{
-    assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, TILE_ASSET_SIZE},
+    assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
-        Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, Piece, Tile,
-        BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
+        Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, MoveHints,
+        Piece, Tile, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
         BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
-        Z_HIGHLIGHT_TILE, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
+        Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
     },
     WIN_HEIGHT, WIN_WIDTH,
 };
@@ -26,6 +26,8 @@ pub fn setup_board(
 ) {
     commands.spawn_bundle(SpatialBundle::default()).insert(Board).with_children(|parent| {
         let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+        let move_hint_texture = asset_server.load("hints/move.png");
+        let capture_hint_texture = asset_server.load("hints/capture.png");
 
         for rank in 0..8_u8 {
             for file in 0..8_u8 {
@@ -96,22 +98,50 @@ pub fn setup_board(
                     .insert(HighlightTile)
                     .insert(location.with_z(Z_HIGHLIGHT_TILE))
                     .insert(Hoverable);
+
+                let move_entity = parent
+                    .spawn_bundle(SpriteBundle {
+                        texture: move_hint_texture.clone(),
+                        visibility: Visibility { is_visible: false },
+                        ..default()
+                    })
+                    .insert(location.with_z(Z_MOVE_HINT))
+                    .id();
+
+                let capture_entity = parent
+                    .spawn_bundle(SpriteBundle {
+                        texture: capture_hint_texture.clone(),
+                        visibility: Visibility { is_visible: false },
+                        ..default()
+                    })
+                    .insert(location.with_z(Z_MOVE_HINT))
+                    .id();
+
+                let hint = MoveHints { entity_capture: capture_entity, entity_move: move_entity };
+                assert!(
+                    board_state.move_hints.insert(location, hint).is_none(),
+                    "Failed to insert board hint into state: hint already at this location"
+                );
             }
         }
 
         let pice_paths_and_coords = PIECE_ASSET_PATHS
             .iter()
-            .zip(PIECE_ASSET_COORDS)
-            .flat_map(|(paths, coords)| paths.iter().copied().zip(coords.iter().copied()));
-        for (path, (file, rank)) in pice_paths_and_coords {
+            .copied()
+            .flatten()
+            .zip(PIECE_ASSET_COORDS.iter().copied().flatten())
+            .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
+        for ((&path, &(file, rank)), &(color, typ)) in pice_paths_and_coords {
             let location = Location::new(file, rank, Z_PIECE);
             assert!(
-                board_state.pieces.insert(location, BoardPiece).is_none(),
+                board_state.pieces.insert(location, BoardPiece { color, typ }).is_none(),
                 "Failed to insert board piece into state: piece already at this location"
             );
             parent
                 .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
                 .insert(Piece)
+                .insert(color)
+                .insert(typ)
                 .insert(location)
                 .insert(Hoverable);
         }

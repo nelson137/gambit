@@ -1,3 +1,5 @@
+use crate::data::{PieceColor, PieceType};
+
 /// build_piece_fn!("{COLOR}", "{PIECE}") -> "assets/pieces/{COLOR}-{PIECE}.png"
 macro_rules! build_piece_fn {
     ($color:literal, $piece:literal) => {
@@ -56,6 +58,49 @@ pub const PIECE_ASSET_PATHS: [&[&str]; 2] = [
             "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn", "pawn",
             "rook", "knight", "bishop", "queen", "king", "bishop", "knight", "rook"
         ]
+    ],
+];
+
+pub const PIECE_COLORS_TYPES: [&[(PieceColor, PieceType)]; 2] = [
+    &[
+        // Rank 8
+        (PieceColor::Black, PieceType::Rook),
+        (PieceColor::Black, PieceType::Knight),
+        (PieceColor::Black, PieceType::Bishop),
+        (PieceColor::Black, PieceType::Queen),
+        (PieceColor::Black, PieceType::King),
+        (PieceColor::Black, PieceType::Bishop),
+        (PieceColor::Black, PieceType::Knight),
+        (PieceColor::Black, PieceType::Rook),
+        // Rank 7
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType::Pawn),
+    ],
+    &[
+        // Rank 2
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType::Pawn),
+        // Rank 1
+        (PieceColor::White, PieceType::Rook),
+        (PieceColor::White, PieceType::Knight),
+        (PieceColor::White, PieceType::Bishop),
+        (PieceColor::White, PieceType::Queen),
+        (PieceColor::White, PieceType::King),
+        (PieceColor::White, PieceType::Bishop),
+        (PieceColor::White, PieceType::Knight),
+        (PieceColor::White, PieceType::Rook),
     ],
 ];
 

@@ -3,8 +3,9 @@ use bevy::prelude::*;
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
-        BoardState, Dragging, Dropped, HighlightTile, Hover, Hoverable, Location, MainCamera,
-        MouseLocation, MouseWorldPosition, Piece, Selected, Selecting, Tile,
+        BoardState, Dragging, Dropped, HideHint, HighlightTile, Hover, Hoverable, Location,
+        MainCamera, MouseLocation, MouseWorldPosition, Piece, Selected, Selecting, ShowHint,
+        ShowingMovesFor, Tile,
     },
 };
 
@@ -87,6 +88,7 @@ pub fn click_handler(
     mut commands: Commands,
     mouse_buttons: Res<Input<MouseButton>>,
     mouse_loc: Res<MouseLocation>,
+    mut showing_piece_moves: ResMut<ShowingMovesFor>,
     mut board_state: ResMut<BoardState>,
     mut q_prev_select: Query<
         (Entity, Option<&HighlightTile>, &mut Visibility),
@@ -113,6 +115,11 @@ pub fn click_handler(
             if hl_tile.is_some() {
                 // Hide if it's a highlight tile
                 vis.is_visible = false;
+                // Hide previous move hints
+                if let Some(showing_loc) = showing_piece_moves.0 {
+                    board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                    showing_piece_moves.0 = None;
+                }
             }
         }
 
@@ -127,6 +134,16 @@ pub fn click_handler(
                 if piece.is_some() {
                     // Insert Dragging if it's a piece
                     cmds.insert(Dragging);
+                    // Hide previous move hints
+                    // Note: this should not happen because q_prev_select should take care of it
+                    if let Some(showing_loc) = showing_piece_moves.0 {
+                        if showing_loc != *loc {
+                            board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                        }
+                    }
+                    // Show move hints
+                    showing_piece_moves.0 = Some(*loc);
+                    board_state.show_piece_move_hints(&mut commands, *loc);
                 } else if board_state.pieces.contains_key(loc) {
                     // Show if it's a highlight tile and it has a piece
                     vis.is_visible = true;
@@ -153,6 +170,11 @@ pub fn click_handler(
                         if hl_tile.is_some() {
                             // Hide highlight tile
                             vis.is_visible = false;
+                            // Hide move hints
+                            if let Some(showing_loc) = showing_piece_moves.0 {
+                                board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                                showing_piece_moves.0 = None;
+                            }
                         }
                     } else {
                         if board_state.pieces.contains_key(&loc) {
@@ -168,6 +190,11 @@ pub fn click_handler(
                         // Move piece location
                         board_state.move_piece(*loc, mouse_loc);
                         loc.move_to(mouse_loc);
+                        // Hide move hints
+                        if let Some(showing_loc) = showing_piece_moves.0 {
+                            board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                            showing_piece_moves.0 = None;
+                        }
                     }
                 }
             }
@@ -179,11 +206,22 @@ pub fn click_handler2(
     mut commands: Commands,
     mut q_added_dragging: Query<&mut Location, (Added<Dragging>, Without<Dropped>)>,
     mut q_added_dropped: Query<(Entity, &mut Location), With<Dropped>>,
+    mut q_show_hints: Query<&mut Visibility, (Added<ShowHint>, Without<HideHint>)>,
+    mut q_hide_hints: Query<(Entity, &mut Visibility), Added<HideHint>>,
 ) {
     q_added_dragging.for_each_mut(|mut loc| loc.snap = false);
 
     for (entity, mut loc) in &mut q_added_dropped {
         commands.entity(entity).remove::<Dragging>().remove::<Dropped>();
         loc.snap = true;
+    }
+
+    for mut vis in &mut q_show_hints {
+        vis.is_visible = true;
+    }
+
+    for (entity, mut vis) in &mut q_hide_hints {
+        commands.entity(entity).remove::<ShowHint>().remove::<HideHint>();
+        vis.is_visible = false;
     }
 }
