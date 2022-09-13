@@ -6,6 +6,7 @@ use crate::{
         Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, Piece, Tile,
         BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
         BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
+        Z_HIGHLIGHT_TILE, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
     },
     WIN_HEIGHT, WIN_WIDTH,
 };
@@ -28,7 +29,7 @@ pub fn setup_board(
 
         for rank in 0..8_u8 {
             for file in 0..8_u8 {
-                let location = Location::new(file, rank, 0.0);
+                let location = Location::new(file, rank, Z_TILE);
 
                 let mut tile = parent.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
@@ -55,7 +56,7 @@ pub fn setup_board(
                             transform: Transform::from_translation(Vec3::from_slice(&[
                                 BOARD_FILE_TEXT_OFFSET_X,
                                 BOARD_FILE_TEXT_OFFSET_Y,
-                                0.1,
+                                Z_NOTATION_TEXT,
                             ])),
                             ..default()
                         });
@@ -75,7 +76,7 @@ pub fn setup_board(
                             transform: Transform::from_translation(Vec3::new(
                                 BOARD_RANK_TEXT_OFFSET_X,
                                 BOARD_RANK_TEXT_OFFSET_Y,
-                                0.1,
+                                Z_NOTATION_TEXT,
                             )),
                             ..default()
                         });
@@ -93,7 +94,7 @@ pub fn setup_board(
                         ..default()
                     })
                     .insert(HighlightTile)
-                    .insert(location.with_z(0.2))
+                    .insert(location.with_z(Z_HIGHLIGHT_TILE))
                     .insert(Hoverable);
             }
         }
@@ -103,7 +104,7 @@ pub fn setup_board(
             .zip(PIECE_ASSET_COORDS)
             .flat_map(|(paths, coords)| paths.iter().copied().zip(coords.iter().copied()));
         for (path, (file, rank)) in pice_paths_and_coords {
-            let location = Location::new(file, rank, 1.0);
+            let location = Location::new(file, rank, Z_PIECE);
             assert!(
                 board_state.pieces.insert(location, BoardPiece).is_none(),
                 "Failed to insert board piece into state: piece already at this location"
