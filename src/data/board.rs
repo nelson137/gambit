@@ -6,6 +6,8 @@ use std::{
 
 use bevy::prelude::*;
 
+pub const Z_PIECE_SELECTED: f32 = 1.5;
+
 pub const Z_PIECE: f32 = 1.0;
 
 pub const Z_HIGHLIGHT_TILE: f32 = 0.3;

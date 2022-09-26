@@ -5,7 +5,7 @@ use crate::{
     data::{
         BoardState, Dragging, Dropped, HideHint, HighlightTile, Hover, Hoverable, Location,
         MainCamera, MouseLocation, MouseWorldPosition, Piece, Selected, Selecting, ShowHint,
-        ShowingMovesFor, Tile,
+        ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
     },
 };
 
@@ -14,7 +14,7 @@ pub fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
-    mut q_dragging: Query<&mut Transform, With<Dragging>>,
+    mut q_dragging: Query<(&Location, &mut Transform), With<Dragging>>,
 ) {
     let win = windows.primary();
 
@@ -34,9 +34,10 @@ pub fn mouse_screen_position_to_world(
 
         mouse_world_pos.0 = world_pos.truncate();
 
-        for mut transf in &mut q_dragging {
+        for (loc, mut transf) in &mut q_dragging {
             transf.translation.x = world_pos.x;
             transf.translation.y = world_pos.y;
+            transf.translation.z = loc.z;
         }
     }
 }
@@ -209,11 +210,15 @@ pub fn click_handler2(
     mut q_show_hints: Query<&mut Visibility, (Added<ShowHint>, Without<HideHint>)>,
     mut q_hide_hints: Query<(Entity, &mut Visibility), Added<HideHint>>,
 ) {
-    q_added_dragging.for_each_mut(|mut loc| loc.snap = false);
+    q_added_dragging.for_each_mut(|mut loc| {
+        loc.snap = false;
+        loc.z = Z_PIECE_SELECTED;
+    });
 
     for (entity, mut loc) in &mut q_added_dropped {
         commands.entity(entity).remove::<Dragging>().remove::<Dropped>();
         loc.snap = true;
+        loc.z = Z_PIECE;
     }
 
     for mut vis in &mut q_show_hints {
