@@ -205,30 +205,39 @@ pub fn click_handler(
     }
 }
 
-pub fn click_handler2(
+pub fn piece_drag(
     mut commands: Commands,
     mut q_added_dragging: Query<&mut Location, (Added<Dragging>, Without<Dropped>)>,
     mut q_added_dropped: Query<(Entity, &mut Location), With<Dropped>>,
-    mut q_show_hints: Query<&mut Visibility, (Added<ShowHint>, Without<HideHint>)>,
-    mut q_hide_hints: Query<(Entity, &mut Visibility), Added<HideHint>>,
 ) {
-    q_added_dragging.for_each_mut(|mut loc| {
+    for mut loc in &mut q_added_dragging {
         loc.snap = false;
         loc.z = Z_PIECE_SELECTED;
-    });
+    }
 
     for (entity, mut loc) in &mut q_added_dropped {
         commands.entity(entity).remove::<Dragging>().remove::<Dropped>();
         loc.snap = true;
         loc.z = Z_PIECE;
     }
+}
 
-    for mut vis in &mut q_show_hints {
-        vis.is_visible = true;
-    }
-
+pub fn hints_hide(
+    mut commands: Commands,
+    mut q_hide_hints: Query<(Entity, &mut Visibility), Added<HideHint>>,
+) {
     for (entity, mut vis) in &mut q_hide_hints {
-        commands.entity(entity).remove::<ShowHint>().remove::<HideHint>();
+        commands.entity(entity).remove::<HideHint>();
         vis.is_visible = false;
+    }
+}
+
+pub fn hints_show(
+    mut commands: Commands,
+    mut q_show_hints: Query<(Entity, &mut Visibility), Added<ShowHint>>,
+) {
+    for (entity, mut vis) in &mut q_show_hints {
+        commands.entity(entity).remove::<ShowHint>();
+        vis.is_visible = true;
     }
 }

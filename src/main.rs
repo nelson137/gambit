@@ -7,8 +7,8 @@ mod window;
 
 use data::{BoardState, MouseLocation, MouseWorldPosition, ShowingMovesFor};
 use systems::{
-    click_handler, click_handler2, mouse_hover, mouse_screen_position_to_world,
-    mouse_world_position_to_location, resize_window, setup_board, setup_camera,
+    click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
+    mouse_world_position_to_location, piece_drag, resize_window, setup_board, setup_camera,
     update_translation_for_location,
 };
 use window::{WIN_HEIGHT, WIN_WIDTH};
@@ -46,7 +46,9 @@ fn main() {
             SystemSet::new().with_system(update_translation_for_location),
         )
         .add_system(click_handler)
-        .add_system(click_handler2.after(click_handler))
+        .add_system(piece_drag.after(click_handler))
+        .add_system(hints_hide.after(click_handler))
+        .add_system(hints_show.after(hints_hide))
         // Run
         .run();
 }
