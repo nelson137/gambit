@@ -183,18 +183,20 @@ pub fn click_handler(
                         }
                     }
                 } else {
-                    // Finish select
-                    if hl_tile.is_some() {
-                        // Hide highlight tile
-                        vis.is_visible = false;
-                    } else {
-                        // Move piece location
-                        board_state.move_piece(*loc, mouse_loc);
-                        loc.move_to(mouse_loc);
-                        // Hide move hints
-                        if let Some(showing_loc) = showing_piece_moves.0 {
-                            board_state.hide_piece_move_hints(&mut commands, &showing_loc);
-                            showing_piece_moves.0 = None;
+                    if board_state.get_piece_moves(&loc).iter().any(|(l, _)| *l == mouse_loc) {
+                        // Finish select
+                        if hl_tile.is_some() {
+                            // Hide highlight tile
+                            vis.is_visible = false;
+                        } else {
+                            // Move piece location
+                            board_state.move_piece(*loc, mouse_loc);
+                            loc.move_to(mouse_loc);
+                            // Hide move hints
+                            if let Some(showing_loc) = showing_piece_moves.0 {
+                                board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                                showing_piece_moves.0 = None;
+                            }
                         }
                     }
                 }
