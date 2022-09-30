@@ -33,3 +33,6 @@ pub struct Dragging;
 
 #[derive(Component)]
 pub struct Dropped;
+
+#[derive(Component)]
+pub struct Unselected;
