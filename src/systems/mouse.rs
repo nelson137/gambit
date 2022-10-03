@@ -103,7 +103,9 @@ pub fn click_handler(
         // Start drag
         if let Some(mouse_loc) = mouse_loc.0 {
             for entity in &mut q_new_select {
-                commands.entity(entity).insert(Dragging::new(mouse_loc));
+                if board_state.pieces.contains_key(&mouse_loc) {
+                    commands.entity(entity).insert(Dragging::new(mouse_loc));
+                }
             }
         }
     }
