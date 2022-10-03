@@ -3,9 +3,9 @@ use bevy::prelude::*;
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
-        BoardState, Dragging, Dropped, HideHint, HighlightTile, Hover, Hoverable, Location,
-        MainCamera, MouseLocation, MouseWorldPosition, Piece, Selected, Selecting, ShowHint,
-        ShowingMovesFor, Tile, Unselected, Z_PIECE, Z_PIECE_SELECTED,
+        BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
+        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, Selected,
+        ShowHint, ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
     },
 };
 
@@ -89,33 +89,22 @@ pub fn click_handler(
     mut commands: Commands,
     mouse_buttons: Res<Input<MouseButton>>,
     mouse_loc: Res<MouseLocation>,
-    mut showing_piece_moves: ResMut<ShowingMovesFor>,
-    mut board_state: ResMut<BoardState>,
-    q_prev_select: Query<Entity, (With<Selected>, Without<Hover>, Without<Selecting>)>,
-    mut q_new_select: Query<Entity, (With<Hover>, Without<Selecting>)>,
-    q_dragging: Query<Entity, With<Dragging>>,
-    mut q_selecting: Query<(
-        Entity,
-        Option<&HighlightTile>,
-        &mut Visibility,
-        &mut Location,
-        &Selecting,
-        Option<&Selected>,
-    )>,
+    board_state: Res<BoardState>,
+    q_prev_select: Query<Entity, (With<Selected>, Without<Hover>, Without<Dragging>)>,
+    mut q_new_select: Query<Entity, (With<Hover>, Without<Dragging>)>,
+    mut q_dragging: Query<(Entity, &Location, &Dragging, Option<&Selected>)>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
+        // Unselect the current selection if not hovered
         for entity in &q_prev_select {
-            commands.entity(entity).insert(Unselected);
+            commands.entity(entity).remove::<Selected>().insert(DoUnselect);
         }
         // (A)
 
-        // Highlight and begin dragging the current hover target
+        // Start drag
         if let Some(mouse_loc) = mouse_loc.0 {
-            // For each entity (pieces & highlight tiles) that are being hovered
             for entity in &mut q_new_select {
-                // Start select
-                let mut cmds = commands.entity(entity);
-                cmds.insert(Selecting::new(mouse_loc));
+                commands.entity(entity).insert(Dragging::new(mouse_loc));
                 // (C)
             }
         }
@@ -123,38 +112,28 @@ pub fn click_handler(
 
     if mouse_buttons.just_released(MouseButton::Left) {
         if let Some(mouse_loc) = mouse_loc.0 {
-            // For each entity (piece) that is Dragging, insert Dropped
-            q_dragging.for_each(|entity| drop(commands.entity(entity).insert(Dropped)));
-
-            // For each entity (pieces & highlight tiles) that is Selecting
-            for (entity, hl_tile, mut vis, mut loc, selecting, selected) in &mut q_selecting {
+            for (entity, loc, dragging, selected) in &mut q_dragging {
                 let mut cmds = commands.entity(entity);
-                // Finish select
-                cmds.remove::<Selecting>().insert(Selected);
+                cmds.remove::<Dragging>().insert(Dropped);
 
-                // If the mouse up is in the same location as the mouse down
-                if mouse_loc == selecting.mouse_down_location {
+                // If the mouse up location is the same as the drag's mouse down
+                if mouse_loc == dragging.mouse_down_location {
                     if selected.is_some() {
                         // Un-select
                         // Mouse up in same location as mouse down when selected
-                        cmds.insert(Unselected);
+                        cmds.remove::<Selected>().insert(DoUnselect);
                         // (B)
+                    } else {
+                        // Select
+                        // Mouse up in same location as mouse down when *not* selected
+                        cmds.insert(Selected);
                     }
                 } else {
+                    // Move
+                    // Mouse up in different location than the drag's mouse down
                     if board_state.get_piece_moves(&loc).iter().any(|(l, _)| *l == mouse_loc) {
-                        if hl_tile.is_some() {
-                            // Hide highlight tile
-                            vis.is_visible = false;
-                        } else {
-                            // Move piece location
-                            board_state.move_piece(*loc, mouse_loc);
-                            loc.move_to(mouse_loc);
-                            // Hide move hints
-                            if let Some(showing_loc) = showing_piece_moves.0 {
-                                board_state.hide_piece_move_hints(&mut commands, &showing_loc);
-                                showing_piece_moves.0 = None;
-                            }
-                        }
+                        cmds.insert(DoMove);
+                        // (D)
                     }
                 }
             }
@@ -168,16 +147,18 @@ pub fn selections(
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
     mut q_unselect: Query<
         (Entity, Option<&HighlightTile>, &mut Visibility),
-        (Added<Unselected>, Without<Selecting>),
+        (Added<DoUnselect>, Without<Dragging>),
     >,
-    mut q_new_select: Query<(Entity, Option<&Piece>, &Location, &mut Visibility), Added<Selecting>>,
+    mut q_new_select: Query<
+        (Option<&Piece>, Option<&HighlightTile>, &Location, &mut Visibility),
+        Added<Dragging>,
+    >,
 ) {
     // (A), (B)
-    // For each entity (pieces & highlight tiles) that is selected and not being hovered
     for (entity, hl_tile, mut vis) in &mut q_unselect {
-        commands.entity(entity).remove::<Unselected>().remove::<Selected>();
+        commands.entity(entity).remove::<DoUnselect>();
         if hl_tile.is_some() {
-            // Hide if it's a highlight tile
+            // Hide highlight tile
             vis.is_visible = false;
             // Hide previous move hints
             if let Some(showing_loc) = showing_piece_moves.0 {
@@ -188,10 +169,8 @@ pub fn selections(
     }
 
     // (C)
-    for (entity, piece, loc, mut vis) in &mut q_new_select {
+    for (piece, hl_tile, loc, mut vis) in &mut q_new_select {
         if piece.is_some() {
-            // Insert Dragging if it's a piece
-            commands.entity(entity).insert(Dragging);
             // Hide previous move hints
             // Note: this should not happen because q_unselect should take care of it
             if let Some(showing_loc) = showing_piece_moves.0 {
@@ -202,27 +181,66 @@ pub fn selections(
             // Show move hints
             showing_piece_moves.0 = Some(*loc);
             board_state.show_piece_move_hints(&mut commands, *loc);
-        } else if board_state.pieces.contains_key(&loc) {
-            // Show if it's a highlight tile and it has a piece
-            vis.is_visible = true;
+        } else if hl_tile.is_some() {
+            if board_state.pieces.contains_key(&loc) {
+                // Show if it's a highlight tile and it has a piece
+                vis.is_visible = true;
+            }
         }
     }
 }
 
-pub fn piece_drag(
+pub fn piece_move(
     mut commands: Commands,
-    mut q_added_dragging: Query<&mut Location, (Added<Dragging>, Without<Dropped>)>,
-    mut q_added_dropped: Query<(Entity, &mut Location), With<Dropped>>,
+    mouse_loc: Res<MouseLocation>,
+    mut board_state: ResMut<BoardState>,
+    mut showing_piece_moves: ResMut<ShowingMovesFor>,
+    mut q_dragging_piece: Query<
+        &mut Location,
+        (With<Piece>, Added<Dragging>, Without<Dropped>, Without<DoMove>),
+    >,
+    mut q_dropped: Query<
+        (
+            Entity,
+            Option<&Piece>,
+            Option<&HighlightTile>,
+            Option<&DoMove>,
+            &mut Visibility,
+            &mut Location,
+        ),
+        Added<Dropped>,
+    >,
 ) {
-    for mut loc in &mut q_added_dragging {
+    for mut loc in &mut q_dragging_piece {
         loc.snap = false;
         loc.z = Z_PIECE_SELECTED;
     }
 
-    for (entity, mut loc) in &mut q_added_dropped {
-        commands.entity(entity).remove::<Dragging>().remove::<Dropped>();
-        loc.snap = true;
-        loc.z = Z_PIECE;
+    // (D)
+    if let Some(mouse_loc) = mouse_loc.0 {
+        // Finish select
+        for (entity, piece, hl_tile, do_move, mut vis, mut loc) in &mut q_dropped {
+            commands.entity(entity).remove::<Dropped>().remove::<DoMove>();
+            if hl_tile.is_some() {
+                if do_move.is_some() {
+                    // Hide highlight tile
+                    vis.is_visible = false;
+                }
+            } else if piece.is_some() {
+                loc.snap = true;
+                loc.z = Z_PIECE;
+                if do_move.is_some() {
+                    // Move piece location
+                    board_state.move_piece(*loc, mouse_loc);
+                    loc.move_to(mouse_loc);
+                    // Hide move hints
+                    if let Some(showing_loc) = showing_piece_moves.0 {
+                        board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                        showing_piece_moves.0 = None;
+                    }
+                }
+            }
+        }
     }
 }
 
