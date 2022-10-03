@@ -4,8 +4,8 @@ use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, Selected,
-        ShowHint, ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
+        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, PieceMoveType,
+        PossibleMove, Selected, ShowHint, ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
     },
 };
 
@@ -128,7 +128,9 @@ pub fn click_handler(
                 } else {
                     // Move
                     // Mouse up in different location than the drag's mouse down
-                    if board_state.get_piece_moves(&loc).iter().any(|(l, _)| *l == mouse_loc) {
+                    // The move type doesn't matter here, hashing is done only by location
+                    let move_with_mouse_loc = PossibleMove::new(mouse_loc, PieceMoveType::Move);
+                    if board_state.get_piece_moves(&loc).contains(&move_with_mouse_loc) {
                         cmds.insert(DoMove);
                     }
                 }

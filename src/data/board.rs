@@ -1,6 +1,6 @@
 use core::fmt;
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{hash_map::Entry, HashMap, HashSet},
     hash::{Hash, Hasher},
 };
 
@@ -186,15 +186,42 @@ pub struct MoveHints {
     pub entity_capture: Entity,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum PieceMoveType {
     Move,
     Capture,
 }
 
+#[derive(Clone, Copy)]
+pub struct PossibleMove {
+    location: Location,
+    typ: PieceMoveType,
+}
+
+impl PartialEq for PossibleMove {
+    fn eq(&self, other: &Self) -> bool {
+        self.location.eq(&other.location)
+    }
+}
+
+impl Eq for PossibleMove {}
+
+impl Hash for PossibleMove {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        self.location.hash(state);
+    }
+}
+
+impl PossibleMove {
+    pub fn new(location: Location, typ: PieceMoveType) -> Self {
+        Self { location, typ }
+    }
+}
+
 pub struct BoardState {
     pub pieces: HashMap<Location, BoardPiece>,
     pub move_hints: HashMap<Location, MoveHints>,
-    piece_moves_cache: HashMap<Location, Vec<(Location, PieceMoveType)>>,
+    piece_moves_cache: HashMap<Location, HashSet<PossibleMove>>,
 }
 
 impl Default for BoardState {
@@ -212,21 +239,29 @@ impl BoardState {
         self.move_hints.get(location).expect("Failed to get hints: none at location")
     }
 
-    fn possible_piece_moves(&self, location: Location) -> Vec<(Location, PieceMoveType)> {
+    fn possible_piece_moves(&self, location: Location) -> HashSet<PossibleMove> {
         let &BoardPiece { color, typ } = self.pieces.get(&location).expect(
             "Failed to calculate possible moves for piece: no such piece exists at this location",
         );
 
-        let mut moves = Vec::new();
+        let mut moves = HashSet::new();
+        let mut safe_insert = |move_: PossibleMove| {
+            if !moves.insert(move_) {
+                panic!(
+                    "failed to insert possible move into hash set, already exists: {:?} {}",
+                    move_.typ, move_.location
+                );
+            }
+        };
 
         // Return whether a directional piece (pawn, rook, bishop, queen) could move past loc
         let mut push_directional_move = |loc: Location| match self.pieces.get(&loc) {
             Some(piece) if piece.color != color => {
-                moves.push((loc, PieceMoveType::Capture));
+                safe_insert(PossibleMove::new(loc, PieceMoveType::Capture));
                 false
             }
             None => {
-                moves.push((loc, PieceMoveType::Move));
+                safe_insert(PossibleMove::new(loc, PieceMoveType::Move));
                 true
             }
             _ => false,
@@ -244,11 +279,11 @@ impl BoardState {
 
                 if let Some(loc1) = location.try_offset(0, offset as i8) {
                     if !self.pieces.contains_key(&loc1) {
-                        moves.push((loc1, PieceMoveType::Move));
+                        safe_insert(PossibleMove::new(loc1, PieceMoveType::Move));
                         if location.rank == start_rank {
                             let loc2 = loc1.with_rank((loc1.rank as i8 + offset) as u8);
                             if !self.pieces.contains_key(&loc2) {
-                                moves.push((loc2, PieceMoveType::Move));
+                                safe_insert(PossibleMove::new(loc2, PieceMoveType::Move));
                             }
                         }
                     }
@@ -258,12 +293,12 @@ impl BoardState {
                     |loc| self.pieces.get(&loc).map(|p| p.color != color).unwrap_or(false);
                 if let Some(loc) = location.try_offset(1, offset) {
                     if loc_capturable(loc) {
-                        moves.push((loc, PieceMoveType::Capture));
+                        safe_insert(PossibleMove::new(loc, PieceMoveType::Capture));
                     }
                 }
                 if let Some(loc) = location.try_offset(-1, offset) {
                     if loc_capturable(loc) {
-                        moves.push((loc, PieceMoveType::Capture));
+                        safe_insert(PossibleMove::new(loc, PieceMoveType::Capture));
                     }
                 }
             }
@@ -327,14 +362,14 @@ impl BoardState {
         self.piece_moves_cache.insert(location, self.possible_piece_moves(location));
     }
 
-    pub fn get_piece_moves(&self, location: &Location) -> &Vec<(Location, PieceMoveType)> {
+    pub fn get_piece_moves(&self, location: &Location) -> &HashSet<PossibleMove> {
         self.piece_moves_cache.get(location).expect("Failed to get possible moves: not cached")
     }
 
     pub fn show_piece_move_hints(&mut self, commands: &mut Commands, location: Location) {
         self.calculate_and_cache_piece_moves(location);
-        for (loc, typ) in self.get_piece_moves(&location) {
-            let loc_hints = self.get_hints(loc);
+        for PossibleMove { location, typ } in self.get_piece_moves(&location) {
+            let loc_hints = self.get_hints(location);
             let entity = match typ {
                 PieceMoveType::Move => loc_hints.entity_move,
                 PieceMoveType::Capture => loc_hints.entity_capture,
@@ -344,8 +379,8 @@ impl BoardState {
     }
 
     pub fn hide_piece_move_hints(&self, commands: &mut Commands, location: &Location) {
-        for (loc, typ) in self.get_piece_moves(location) {
-            let loc_hints = self.get_hints(loc);
+        for PossibleMove { location, typ } in self.get_piece_moves(location) {
+            let loc_hints = self.get_hints(location);
             let entity = match typ {
                 PieceMoveType::Capture => loc_hints.entity_capture,
                 PieceMoveType::Move => loc_hints.entity_move,
