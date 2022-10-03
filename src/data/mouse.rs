@@ -12,12 +12,15 @@ pub struct MouseLocation(pub Option<Location>);
 pub struct Hoverable;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct Hover;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct Selected;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct Dragging {
     pub mouse_down_location: Location,
 }
@@ -29,10 +32,13 @@ impl Dragging {
 }
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct Dropped;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct DoUnselect;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct DoMove;

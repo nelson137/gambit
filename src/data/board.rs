@@ -62,9 +62,11 @@ pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
 pub struct ShowingMovesFor(pub Option<Location>);
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct ShowHint;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 pub struct HideHint;
 
 #[derive(Component)]
