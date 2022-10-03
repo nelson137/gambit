@@ -130,7 +130,9 @@ pub fn click_handler(
                 } else {
                     // The move type doesn't matter here, hashing is done only by location
                     let move_with_mouse_loc = PossibleMove::new(mouse_loc, PieceMoveType::Move);
-                    if board_state.get_piece_moves(&loc).contains(&move_with_mouse_loc) {
+                    if board_state.is_colors_turn_at(*loc)
+                        && board_state.get_piece_moves(&loc).contains(&move_with_mouse_loc)
+                    {
                         // Move
                         // Mouse up in different location than the drag's mouse down and is a valid
                         // move
@@ -182,9 +184,11 @@ pub fn selections(
                     board_state.hide_piece_move_hints(&mut commands, &showing_loc);
                 }
             }
-            // Show move hints
-            showing_piece_moves.0 = Some(*loc);
-            board_state.show_piece_move_hints(&mut commands, *loc);
+            if board_state.is_colors_turn_at(*loc) {
+                // Show move hints
+                showing_piece_moves.0 = Some(*loc);
+                board_state.show_piece_move_hints(&mut commands, *loc);
+            }
         } else if hl_tile.is_some() {
             if board_state.pieces.contains_key(&loc) {
                 // Show if it's a highlight tile and it has a piece
@@ -236,6 +240,7 @@ pub fn piece_move(
                     // Move piece location
                     board_state.move_piece(*loc, mouse_loc);
                     loc.move_to(mouse_loc);
+                    board_state.move_count += 1;
                     // Hide move hints
                     if let Some(showing_loc) = showing_piece_moves.0 {
                         board_state.hide_piece_move_hints(&mut commands, &showing_loc);

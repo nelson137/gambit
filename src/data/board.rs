@@ -221,6 +221,7 @@ impl PossibleMove {
 }
 
 pub struct BoardState {
+    pub move_count: u32,
     pub pieces: HashMap<Location, BoardPiece>,
     pub move_hints: HashMap<Location, MoveHints>,
     piece_moves_cache: HashMap<Location, HashSet<PossibleMove>>,
@@ -229,6 +230,7 @@ pub struct BoardState {
 impl Default for BoardState {
     fn default() -> Self {
         Self {
+            move_count: 0,
             pieces: HashMap::with_capacity(32),
             move_hints: HashMap::with_capacity(64),
             piece_moves_cache: HashMap::with_capacity(64),
@@ -237,6 +239,14 @@ impl Default for BoardState {
 }
 
 impl BoardState {
+    pub fn is_colors_turn_at(&self, location: Location) -> bool {
+        let color = self.pieces.get(&location).expect("TODO").color;
+        match color {
+            PieceColor::Black => self.move_count % 2 == 1,
+            PieceColor::White => self.move_count % 2 == 0,
+        }
+    }
+
     fn get_hints(&self, location: &Location) -> &MoveHints {
         self.move_hints.get(location).expect("Failed to get hints: none at location")
     }
