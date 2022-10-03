@@ -126,12 +126,18 @@ pub fn click_handler(
                         cmds.insert(Selected);
                     }
                 } else {
-                    // Move
-                    // Mouse up in different location than the drag's mouse down
                     // The move type doesn't matter here, hashing is done only by location
                     let move_with_mouse_loc = PossibleMove::new(mouse_loc, PieceMoveType::Move);
                     if board_state.get_piece_moves(&loc).contains(&move_with_mouse_loc) {
+                        // Move
+                        // Mouse up in different location than the drag's mouse down and is a valid
+                        // move
                         cmds.insert(DoMove);
+                    } else {
+                        // Select
+                        // Mouse up in different location than the drag's mouse down and is *not* a
+                        // valid move
+                        cmds.insert(Selected);
                     }
                 }
             }
