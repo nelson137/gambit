@@ -33,6 +33,7 @@ pub fn setup_board(
             for file in 0..8_u8 {
                 let location = Location::new(file, rank, Z_TILE);
 
+                // Tile
                 let mut tile = parent.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
                         color: if (rank + file) % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
@@ -45,6 +46,7 @@ pub fn setup_board(
                 tile.insert(Tile);
                 tile.insert(location);
 
+                // File markers
                 if rank == 0 {
                     let style = TextStyle {
                         color: if file % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
@@ -65,6 +67,7 @@ pub fn setup_board(
                     });
                 }
 
+                // Rank markers
                 if file == 0 {
                     let style = TextStyle {
                         color: if rank % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
@@ -85,6 +88,7 @@ pub fn setup_board(
                     });
                 }
 
+                // Highlight tile
                 parent
                     .spawn_bundle(SpriteBundle {
                         sprite: Sprite {
@@ -99,6 +103,7 @@ pub fn setup_board(
                     .insert(location.with_z(Z_HIGHLIGHT_TILE))
                     .insert(Hoverable);
 
+                // Move hint
                 let move_entity = parent
                     .spawn_bundle(SpriteBundle {
                         texture: move_hint_texture.clone(),
@@ -108,6 +113,7 @@ pub fn setup_board(
                     .insert(location.with_z(Z_MOVE_HINT))
                     .id();
 
+                // Capture hint
                 let capture_entity = parent
                     .spawn_bundle(SpriteBundle {
                         texture: capture_hint_texture.clone(),
