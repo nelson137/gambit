@@ -14,7 +14,7 @@ pub fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
-    mut q_dragging: Query<(&Location, &mut Transform), With<Dragging>>,
+    mut q_dragging: Query<(&Location, &mut Transform), (With<Dragging>, With<Piece>)>,
 ) {
     let win = windows.primary();
 
@@ -99,13 +99,11 @@ pub fn click_handler(
         for entity in &q_prev_select {
             commands.entity(entity).remove::<Selected>().insert(DoUnselect);
         }
-        // (A)
 
         // Start drag
         if let Some(mouse_loc) = mouse_loc.0 {
             for entity in &mut q_new_select {
                 commands.entity(entity).insert(Dragging::new(mouse_loc));
-                // (C)
             }
         }
     }
@@ -122,7 +120,6 @@ pub fn click_handler(
                         // Un-select
                         // Mouse up in same location as mouse down when selected
                         cmds.remove::<Selected>().insert(DoUnselect);
-                        // (B)
                     } else {
                         // Select
                         // Mouse up in same location as mouse down when *not* selected
@@ -133,7 +130,6 @@ pub fn click_handler(
                     // Mouse up in different location than the drag's mouse down
                     if board_state.get_piece_moves(&loc).iter().any(|(l, _)| *l == mouse_loc) {
                         cmds.insert(DoMove);
-                        // (D)
                     }
                 }
             }
@@ -154,7 +150,6 @@ pub fn selections(
         Added<Dragging>,
     >,
 ) {
-    // (A), (B)
     for (entity, hl_tile, mut vis) in &mut q_unselect {
         commands.entity(entity).remove::<DoUnselect>();
         if hl_tile.is_some() {
@@ -168,7 +163,6 @@ pub fn selections(
         }
     }
 
-    // (C)
     for (piece, hl_tile, loc, mut vis) in &mut q_new_select {
         if piece.is_some() {
             // Hide previous move hints
@@ -216,7 +210,6 @@ pub fn piece_move(
         loc.z = Z_PIECE_SELECTED;
     }
 
-    // (D)
     if let Some(mouse_loc) = mouse_loc.0 {
         // Finish select
         for (entity, piece, hl_tile, do_move, mut vis, mut loc) in &mut q_dropped {
