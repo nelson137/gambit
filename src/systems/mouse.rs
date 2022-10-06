@@ -7,6 +7,7 @@ use crate::{
         Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, PieceMoveType,
         PossibleMove, Selected, ShowHint, ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
     },
+    util::consume,
 };
 
 // Source: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
@@ -81,7 +82,7 @@ pub fn mouse_hover(
         }
     } else {
         // Remove Hover component from all entities
-        q_hoverable.for_each(|entity| drop(commands.entity(entity.0).remove::<Hover>()));
+        q_hoverable.for_each(|entity| consume(commands.entity(entity.0).remove::<Hover>()));
     }
 }
 
@@ -131,7 +132,7 @@ pub fn click_handler(
                     // The move type doesn't matter here, hashing is done only by location
                     let move_with_mouse_loc = PossibleMove::new(mouse_loc, PieceMoveType::Move);
                     if board_state.is_colors_turn_at(*loc)
-                        && board_state.get_piece_moves(&loc).contains(&move_with_mouse_loc)
+                        && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
                     {
                         // Move
                         // Mouse up in different location than the drag's mouse down and is a valid
@@ -190,7 +191,8 @@ pub fn selections(
                 board_state.show_piece_move_hints(&mut commands, *loc);
             }
         } else if hl_tile.is_some() {
-            if board_state.pieces.contains_key(&loc) {
+            #[allow(clippy::collapsible_if)]
+            if board_state.pieces.contains_key(loc) {
                 // Show if it's a highlight tile and it has a piece
                 vis.is_visible = true;
             }

@@ -1,8 +1,11 @@
+#![allow(clippy::type_complexity)]
+
 use bevy::{audio::AudioPlugin, prelude::*};
 
 mod assets;
 mod data;
 mod systems;
+mod util;
 mod window;
 
 use data::{BoardState, MouseLocation, MouseWorldPosition, ShowingMovesFor};

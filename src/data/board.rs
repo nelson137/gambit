@@ -2,6 +2,7 @@ use core::fmt;
 use std::{
     collections::{hash_map::Entry, HashMap, HashSet},
     hash::{Hash, Hasher},
+    ops::Range,
 };
 
 use bevy::prelude::*;
@@ -143,7 +144,8 @@ impl Location {
     pub fn try_offset(&self, file_offset: i8, rank_offset: i8) -> Option<Location> {
         let file = self.file as i8 + file_offset;
         let rank = self.rank as i8 + rank_offset;
-        if 0 <= file && file <= 7 && 0 <= rank && rank <= 7 {
+        const RANGE: Range<i8> = 0..8;
+        if RANGE.contains(&file) && RANGE.contains(&rank) {
             Some(Self { file: file as u8, rank: rank as u8, z: self.z, snap: self.snap })
         } else {
             None
@@ -279,7 +281,7 @@ impl BoardState {
             _ => false,
         };
         let mut push_directional_offset = |file_o, rank_o| {
-            location.try_offset(file_o, rank_o).map(|l| push_directional_move(l)).unwrap_or(false)
+            location.try_offset(file_o, rank_o).map(&mut push_directional_move).unwrap_or(false)
         };
 
         match typ {
