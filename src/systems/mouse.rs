@@ -5,7 +5,7 @@ use crate::{
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
         Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, PieceMoveType,
-        PossibleMove, Selected, ShowHint, ShowingMovesFor, Tile, Z_PIECE, Z_PIECE_SELECTED,
+        Selected, ShowHint, ShowingMovesFor, Tile, ValidMove, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
 };
@@ -130,10 +130,10 @@ pub fn click_handler(
                     }
                 } else {
                     // The move type doesn't matter here, hashing is done only by location
-                    let move_with_mouse_loc = PossibleMove::new(mouse_loc, PieceMoveType::Move);
-                    if board_state.is_colors_turn_at(*loc)
-                        && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
-                    {
+                    let move_with_mouse_loc = ValidMove::new(mouse_loc, PieceMoveType::Move);
+                    // if board_state.is_colors_turn_at(*loc)
+                    //     && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
+                    if true {
                         // Move
                         // Mouse up in different location than the drag's mouse down and is a valid
                         // move
@@ -170,7 +170,7 @@ pub fn selections(
             vis.is_visible = false;
             // Hide previous move hints
             if let Some(showing_loc) = showing_piece_moves.0 {
-                board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                board_state.hide_piece_move_hints(&mut commands, showing_loc);
                 showing_piece_moves.0 = None;
             }
         }
@@ -182,10 +182,10 @@ pub fn selections(
             // Note: this should not happen because q_unselect should take care of it
             if let Some(showing_loc) = showing_piece_moves.0 {
                 if showing_loc != *loc {
-                    board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                    board_state.hide_piece_move_hints(&mut commands, showing_loc);
                 }
             }
-            if board_state.is_colors_turn_at(*loc) {
+            if true && board_state.is_colors_turn_at(*loc) {
                 // Show move hints
                 showing_piece_moves.0 = Some(*loc);
                 board_state.show_piece_move_hints(&mut commands, *loc);
@@ -245,7 +245,7 @@ pub fn piece_move(
                     board_state.move_count += 1;
                     // Hide move hints
                     if let Some(showing_loc) = showing_piece_moves.0 {
-                        board_state.hide_piece_move_hints(&mut commands, &showing_loc);
+                        board_state.hide_piece_move_hints(&mut commands, showing_loc);
                         showing_piece_moves.0 = None;
                     }
                 }

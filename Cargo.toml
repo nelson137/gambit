@@ -12,4 +12,6 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = "0.8"
+bevy = { version = "0.8", features = ["filesystem_watcher"] }
+# bevy = { version = "0.8", features = ["dynamic"] }
+grid = "0.9"

@@ -31,7 +31,7 @@ pub fn setup_board(
 
         for rank in 0..8_u8 {
             for file in 0..8_u8 {
-                let location = Location::new(file, rank, Z_TILE);
+                let location = Location::new_with_z(file, rank, Z_TILE);
 
                 // Tile
                 let mut tile = parent.spawn_bundle(SpriteBundle {
@@ -138,9 +138,9 @@ pub fn setup_board(
             .zip(PIECE_ASSET_COORDS.iter().copied().flatten())
             .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
         for ((&path, &(file, rank)), &(color, typ)) in pice_paths_and_coords {
-            let location = Location::new(file, rank, Z_PIECE);
+            let location = Location::new_with_z(file, rank, Z_PIECE);
             assert!(
-                board_state.pieces.insert(location, BoardPiece { color, typ }).is_none(),
+                board_state.pieces.insert(location, BoardPiece::new(color, typ)).is_none(),
                 "Failed to insert board piece into state: piece already at this location"
             );
             parent
