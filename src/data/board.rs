@@ -5,7 +5,7 @@ use std::{
 };
 
 use bevy::prelude::*;
-use chess::{ChessMove, File, MoveGen, Piece, Rank, Square, EMPTY};
+use chess::{Board, ChessMove, File, MoveGen, Piece, Rank, Square, EMPTY};
 
 pub const Z_PIECE_SELECTED: f32 = 1.5;
 
@@ -20,7 +20,7 @@ pub const Z_NOTATION_TEXT: f32 = 0.1;
 pub const Z_TILE: f32 = 0.0;
 
 #[derive(Component)]
-pub struct Board;
+pub struct UiBoard;
 
 /// The color used to highlight tiles.
 pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
@@ -198,7 +198,7 @@ pub struct BoardState {
     pub move_count: u32,
     pub pieces: HashMap<Square, BoardPiece>,
     pub move_hints: HashMap<Square, MoveHints>,
-    pub move_gen_board: chess::Board,
+    pub move_gen_board: Board,
     last_shown_hints: Vec<Entity>,
 }
 
@@ -208,7 +208,7 @@ impl Default for BoardState {
             move_count: 0,
             pieces: HashMap::with_capacity(32),
             move_hints: HashMap::with_capacity(64),
-            move_gen_board: chess::Board::default(),
+            move_gen_board: Board::default(),
             last_shown_hints: Vec::with_capacity(27),
         }
     }

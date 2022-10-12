@@ -4,8 +4,8 @@ use chess::{File, Rank, Square};
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
-        Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, MoveHints,
-        Tile, UiPiece, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
+        BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, MoveHints, Tile,
+        UiBoard, UiPiece, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
         BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK,
         COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
         Z_TILE,
@@ -26,7 +26,7 @@ pub fn setup_board(
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
 ) {
-    commands.spawn_bundle(SpatialBundle::default()).insert(Board).with_children(|parent| {
+    commands.spawn_bundle(SpatialBundle::default()).insert(UiBoard).with_children(|parent| {
         let font = asset_server.load("fonts/FiraMono-Medium.ttf");
         let move_hint_texture = asset_server.load("hints/move.png");
         let capture_hint_texture = asset_server.load("hints/capture.png");
