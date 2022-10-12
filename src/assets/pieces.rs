@@ -1,3 +1,5 @@
+use chess::Piece;
+
 use crate::data::{PieceColor, PieceType};
 
 /// build_piece_fn!("{COLOR}", "{PIECE}") -> "assets/pieces/{COLOR}-{PIECE}.png"
@@ -64,43 +66,43 @@ pub const PIECE_ASSET_PATHS: [&[&str]; 2] = [
 pub const PIECE_COLORS_TYPES: [&[(PieceColor, PieceType)]; 2] = [
     &[
         // Rank 8
-        (PieceColor::Black, PieceType::Rook),
-        (PieceColor::Black, PieceType::Knight),
-        (PieceColor::Black, PieceType::Bishop),
-        (PieceColor::Black, PieceType::Queen),
-        (PieceColor::Black, PieceType::King { been_in_check: false }),
-        (PieceColor::Black, PieceType::Bishop),
-        (PieceColor::Black, PieceType::Knight),
-        (PieceColor::Black, PieceType::Rook),
+        (PieceColor::Black, PieceType(Piece::Rook)),
+        (PieceColor::Black, PieceType(Piece::Knight)),
+        (PieceColor::Black, PieceType(Piece::Bishop)),
+        (PieceColor::Black, PieceType(Piece::Queen)),
+        (PieceColor::Black, PieceType(Piece::King)),
+        (PieceColor::Black, PieceType(Piece::Bishop)),
+        (PieceColor::Black, PieceType(Piece::Knight)),
+        (PieceColor::Black, PieceType(Piece::Rook)),
         // Rank 7
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
-        (PieceColor::Black, PieceType::Pawn),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor::Black, PieceType(Piece::Pawn)),
     ],
     &[
         // Rank 2
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
-        (PieceColor::White, PieceType::Pawn),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor::White, PieceType(Piece::Pawn)),
         // Rank 1
-        (PieceColor::White, PieceType::Rook),
-        (PieceColor::White, PieceType::Knight),
-        (PieceColor::White, PieceType::Bishop),
-        (PieceColor::White, PieceType::Queen),
-        (PieceColor::White, PieceType::King { been_in_check: false }),
-        (PieceColor::White, PieceType::Bishop),
-        (PieceColor::White, PieceType::Knight),
-        (PieceColor::White, PieceType::Rook),
+        (PieceColor::White, PieceType(Piece::Rook)),
+        (PieceColor::White, PieceType(Piece::Knight)),
+        (PieceColor::White, PieceType(Piece::Bishop)),
+        (PieceColor::White, PieceType(Piece::Queen)),
+        (PieceColor::White, PieceType(Piece::King)),
+        (PieceColor::White, PieceType(Piece::Bishop)),
+        (PieceColor::White, PieceType(Piece::Knight)),
+        (PieceColor::White, PieceType(Piece::Rook)),
     ],
 ];
 

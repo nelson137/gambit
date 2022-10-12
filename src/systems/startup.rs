@@ -4,9 +4,10 @@ use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
         Board, BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, MoveHints,
-        Piece, Tile, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
-        BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
-        Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
+        Tile, UiPiece, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
+        BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK,
+        COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
+        Z_TILE,
     },
     WIN_HEIGHT, WIN_WIDTH,
 };
@@ -145,7 +146,7 @@ pub fn setup_board(
             );
             parent
                 .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
-                .insert(Piece)
+                .insert(UiPiece)
                 .insert(color)
                 .insert(typ)
                 .insert(location)

@@ -1,11 +1,12 @@
 use bevy::prelude::*;
+use chess::ChessMove;
 
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Piece, PieceMoveType,
-        Selected, ShowHint, ShowingMovesFor, Tile, ValidMove, Z_PIECE, Z_PIECE_SELECTED,
+        Hoverable, Location, LocationToSquare, MainCamera, MouseLocation, MouseWorldPosition,
+        Selected, ShowHint, ShowingMovesFor, Tile, UiPiece, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
 };
@@ -15,7 +16,7 @@ pub fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
-    mut q_dragging: Query<(&Location, &mut Transform), (With<Dragging>, With<Piece>)>,
+    mut q_dragging: Query<(&Location, &mut Transform), (With<Dragging>, With<UiPiece>)>,
 ) {
     let win = windows.primary();
 
@@ -130,7 +131,8 @@ pub fn click_handler(
                     }
                 } else {
                     // The move type doesn't matter here, hashing is done only by location
-                    let move_with_mouse_loc = ValidMove::new(mouse_loc, PieceMoveType::Move);
+                    let move_with_mouse_loc =
+                        ChessMove::new(loc.to_square(), mouse_loc.to_square(), None);
                     // if board_state.is_colors_turn_at(*loc)
                     //     && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
                     if true {
@@ -159,7 +161,7 @@ pub fn selections(
         (Added<DoUnselect>, Without<Dragging>),
     >,
     mut q_new_select: Query<
-        (Option<&Piece>, Option<&HighlightTile>, &Location, &mut Visibility),
+        (Option<&UiPiece>, Option<&HighlightTile>, &Location, &mut Visibility),
         Added<Dragging>,
     >,
 ) {
@@ -207,12 +209,12 @@ pub fn piece_move(
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
     mut q_dragging_piece: Query<
         &mut Location,
-        (With<Piece>, Added<Dragging>, Without<Dropped>, Without<DoMove>),
+        (With<UiPiece>, Added<Dragging>, Without<Dropped>, Without<DoMove>),
     >,
     mut q_dropped: Query<
         (
             Entity,
-            Option<&Piece>,
+            Option<&UiPiece>,
             Option<&HighlightTile>,
             Option<&DoMove>,
             &mut Visibility,

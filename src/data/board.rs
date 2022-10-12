@@ -2,11 +2,10 @@ use core::fmt;
 use std::{
     collections::{hash_map::Entry, HashMap},
     hash::{Hash, Hasher},
-    ops::Range,
 };
 
 use bevy::prelude::*;
-use chess::{ChessMove, File, MoveGen, Rank, Square, EMPTY};
+use chess::{ChessMove, File, MoveGen, Piece, Rank, Square, EMPTY};
 
 pub const Z_PIECE_SELECTED: f32 = 1.5;
 
@@ -72,7 +71,7 @@ pub struct ShowHint;
 pub struct HideHint;
 
 #[derive(Component)]
-pub struct Piece;
+pub struct UiPiece;
 
 #[derive(Clone, Copy, Component, PartialEq, Eq, Debug)]
 pub enum PieceColor {
@@ -90,41 +89,8 @@ impl Into<chess::Color> for PieceColor {
     }
 }
 
-#[derive(Clone, Copy, Component, Debug, Eq)]
-pub enum PieceType {
-    Bishop,
-    King { been_in_check: bool },
-    Knight,
-    Pawn,
-    Queen,
-    Rook,
-}
-
-impl PartialEq for PieceType {
-    fn eq(&self, other: &Self) -> bool {
-        core::mem::discriminant(self) == core::mem::discriminant(other)
-    }
-}
-
-impl Hash for PieceType {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        core::mem::discriminant(self).hash(state);
-    }
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<chess::Piece> for PieceType {
-    fn into(self) -> chess::Piece {
-        match self {
-            PieceType::Bishop => chess::Piece::Bishop,
-            PieceType::King { .. } => chess::Piece::King,
-            PieceType::Knight => chess::Piece::Knight,
-            PieceType::Pawn => chess::Piece::Pawn,
-            PieceType::Queen => chess::Piece::Queen,
-            PieceType::Rook => chess::Piece::Rook,
-        }
-    }
-}
+#[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
+pub struct PieceType(pub Piece);
 
 #[derive(Component, Clone, Copy, Debug)]
 pub struct Location {
@@ -151,16 +117,6 @@ impl Location {
         Self::new_with_z(file, rank, 0.0)
     }
 
-    pub fn with_file(mut self, file: u8) -> Self {
-        self.file = file;
-        self
-    }
-
-    pub fn with_rank(mut self, rank: u8) -> Self {
-        self.rank = rank;
-        self
-    }
-
     pub fn with_z(mut self, z: f32) -> Self {
         self.z = z;
         self
@@ -185,17 +141,6 @@ impl Location {
     pub fn move_to(&mut self, location: Location) {
         self.file = location.file;
         self.rank = location.rank;
-    }
-
-    pub fn try_offset(&self, file_offset: i8, rank_offset: i8) -> Option<Location> {
-        let file = self.file as i8 + file_offset;
-        let rank = self.rank as i8 + rank_offset;
-        const RANGE: Range<i8> = 0..8;
-        if RANGE.contains(&file) && RANGE.contains(&rank) {
-            Some(Self { file: file as u8, rank: rank as u8, z: self.z, snap: self.snap })
-        } else {
-            None
-        }
     }
 }
 
@@ -224,7 +169,7 @@ impl fmt::Display for Location {
     }
 }
 
-trait LocationToSquare {
+pub trait LocationToSquare {
     fn to_square(self) -> Square;
 }
 impl LocationToSquare for Location {
@@ -235,7 +180,7 @@ impl LocationToSquare for Location {
     }
 }
 
-trait SquareToLocation {
+pub trait SquareToLocation {
     fn to_loc(self) -> Location;
 }
 impl SquareToLocation for Square {
@@ -263,77 +208,6 @@ pub struct MoveHints {
     pub entity_capture: Entity,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum PieceMoveType {
-    Move,
-    Capture,
-    Castle,
-}
-
-#[derive(Clone, Copy)]
-pub struct ValidMove {
-    location: Location,
-    typ: PieceMoveType,
-}
-
-impl PartialEq for ValidMove {
-    fn eq(&self, other: &Self) -> bool {
-        self.location.eq(&other.location)
-    }
-}
-
-impl Eq for ValidMove {}
-
-impl Hash for ValidMove {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.location.hash(state);
-    }
-}
-
-impl ValidMove {
-    pub fn new(location: Location, typ: PieceMoveType) -> Self {
-        Self { location, typ }
-    }
-}
-
-#[derive(Eq)]
-pub struct PieceMove {
-    location: Location,
-    can_capture: bool,
-}
-
-impl PartialEq for PieceMove {
-    fn eq(&self, other: &Self) -> bool {
-        self.location.eq(&other.location)
-    }
-}
-
-impl Hash for PieceMove {
-    fn hash<H: Hasher>(&self, state: &mut H) {
-        self.location.hash(state);
-    }
-}
-
-impl PieceMove {
-    fn new(location: Location, can_capture: bool) -> Self {
-        Self { location, can_capture }
-    }
-}
-
-pub struct LocationOffset {
-    file: i8,
-    rank: i8,
-}
-
-impl LocationOffset {
-    fn new(file: i8, rank: i8) -> Self {
-        Self { file, rank }
-    }
-}
-
-/**
- * Store all possible moves for a piece
- */
 pub struct BoardState {
     pub move_count: u32,
     pub pieces: HashMap<Location, BoardPiece>,
