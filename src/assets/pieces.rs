@@ -1,4 +1,4 @@
-use chess::Piece;
+use chess::{File, Piece, Rank};
 
 use crate::data::{PieceColor, PieceType};
 
@@ -139,47 +139,47 @@ pub const PIECE_COLORS_TYPES: [&[(PieceColor, PieceType)]; 2] = [
 ///               White
 ///
 /// ```
-pub const PIECE_ASSET_COORDS: [&[(u8, u8)]; 2] = [
+pub const PIECE_ASSET_COORDS: [&[(Rank, File)]; 2] = [
     // Black
     &[
         // Rank 8
-        (0, 7),
-        (1, 7),
-        (2, 7),
-        (3, 7),
-        (4, 7),
-        (5, 7),
-        (6, 7),
-        (7, 7),
+        (Rank::Eighth, File::A),
+        (Rank::Eighth, File::B),
+        (Rank::Eighth, File::C),
+        (Rank::Eighth, File::D),
+        (Rank::Eighth, File::E),
+        (Rank::Eighth, File::F),
+        (Rank::Eighth, File::G),
+        (Rank::Eighth, File::H),
         // Rank 7
-        (0, 6),
-        (1, 6),
-        (2, 6),
-        (3, 6),
-        (4, 6),
-        (5, 6),
-        (6, 6),
-        (7, 6),
+        (Rank::Seventh, File::A),
+        (Rank::Seventh, File::B),
+        (Rank::Seventh, File::C),
+        (Rank::Seventh, File::D),
+        (Rank::Seventh, File::E),
+        (Rank::Seventh, File::F),
+        (Rank::Seventh, File::G),
+        (Rank::Seventh, File::H),
     ],
     // White
     &[
         // Rank 2
-        (0, 1),
-        (1, 1),
-        (2, 1),
-        (3, 1),
-        (4, 1),
-        (5, 1),
-        (6, 1),
-        (7, 1),
+        (Rank::Second, File::A),
+        (Rank::Second, File::B),
+        (Rank::Second, File::C),
+        (Rank::Second, File::D),
+        (Rank::Second, File::E),
+        (Rank::Second, File::F),
+        (Rank::Second, File::G),
+        (Rank::Second, File::H),
         // Rank 1
-        (0, 0),
-        (1, 0),
-        (2, 0),
-        (3, 0),
-        (4, 0),
-        (5, 0),
-        (6, 0),
-        (7, 0),
+        (Rank::First, File::A),
+        (Rank::First, File::B),
+        (Rank::First, File::C),
+        (Rank::First, File::D),
+        (Rank::First, File::E),
+        (Rank::First, File::F),
+        (Rank::First, File::G),
+        (Rank::First, File::H),
     ],
 ];

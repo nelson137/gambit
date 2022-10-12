@@ -1,4 +1,5 @@
 use bevy::prelude::*;
+use chess::{File, Rank, Square};
 
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
@@ -30,14 +31,18 @@ pub fn setup_board(
         let move_hint_texture = asset_server.load("hints/move.png");
         let capture_hint_texture = asset_server.load("hints/capture.png");
 
-        for rank in 0..8_u8 {
-            for file in 0..8_u8 {
-                let location = Location::new_with_z(file, rank, Z_TILE);
+        let mut square = Square::default();
+        for _ in 0..8 {
+            for _ in 0..8 {
+                let file = square.get_file();
+                let rank = square.get_rank();
+                let location = Location::new_with_z(square, Z_TILE);
 
                 // Tile
+                let file_rank_sum = rank.to_index() + file.to_index();
                 let mut tile = parent.spawn_bundle(SpriteBundle {
                     sprite: Sprite {
-                        color: if (rank + file) % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
+                        color: if file_rank_sum % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
                         custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
                         ..default()
                     },
@@ -48,9 +53,9 @@ pub fn setup_board(
                 tile.insert(location);
 
                 // File markers
-                if rank == 0 {
+                if square.get_rank() == Rank::First {
                     let style = TextStyle {
-                        color: if file % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                        color: if file.to_index() % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
                         font_size: BOARD_TEXT_FONT_SIZE,
                         font: font.clone(),
                     };
@@ -69,9 +74,9 @@ pub fn setup_board(
                 }
 
                 // Rank markers
-                if file == 0 {
+                if square.get_file() == File::A {
                     let style = TextStyle {
-                        color: if rank % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                        color: if rank.to_index() % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
                         font_size: BOARD_TEXT_FONT_SIZE,
                         font: font.clone(),
                     };
@@ -129,7 +134,11 @@ pub fn setup_board(
                     board_state.move_hints.insert(location, hint).is_none(),
                     "Failed to insert board hint into state: hint already at this location"
                 );
+
+                square = square.uright();
             }
+
+            square = square.uup();
         }
 
         let pice_paths_and_coords = PIECE_ASSET_PATHS
@@ -138,8 +147,8 @@ pub fn setup_board(
             .flatten()
             .zip(PIECE_ASSET_COORDS.iter().copied().flatten())
             .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
-        for ((&path, &(file, rank)), &(color, typ)) in pice_paths_and_coords {
-            let location = Location::new_with_z(file, rank, Z_PIECE);
+        for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
+            let location = Location::new_with_z(Square::make_square(rank, file), Z_PIECE);
             assert!(
                 board_state.pieces.insert(location, BoardPiece::new(color, typ)).is_none(),
                 "Failed to insert board piece into state: piece already at this location"

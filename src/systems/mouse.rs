@@ -5,8 +5,8 @@ use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, Location, LocationToSquare, MainCamera, MouseLocation, MouseWorldPosition,
-        Selected, ShowHint, ShowingMovesFor, Tile, UiPiece, Z_PIECE, Z_PIECE_SELECTED,
+        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Selected, ShowHint,
+        ShowingMovesFor, Tile, UiPiece, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
 };
@@ -132,7 +132,7 @@ pub fn click_handler(
                 } else {
                     // The move type doesn't matter here, hashing is done only by location
                     let move_with_mouse_loc =
-                        ChessMove::new(loc.to_square(), mouse_loc.to_square(), None);
+                        ChessMove::new(loc.square(), mouse_loc.square(), None);
                     // if board_state.is_colors_turn_at(*loc)
                     //     && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
                     if true {
