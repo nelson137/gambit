@@ -1,12 +1,12 @@
 use core::fmt;
 use std::{
-    collections::{hash_map::Entry, HashMap, HashSet},
+    collections::{hash_map::Entry, HashMap},
     hash::{Hash, Hasher},
-    ops::{Range, RangeInclusive},
+    ops::Range,
 };
 
 use bevy::prelude::*;
-use grid::Grid;
+use chess::{ChessMove, File, MoveGen, Rank, Square, EMPTY};
 
 pub const Z_PIECE_SELECTED: f32 = 1.5;
 
@@ -80,6 +80,16 @@ pub enum PieceColor {
     White,
 }
 
+#[allow(clippy::from_over_into)]
+impl Into<chess::Color> for PieceColor {
+    fn into(self) -> chess::Color {
+        match self {
+            PieceColor::Black => chess::Color::Black,
+            PieceColor::White => chess::Color::White,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Component, Debug, Eq)]
 pub enum PieceType {
     Bishop,
@@ -99,6 +109,20 @@ impl PartialEq for PieceType {
 impl Hash for PieceType {
     fn hash<H: Hasher>(&self, state: &mut H) {
         core::mem::discriminant(self).hash(state);
+    }
+}
+
+#[allow(clippy::from_over_into)]
+impl Into<chess::Piece> for PieceType {
+    fn into(self) -> chess::Piece {
+        match self {
+            PieceType::Bishop => chess::Piece::Bishop,
+            PieceType::King { .. } => chess::Piece::King,
+            PieceType::Knight => chess::Piece::Knight,
+            PieceType::Pawn => chess::Piece::Pawn,
+            PieceType::Queen => chess::Piece::Queen,
+            PieceType::Rook => chess::Piece::Rook,
+        }
     }
 }
 
@@ -200,6 +224,26 @@ impl fmt::Display for Location {
     }
 }
 
+trait LocationToSquare {
+    fn to_square(self) -> Square;
+}
+impl LocationToSquare for Location {
+    fn to_square(self) -> Square {
+        let rank = Rank::from_index(self.rank as usize);
+        let file = File::from_index(self.file as usize);
+        Square::make_square(rank, file)
+    }
+}
+
+trait SquareToLocation {
+    fn to_loc(self) -> Location;
+}
+impl SquareToLocation for Square {
+    fn to_loc(self) -> Location {
+        Location::new(self.get_file().to_index() as u8, self.get_rank().to_index() as u8)
+    }
+}
+
 #[derive(Debug)]
 pub struct BoardPiece {
     pub color: PieceColor,
@@ -294,95 +338,16 @@ pub struct BoardState {
     pub move_count: u32,
     pub pieces: HashMap<Location, BoardPiece>,
     pub move_hints: HashMap<Location, MoveHints>,
-    selected_valid_moves_cache: HashMap<Location, HashSet<ValidMove>>,
-    // location_to_possible_captures: HashMap<Location, Vec<Location>>,
-    piece_possible_moves: HashMap<Location, Vec<Vec<PieceMove>>>,
-    valid_moves: HashMap<Location, Vec<Location>>,
-    global_possible_captures: Grid<u8>,
-    // piece_type_move_sets: HashMap<PieceType, Vec<Vec<LocationOffset>>>,
+    pub move_gen_board: chess::Board,
 }
 
 impl Default for BoardState {
     fn default() -> Self {
-        /*
-        let mut piece_type_move_sets = HashMap::with_capacity(32);
-
-        // Pawn
-        let pawn_move_set = vec![
-            vec![LocationOffset::new(0, 1), LocationOffset::new(0, 1)],
-            vec![LocationOffset::new(-1, 1)],
-            vec![LocationOffset::new(1, 1)],
-        ];
-        piece_type_move_sets.insert(PieceType::Pawn, pawn_move_set);
-
-        // Rook
-        let rook_move_set = vec![
-            (1..8).map(|r| LocationOffset::new(0, r)).collect(), // N
-            (1..8).map(|f| LocationOffset::new(f, 0)).collect(), // E
-            (1..8).map(|r| LocationOffset::new(0, -r)).collect(), // S
-            (1..8).map(|f| LocationOffset::new(-f, 0)).collect(), // W
-        ];
-        piece_type_move_sets.insert(PieceType::Rook, rook_move_set);
-
-        // Knight
-        let knight_move_set = vec![
-            vec![LocationOffset::new(1, 2)],
-            vec![LocationOffset::new(2, 1)],
-            vec![LocationOffset::new(2, -1)],
-            vec![LocationOffset::new(1, -2)],
-            vec![LocationOffset::new(-1, -2)],
-            vec![LocationOffset::new(-2, -1)],
-            vec![LocationOffset::new(-2, 1)],
-            vec![LocationOffset::new(-1, 2)],
-        ];
-        piece_type_move_sets.insert(PieceType::Knight, knight_move_set);
-
-        // Bishop
-        let bishop_move_set = vec![
-            (1..8).map(|o| LocationOffset::new(o, o)).collect(), // NE
-            (1..8).map(|o| LocationOffset::new(o, -o)).collect(), // SE
-            (1..8).map(|o| LocationOffset::new(-o, -o)).collect(), // SW
-            (1..8).map(|o| LocationOffset::new(-o, o)).collect(), // NW
-        ];
-        piece_type_move_sets.insert(PieceType::Bishop, bishop_move_set);
-
-        // Queen
-        let queen_move_set = vec![
-            (1..8).map(|r| LocationOffset::new(0, r)).collect(), // N
-            (1..8).map(|o| LocationOffset::new(o, o)).collect(), // NE
-            (1..8).map(|f| LocationOffset::new(f, 0)).collect(), // E
-            (1..8).map(|o| LocationOffset::new(o, -o)).collect(), // SE
-            (1..8).map(|r| LocationOffset::new(0, -r)).collect(), // S
-            (1..8).map(|o| LocationOffset::new(-o, -o)).collect(), // SW
-            (1..8).map(|f| LocationOffset::new(-f, 0)).collect(), // W
-            (1..8).map(|o| LocationOffset::new(-o, o)).collect(), // NW
-        ];
-        piece_type_move_sets.insert(PieceType::Queen, queen_move_set);
-
-        // King
-        let king_move_set = vec![
-            vec![LocationOffset::new(0, 1)],   // N
-            vec![LocationOffset::new(1, 1)],   // NE
-            vec![LocationOffset::new(1, 0)],   // E
-            vec![LocationOffset::new(1, -1)],  // SE
-            vec![LocationOffset::new(0, -1)],  // S
-            vec![LocationOffset::new(-1, -1)], // SW
-            vec![LocationOffset::new(-1, 0)],  // W
-            vec![LocationOffset::new(-1, 1)],  // NW
-        ];
-        piece_type_move_sets.insert(PieceType::King { been_in_check: false }, king_move_set);
-        */
-
         Self {
             move_count: 0,
             pieces: HashMap::with_capacity(32),
             move_hints: HashMap::with_capacity(64),
-            selected_valid_moves_cache: HashMap::with_capacity(64),
-            // location_to_possible_captures: HashMap::with_capacity(64),
-            piece_possible_moves: HashMap::with_capacity(64),
-            valid_moves: HashMap::with_capacity(64),
-            global_possible_captures: Grid::new(8, 8),
-            // piece_type_move_sets,
+            move_gen_board: chess::Board::default(),
         }
     }
 }
@@ -400,381 +365,37 @@ impl BoardState {
         self.move_hints.get(&location).expect("Failed to get hints: none at location")
     }
 
-    fn get_capture_count(&mut self, Location { file, rank, .. }: Location) -> &mut u8 {
-        self.global_possible_captures
-            .get_mut(rank as usize, file as usize)
-            .expect("failed to get capture count from grid, invalid location")
-    }
+    pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Location) {
+        let source = source.to_square();
 
-    fn old_possible_piece_moves(&self, location: Location) -> HashSet<ValidMove> {
-        let &BoardPiece { color, typ, did_move } = self.pieces.get(&location).expect(
-            "Failed to calculate possible moves for piece: no such piece exists at this location",
-        );
+        let mut moves = MoveGen::new_legal(&self.move_gen_board);
 
-        let mut moves = HashSet::new();
-        let mut safe_insert = |move_: ValidMove| {
-            if !moves.insert(move_) {
-                panic!(
-                    "failed to insert possible move into hash set, already exists: {:?} {}",
-                    move_.typ, move_.location
-                );
+        let side_to_move_mask =
+            self.move_gen_board.color_combined(!self.move_gen_board.side_to_move());
+        moves.set_iterator_mask(*side_to_move_mask);
+        for r#move in &mut moves {
+            if r#move.get_source() != source {
+                continue;
             }
-        };
-
-        // Return whether a directional piece (pawn, rook, bishop, queen) could move past loc
-        let mut push_directional_move = |loc: Location| match self.pieces.get(&loc) {
-            Some(piece) if piece.color != color => {
-                safe_insert(ValidMove::new(loc, PieceMoveType::Capture));
-                false
-            }
-            None => {
-                safe_insert(ValidMove::new(loc, PieceMoveType::Move));
-                true
-            }
-            _ => false,
-        };
-        let mut push_directional_offset = |file_o, rank_o| {
-            location.try_offset(file_o, rank_o).map(&mut push_directional_move).unwrap_or(false)
-        };
-
-        match typ {
-            PieceType::Pawn => {
-                let (direction, start_rank): (i8, u8) = match color {
-                    PieceColor::Black => (-1, 6),
-                    PieceColor::White => (1, 1),
-                };
-
-                if let Some(loc1) = location.try_offset(0, direction) {
-                    // safe_insert(PieceMove::new(loc1, false));
-                    if !self.pieces.contains_key(&loc1) {
-                        safe_insert(ValidMove::new(loc1, PieceMoveType::Move));
-                        if location.rank == start_rank {
-                            let loc2 = loc1.with_rank((loc1.rank as i8 + direction) as u8);
-                            if !self.pieces.contains_key(&loc2) {
-                                safe_insert(ValidMove::new(loc2, PieceMoveType::Move));
-                            }
-                        }
-                    }
-                }
-
-                #[inline(always)]
-                fn loc_capturable(
-                    pieces: &HashMap<Location, BoardPiece>,
-                    location: Location,
-                    color: PieceColor,
-                ) -> bool {
-                    pieces.get(&location).map(|p| p.color != color).unwrap_or(false)
-                }
-                if let Some(loc) = location.try_offset(1, direction) {
-                    if loc_capturable(&self.pieces, loc, color) {
-                        safe_insert(ValidMove::new(loc, PieceMoveType::Capture));
-                    }
-                }
-                if let Some(loc) = location.try_offset(-1, direction) {
-                    if loc_capturable(&self.pieces, loc, color) {
-                        safe_insert(ValidMove::new(loc, PieceMoveType::Capture));
-                    }
-                }
-            }
-
-            PieceType::Rook => {
-                let (mut n, mut e, mut s, mut w) = (true, true, true, true);
-                for i in 1..8 {
-                    n = n && push_directional_offset(0, i);
-                    e = e && push_directional_offset(i, 0);
-                    s = s && push_directional_offset(0, -i);
-                    w = w && push_directional_offset(-i, 0);
-                }
-            }
-
-            PieceType::Knight => {
-                const KNIGHT_MOVES: [(i8, i8); 8] =
-                    [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)];
-                for (file_o, rank_o) in KNIGHT_MOVES {
-                    push_directional_offset(file_o, rank_o);
-                }
-            }
-
-            PieceType::Bishop => {
-                let (mut ne, mut se, mut sw, mut nw) = (true, true, true, true);
-                for o in 1..8 {
-                    ne = ne && push_directional_offset(o, o);
-                    se = se && push_directional_offset(o, -o);
-                    sw = sw && push_directional_offset(-o, -o);
-                    nw = nw && push_directional_offset(-o, o);
-                }
-            }
-
-            PieceType::Queen => {
-                let (mut n, mut ne, mut e, mut se, mut s, mut sw, mut w, mut nw) =
-                    (true, true, true, true, true, true, true, true);
-                for o in 1..8 {
-                    n = n && push_directional_offset(0, o);
-                    ne = ne && push_directional_offset(o, o);
-                    e = e && push_directional_offset(o, 0);
-                    se = se && push_directional_offset(o, -o);
-                    s = s && push_directional_offset(0, -o);
-                    sw = sw && push_directional_offset(-o, -o);
-                    w = w && push_directional_offset(-o, 0);
-                    nw = nw && push_directional_offset(-o, o);
-                }
-            }
-
-            PieceType::King { been_in_check } => {
-                const KING_MOVES: [(i8, i8); 8] =
-                    [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)];
-                for (file_o, rank_o) in KING_MOVES {
-                    push_directional_offset(file_o, rank_o);
-                }
-
-                #[inline(always)]
-                fn castle_path_is_clear(
-                    pieces: &HashMap<Location, BoardPiece>,
-                    location: Location,
-                    mut file_range: RangeInclusive<u8>,
-                ) -> bool {
-                    file_range.all(|f| !pieces.contains_key(&location.with_file(f)))
-                }
-                if !did_move && !been_in_check {
-                    let rank = match color {
-                        PieceColor::White => 0,
-                        PieceColor::Black => 7,
-                    };
-                    const CASTLE_PARAMS: [(u8, RangeInclusive<u8>, u8); 2] =
-                        [(0, 1..=3, 2), (7, 5..=6, 6)];
-                    for (rook_file, castle_path_range, castle_file) in CASTLE_PARAMS {
-                        let rook_loc = Location::new(rook_file, rank);
-                        #[allow(clippy::collapsible_if)]
-                        if self.pieces.get(&rook_loc).map_or(false, |rook| !rook.did_move) {
-                            if castle_path_is_clear(&self.pieces, location, castle_path_range) {
-                                // TODO: Only push moves that will take the king *out* of check.
-                                // TODO:
-                                // TODO: This probably means we will have to keep track of *all*
-                                // TODO: possible moves for *all* pieces at *all* times rather than
-                                // TODO: only keeping track of the possible move set for the
-                                // TODO: selected piece.
-                                let castle_loc = rook_loc.with_file(castle_file);
-                                // safe_insert(PossibleMove::new(castle_loc, PieceMoveType::Castle));
-                                safe_insert(ValidMove::new(castle_loc, PieceMoveType::Move));
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        moves
-    }
-
-    fn possible_piece_moves(&self, location: Location) -> Vec<Vec<PieceMove>> {
-        let &BoardPiece { color, typ, did_move } = self.pieces.get(&location).expect(
-            "Failed to calculate possible moves for piece: no such piece exists at this location",
-        );
-
-        let push_offset_to =
-            |file_o: i8, rank_o: i8, can_capture: bool, moves: &mut Vec<PieceMove>| {
-                if let Some(loc) = location.try_offset(file_o, rank_o) {
-                    moves.push(PieceMove::new(loc, can_capture));
-                }
-            };
-
-        fn to_move(loc: Location) -> PieceMove {
-            PieceMove::new(loc, true)
+            let dest = r#move.get_dest();
+            commands.entity(self.get_hints(dest.to_loc()).entity_capture).insert(ShowHint);
         }
 
-        match typ {
-            PieceType::Pawn => {
-                let (direction, start_rank): (i8, u8) = match color {
-                    PieceColor::Black => (-1, 6),
-                    PieceColor::White => (1, 1),
-                };
-
-                let mut forward_moves = Vec::with_capacity(2);
-                if let Some(loc1) = location.try_offset(0, direction) {
-                    if !self.pieces.contains_key(&loc1) {
-                        forward_moves.push(PieceMove::new(loc1, false));
-                        if location.rank == start_rank {
-                            if let Some(loc2) = location.try_offset(0, 2 * direction) {
-                                if !self.pieces.contains_key(&loc2) {
-                                    forward_moves.push(PieceMove::new(loc2, false));
-                                }
-                            }
-                        }
-                    }
-                }
-
-                let mut cap_left = Vec::with_capacity(1);
-                push_offset_to(-1, direction, true, &mut cap_left);
-
-                let mut cap_right = Vec::with_capacity(1);
-                push_offset_to(1, direction, true, &mut cap_right);
-
-                vec![forward_moves, cap_left, cap_right]
+        moves.set_iterator_mask(!EMPTY);
+        for r#move in &mut moves {
+            if r#move.get_source() != source {
+                continue;
             }
-
-            PieceType::Rook => {
-                const R: Range<i8> = 1..8;
-                vec![
-                    R.filter_map(|r| location.try_offset(0, r)).map(to_move).collect(), // N
-                    R.filter_map(|f| location.try_offset(f, 0)).map(to_move).collect(), // E
-                    R.filter_map(|r| location.try_offset(0, -r)).map(to_move).collect(), // S
-                    R.filter_map(|f| location.try_offset(-f, 0)).map(to_move).collect(), // W
-                ]
-            }
-
-            PieceType::Knight => {
-                [(1, 2), (2, 1), (2, -1), (1, -2), (-1, -2), (-2, -1), (-2, 1), (-1, 2)]
-                    .into_iter()
-                    .filter_map(|(f, r)| location.try_offset(f, r))
-                    .map(|loc| vec![to_move(loc)])
-                    .collect()
-            }
-
-            PieceType::Bishop => {
-                const R: Range<i8> = 1..8;
-                vec![
-                    R.filter_map(|o| location.try_offset(o, o)).map(to_move).collect(), // NE
-                    R.filter_map(|o| location.try_offset(o, -o)).map(to_move).collect(), // SE
-                    R.filter_map(|o| location.try_offset(-o, -o)).map(to_move).collect(), // SW
-                    R.filter_map(|o| location.try_offset(-o, o)).map(to_move).collect(), // NW
-                ]
-            }
-
-            PieceType::Queen => {
-                const R: Range<i8> = 1..8;
-                vec![
-                    R.filter_map(|r| location.try_offset(0, r)).map(to_move).collect(), // N
-                    R.filter_map(|o| location.try_offset(o, o)).map(to_move).collect(), // NE
-                    R.filter_map(|f| location.try_offset(f, 0)).map(to_move).collect(), // E
-                    R.filter_map(|o| location.try_offset(o, -o)).map(to_move).collect(), // SE
-                    R.filter_map(|r| location.try_offset(0, -r)).map(to_move).collect(), // S
-                    R.filter_map(|o| location.try_offset(-o, -o)).map(to_move).collect(), // SW
-                    R.filter_map(|f| location.try_offset(-f, 0)).map(to_move).collect(), // W
-                    R.filter_map(|o| location.try_offset(-o, o)).map(to_move).collect(), // NW
-                ]
-            }
-
-            PieceType::King { been_in_check } => {
-                let mut moves = Vec::with_capacity(10);
-
-                let steps = [(0, 1), (1, 1), (1, 0), (1, -1), (0, -1), (-1, -1), (-1, 0), (-1, 1)]
-                    .into_iter()
-                    .filter_map(|(f, r)| location.try_offset(f, r))
-                    .map(|loc| vec![to_move(loc)]);
-                moves.extend(steps);
-
-                if !did_move && !been_in_check {
-                    let rank = match color {
-                        PieceColor::White => 0,
-                        PieceColor::Black => 7,
-                    };
-
-                    #[inline(always)]
-                    fn castle_path_is_clear(
-                        pieces: &HashMap<Location, BoardPiece>,
-                        location: Location,
-                        mut file_range: RangeInclusive<u8>,
-                    ) -> bool {
-                        file_range.all(|f| !pieces.contains_key(&location.with_file(f)))
-                    }
-
-                    const CASTLE_PARAMS: [(u8, RangeInclusive<u8>, u8); 2] =
-                        [(0, 1..=3, 2), (7, 5..=6, 6)];
-                    for (rook_file, path, castle_file) in CASTLE_PARAMS {
-                        let rook_loc = Location::new(rook_file, rank);
-                        #[allow(clippy::collapsible_if)]
-                        if self.pieces.get(&rook_loc).map_or(false, |rook| !rook.did_move) {
-                            if castle_path_is_clear(&self.pieces, location, path) {
-                                let castle_loc = rook_loc.with_file(castle_file);
-                                moves.push(vec![PieceMove::new(castle_loc, false)]);
-                            }
-                        }
-                    }
-                }
-
-                moves
-            }
+            let dest = r#move.get_dest();
+            commands.entity(self.get_hints(dest.to_loc()).entity_move).insert(ShowHint);
         }
-    }
-
-    // fn calculate_and_cache_piece_moves(&mut self, location: Location) {
-    //     self.selected_valid_moves_cache.insert(location, self.possible_piece_moves(location));
-    // }
-
-    // pub fn get_piece_moves(&self, location: &Location) -> &HashSet<ValidMove> {
-    //     self.selected_valid_moves_cache
-    //         .get(location)
-    //         .expect("Failed to get possible moves: not cached")
-    // }
-
-    pub fn show_piece_move_hints(&mut self, commands: &mut Commands, location: Location) {
-        let possible_moves = self.possible_piece_moves(location);
-        let mut valid_moves = Vec::new();
-
-        let BoardPiece { color, .. } =
-            self.pieces.get(&location).expect("no such piece at location");
-
-        for move_series in &possible_moves {
-            for PieceMove { location: move_loc, .. } in move_series {
-                match self.pieces.get(move_loc) {
-                    Some(BoardPiece { color: move_color, .. }) if move_color == color => break,
-                    piece => {
-                        let loc_hints = self.get_hints(*move_loc);
-                        let hint_entity = if piece.is_some() {
-                            loc_hints.entity_capture
-                        } else {
-                            loc_hints.entity_move
-                        };
-                        commands.entity(hint_entity).insert(ShowHint);
-                        valid_moves.push(*move_loc);
-                        let count = self
-                            .global_possible_captures
-                            .get_mut(move_loc.rank as usize, move_loc.file as usize)
-                            .expect("invalid piece move location");
-                        *count += 1;
-                        if piece.is_some() {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        self.piece_possible_moves.insert(location, possible_moves);
-        self.valid_moves.insert(location, valid_moves);
-
-        // self.calculate_and_cache_piece_moves(location);
-        // for ValidMove { location, typ } in self.get_piece_moves(&location) {
-        //     let loc_hints = self.get_hints(location);
-        //     let entity = match typ {
-        //         PieceMoveType::Move | PieceMoveType::Castle => loc_hints.entity_move,
-        //         PieceMoveType::Capture => loc_hints.entity_capture,
-        //     };
-        //     commands.entity(entity).insert(ShowHint);
-        // }
     }
 
     pub fn hide_piece_move_hints(&mut self, commands: &mut Commands, location: Location) {
-        if let Some(valid_moves) = self.valid_moves.remove(&location) {
-            for v_move in valid_moves {
-                let loc_hints = self.get_hints(v_move);
-                commands.entity(loc_hints.entity_move).insert(HideHint);
-                commands.entity(loc_hints.entity_capture).insert(HideHint);
-
-                let count = self.get_capture_count(v_move);
-                *count = count.saturating_sub(1);
-            }
+        for hints in self.move_hints.values() {
+            commands.entity(hints.entity_move).insert(HideHint);
+            commands.entity(hints.entity_capture).insert(HideHint);
         }
-
-        self.piece_possible_moves.remove(&location);
-
-        // for ValidMove { location, typ } in self.get_piece_moves(location) {
-        //     let loc_hints = self.get_hints(location);
-        //     let entity = match typ {
-        //         PieceMoveType::Move | PieceMoveType::Castle => loc_hints.entity_move,
-        //         PieceMoveType::Capture => loc_hints.entity_capture,
-        //     };
-        //     commands.entity(entity).insert(HideHint);
-        // }
     }
 
     pub fn move_piece(&mut self, from: Location, to: Location) {
@@ -794,5 +415,10 @@ impl BoardState {
                 entry.insert(piece);
             }
         }
+        self.move_gen_board = self.move_gen_board.make_move_new(ChessMove::new(
+            from.to_square(),
+            to.to_square(),
+            None,
+        ));
     }
 }
