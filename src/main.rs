@@ -8,7 +8,7 @@ mod systems;
 mod util;
 mod window;
 
-use data::{BoardState, MouseLocation, MouseWorldPosition, ShowingMovesFor};
+use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor};
 use systems::{
     click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
     mouse_world_position_to_location, piece_move, resize_window, selections, setup_board,
@@ -30,7 +30,7 @@ fn main() {
         })
         .init_resource::<BoardState>()
         .init_resource::<MouseWorldPosition>()
-        .init_resource::<MouseLocation>()
+        .init_resource::<MouseSquare>()
         .init_resource::<ShowingMovesFor>()
         // Startup Systems
         .add_startup_system(resize_window)

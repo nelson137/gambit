@@ -1,12 +1,11 @@
 use bevy::prelude::*;
-
-use super::Location;
+use chess::Square;
 
 #[derive(Default)]
 pub struct MouseWorldPosition(pub Vec2);
 
 #[derive(Default)]
-pub struct MouseLocation(pub Option<Location>);
+pub struct MouseSquare(pub Option<Square>);
 
 #[derive(Component)]
 pub struct Hoverable;
@@ -22,12 +21,12 @@ pub struct Selected;
 #[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct Dragging {
-    pub mouse_down_location: Location,
+    pub mouse_down_square: Square,
 }
 
 impl Dragging {
-    pub fn new(mouse_down_location: Location) -> Self {
-        Self { mouse_down_location }
+    pub fn new(mouse_down_square: Square) -> Self {
+        Self { mouse_down_square }
     }
 }
 

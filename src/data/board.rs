@@ -60,7 +60,7 @@ pub const BOARD_RANK_TEXT_OFFSET_X: f32 = -BOARD_RANK_TEXT_OFFSET_Y;
 pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
 
 #[derive(Default)]
-pub struct ShowingMovesFor(pub Option<Location>);
+pub struct ShowingMovesFor(pub Option<Square>);
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
@@ -94,7 +94,7 @@ pub struct PieceType(pub Piece);
 
 #[derive(Component, Clone, Copy, Debug)]
 pub struct Location {
-    pub square: Square,
+    square: Square,
     pub z: f32,
     pub snap: bool,
 }
@@ -145,8 +145,8 @@ impl Location {
         self.rank().to_index()
     }
 
-    pub fn move_to(&mut self, location: Location) {
-        self.square = location.square;
+    pub fn move_to(&mut self, square: Square) {
+        self.square = square;
     }
 }
 
@@ -180,12 +180,11 @@ impl From<Square> for Location {
 pub struct BoardPiece {
     pub color: PieceColor,
     pub typ: PieceType,
-    pub did_move: bool,
 }
 
 impl BoardPiece {
     pub fn new(color: PieceColor, typ: PieceType) -> Self {
-        Self { color, typ, did_move: false }
+        Self { color, typ }
     }
 }
 
@@ -197,8 +196,8 @@ pub struct MoveHints {
 
 pub struct BoardState {
     pub move_count: u32,
-    pub pieces: HashMap<Location, BoardPiece>,
-    pub move_hints: HashMap<Location, MoveHints>,
+    pub pieces: HashMap<Square, BoardPiece>,
+    pub move_hints: HashMap<Square, MoveHints>,
     pub move_gen_board: chess::Board,
     last_shown_hints: Vec<Entity>,
 }
@@ -216,22 +215,20 @@ impl Default for BoardState {
 }
 
 impl BoardState {
-    pub fn is_colors_turn_at(&self, location: Location) -> bool {
-        let color = self.pieces.get(&location).expect("TODO").color;
+    pub fn is_colors_turn_at(&self, square: Square) -> bool {
+        let color = self.pieces.get(&square).expect("TODO").color;
         match color {
             PieceColor::Black => self.move_count % 2 == 1,
             PieceColor::White => self.move_count % 2 == 0,
         }
     }
 
-    fn get_hints(&self, location: Location) -> &MoveHints {
-        self.move_hints.get(&location).expect("Failed to get hints: none at location")
+    fn get_hints(&self, square: Square) -> &MoveHints {
+        self.move_hints.get(&square).expect("Failed to get hints: none at location")
     }
 
-    pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Location) {
+    pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Square) {
         self.last_shown_hints.clear();
-
-        let source = source.square();
 
         let mut moves = MoveGen::new_legal(&self.move_gen_board);
 
@@ -242,8 +239,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            let dest = r#move.get_dest();
-            let entity = self.get_hints(dest.into()).entity_capture;
+            let entity = self.get_hints(r#move.get_dest()).entity_capture;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
@@ -253,8 +249,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            let dest = r#move.get_dest();
-            let entity = self.get_hints(dest.into()).entity_move;
+            let entity = self.get_hints(r#move.get_dest()).entity_move;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
@@ -266,12 +261,11 @@ impl BoardState {
         }
     }
 
-    pub fn move_piece(&mut self, from: Location, to: Location) {
-        let (_old_loc, mut piece) = self
+    pub fn move_piece(&mut self, from: Square, to: Square) {
+        let (_old_loc, piece) = self
             .pieces
             .remove_entry(&from)
             .expect("Failed to move board state piece: no piece found at source location");
-        piece.did_move = true;
         match self.pieces.entry(to) {
             Entry::Occupied(entry) => {
                 panic!(
@@ -283,7 +277,6 @@ impl BoardState {
                 entry.insert(piece);
             }
         }
-        self.move_gen_board =
-            self.move_gen_board.make_move_new(ChessMove::new(from.square(), to.square(), None));
+        self.move_gen_board = self.move_gen_board.make_move_new(ChessMove::new(from, to, None));
     }
 }

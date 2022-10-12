@@ -131,7 +131,7 @@ pub fn setup_board(
 
                 let hint = MoveHints { entity_capture: capture_entity, entity_move: move_entity };
                 assert!(
-                    board_state.move_hints.insert(location, hint).is_none(),
+                    board_state.move_hints.insert(square, hint).is_none(),
                     "Failed to insert board hint into state: hint already at this location"
                 );
 
@@ -148,9 +148,10 @@ pub fn setup_board(
             .zip(PIECE_ASSET_COORDS.iter().copied().flatten())
             .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
         for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
-            let location = Location::new_with_z(Square::make_square(rank, file), Z_PIECE);
+            let square = Square::make_square(rank, file);
+            let location = Location::new_with_z(square, Z_PIECE);
             assert!(
-                board_state.pieces.insert(location, BoardPiece::new(color, typ)).is_none(),
+                board_state.pieces.insert(square, BoardPiece::new(color, typ)).is_none(),
                 "Failed to insert board piece into state: piece already at this location"
             );
             parent

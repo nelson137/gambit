@@ -5,7 +5,7 @@ use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, Location, MainCamera, MouseLocation, MouseWorldPosition, Selected, ShowHint,
+        Hoverable, Location, MainCamera, MouseSquare, MouseWorldPosition, Selected, ShowHint,
         ShowingMovesFor, Tile, UiPiece, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
@@ -46,7 +46,7 @@ pub fn mouse_screen_position_to_world(
 
 pub fn mouse_world_position_to_location(
     mouse_world_pos: Res<MouseWorldPosition>,
-    mut mouse_loc: ResMut<MouseLocation>,
+    mut mouse_square: ResMut<MouseSquare>,
     q_tiles: Query<(&Location, &Transform), With<Tile>>,
 ) {
     let mouse_pos = mouse_world_pos.0.extend(0.0);
@@ -59,23 +59,23 @@ pub fn mouse_world_position_to_location(
             Vec2::splat(TILE_ASSET_SIZE) * transf.scale.truncate(),
         );
         if collision.is_some() {
-            mouse_loc.0 = Some(*loc);
+            mouse_square.0 = Some(loc.square());
             return;
         }
     }
 
-    mouse_loc.0 = None;
+    mouse_square.0 = None;
 }
 
 pub fn mouse_hover(
     mut commands: Commands,
-    mouse_loc: Res<MouseLocation>,
+    mouse_square: Res<MouseSquare>,
     q_hoverable: Query<(Entity, &Location), With<Hoverable>>,
 ) {
-    if let Some(mouse_loc) = mouse_loc.0 {
+    if let Some(mouse_square) = mouse_square.0 {
         for (entity, loc) in &q_hoverable {
             let mut entity_cmds = commands.entity(entity);
-            if *loc == mouse_loc {
+            if loc.square() == mouse_square {
                 entity_cmds.insert(Hover);
             } else {
                 entity_cmds.remove::<Hover>();
@@ -90,7 +90,7 @@ pub fn mouse_hover(
 pub fn click_handler(
     mut commands: Commands,
     mouse_buttons: Res<Input<MouseButton>>,
-    mouse_loc: Res<MouseLocation>,
+    mouse_square: Res<MouseSquare>,
     board_state: Res<BoardState>,
     q_prev_select: Query<Entity, (With<Selected>, Without<Hover>, Without<Dragging>)>,
     mut q_new_select: Query<Entity, (With<Hover>, Without<Dragging>)>,
@@ -103,23 +103,23 @@ pub fn click_handler(
         }
 
         // Start drag
-        if let Some(mouse_loc) = mouse_loc.0 {
+        if let Some(mouse_square) = mouse_square.0 {
             for entity in &mut q_new_select {
-                if board_state.pieces.contains_key(&mouse_loc) {
-                    commands.entity(entity).insert(Dragging::new(mouse_loc));
+                if board_state.pieces.contains_key(&mouse_square) {
+                    commands.entity(entity).insert(Dragging::new(mouse_square));
                 }
             }
         }
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
-        if let Some(mouse_loc) = mouse_loc.0 {
+        if let Some(mouse_square) = mouse_square.0 {
             for (entity, loc, dragging, selected) in &mut q_dragging {
                 let mut cmds = commands.entity(entity);
                 cmds.remove::<Dragging>().insert(Dropped);
 
                 // If the mouse up location is the same as the drag's mouse down
-                if mouse_loc == dragging.mouse_down_location {
+                if mouse_square == dragging.mouse_down_square {
                     if selected.is_some() {
                         // Un-select
                         // Mouse up in same location as mouse down when selected
@@ -131,8 +131,7 @@ pub fn click_handler(
                     }
                 } else {
                     // The move type doesn't matter here, hashing is done only by location
-                    let move_with_mouse_loc =
-                        ChessMove::new(loc.square(), mouse_loc.square(), None);
+                    let move_with_mouse_loc = ChessMove::new(loc.square(), mouse_square, None);
                     // if board_state.is_colors_turn_at(*loc)
                     //     && board_state.get_piece_moves(loc).contains(&move_with_mouse_loc)
                     if true {
@@ -182,19 +181,19 @@ pub fn selections(
         if piece.is_some() {
             // Hide previous move hints
             // Note: this should not happen because q_unselect should take care of it
-            if let Some(showing_loc) = showing_piece_moves.0 {
-                if showing_loc != *loc {
+            if let Some(showing_for_square) = showing_piece_moves.0 {
+                if showing_for_square != loc.square() {
                     board_state.hide_piece_move_hints(&mut commands);
                 }
             }
-            if true && board_state.is_colors_turn_at(*loc) {
+            if true && board_state.is_colors_turn_at(loc.square()) {
                 // Show move hints
-                showing_piece_moves.0 = Some(*loc);
-                board_state.show_piece_move_hints(&mut commands, *loc);
+                showing_piece_moves.0 = Some(loc.square());
+                board_state.show_piece_move_hints(&mut commands, loc.square());
             }
         } else if hl_tile.is_some() {
             #[allow(clippy::collapsible_if)]
-            if board_state.pieces.contains_key(loc) {
+            if board_state.pieces.contains_key(&loc.square()) {
                 // Show if it's a highlight tile and it has a piece
                 vis.is_visible = true;
             }
@@ -204,7 +203,7 @@ pub fn selections(
 
 pub fn piece_move(
     mut commands: Commands,
-    mouse_loc: Res<MouseLocation>,
+    mouse_square: Res<MouseSquare>,
     mut board_state: ResMut<BoardState>,
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
     mut q_dragging_piece: Query<
@@ -228,7 +227,7 @@ pub fn piece_move(
         loc.z = Z_PIECE_SELECTED;
     }
 
-    if let Some(mouse_loc) = mouse_loc.0 {
+    if let Some(mouse_square) = mouse_square.0 {
         // Finish select
         for (entity, piece, hl_tile, do_move, mut vis, mut loc) in &mut q_dropped {
             commands.entity(entity).remove::<Dropped>().remove::<DoMove>();
@@ -242,8 +241,8 @@ pub fn piece_move(
                 loc.z = Z_PIECE;
                 if do_move.is_some() {
                     // Move piece location
-                    board_state.move_piece(*loc, mouse_loc);
-                    loc.move_to(mouse_loc);
+                    board_state.move_piece(loc.square(), mouse_square);
+                    loc.move_to(mouse_square);
                     board_state.move_count += 1;
                     // Hide move hints
                     if showing_piece_moves.0.is_some() {
