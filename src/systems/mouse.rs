@@ -171,8 +171,8 @@ pub fn selections(
             // Hide highlight tile
             vis.is_visible = false;
             // Hide previous move hints
-            if let Some(showing_loc) = showing_piece_moves.0 {
-                board_state.hide_piece_move_hints(&mut commands, showing_loc);
+            if showing_piece_moves.0.is_some() {
+                board_state.hide_piece_move_hints(&mut commands);
                 showing_piece_moves.0 = None;
             }
         }
@@ -184,7 +184,7 @@ pub fn selections(
             // Note: this should not happen because q_unselect should take care of it
             if let Some(showing_loc) = showing_piece_moves.0 {
                 if showing_loc != *loc {
-                    board_state.hide_piece_move_hints(&mut commands, showing_loc);
+                    board_state.hide_piece_move_hints(&mut commands);
                 }
             }
             if true && board_state.is_colors_turn_at(*loc) {
@@ -246,8 +246,8 @@ pub fn piece_move(
                     loc.move_to(mouse_loc);
                     board_state.move_count += 1;
                     // Hide move hints
-                    if let Some(showing_loc) = showing_piece_moves.0 {
-                        board_state.hide_piece_move_hints(&mut commands, showing_loc);
+                    if showing_piece_moves.0.is_some() {
+                        board_state.hide_piece_move_hints(&mut commands);
                         showing_piece_moves.0 = None;
                     }
                 }

@@ -213,6 +213,7 @@ pub struct BoardState {
     pub pieces: HashMap<Location, BoardPiece>,
     pub move_hints: HashMap<Location, MoveHints>,
     pub move_gen_board: chess::Board,
+    last_shown_hints: Vec<Entity>,
 }
 
 impl Default for BoardState {
@@ -222,6 +223,7 @@ impl Default for BoardState {
             pieces: HashMap::with_capacity(32),
             move_hints: HashMap::with_capacity(64),
             move_gen_board: chess::Board::default(),
+            last_shown_hints: Vec::with_capacity(27),
         }
     }
 }
@@ -240,6 +242,8 @@ impl BoardState {
     }
 
     pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Location) {
+        self.last_shown_hints.clear();
+
         let source = source.to_square();
 
         let mut moves = MoveGen::new_legal(&self.move_gen_board);
@@ -252,7 +256,9 @@ impl BoardState {
                 continue;
             }
             let dest = r#move.get_dest();
-            commands.entity(self.get_hints(dest.to_loc()).entity_capture).insert(ShowHint);
+            let entity = self.get_hints(dest.to_loc()).entity_capture;
+            commands.entity(entity).insert(ShowHint);
+            self.last_shown_hints.push(entity);
         }
 
         moves.set_iterator_mask(!EMPTY);
@@ -261,14 +267,15 @@ impl BoardState {
                 continue;
             }
             let dest = r#move.get_dest();
-            commands.entity(self.get_hints(dest.to_loc()).entity_move).insert(ShowHint);
+            let entity = self.get_hints(dest.to_loc()).entity_move;
+            commands.entity(entity).insert(ShowHint);
+            self.last_shown_hints.push(entity);
         }
     }
 
-    pub fn hide_piece_move_hints(&mut self, commands: &mut Commands, location: Location) {
-        for hints in self.move_hints.values() {
-            commands.entity(hints.entity_move).insert(HideHint);
-            commands.entity(hints.entity_capture).insert(HideHint);
+    pub fn hide_piece_move_hints(&mut self, commands: &mut Commands) {
+        for entity in self.last_shown_hints.drain(..) {
+            commands.entity(entity).insert(HideHint);
         }
     }
 
