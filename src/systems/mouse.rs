@@ -184,8 +184,7 @@ pub fn selections(
                     board_state.hide_piece_move_hints(&mut commands);
                 }
             }
-            // FIXME
-            if true && board_state.is_colors_turn_at(square.0) {
+            if board_state.is_colors_turn_at(square.0) {
                 // Show move hints
                 showing_piece_moves.0 = Some(square.0);
                 board_state.show_piece_move_hints(&mut commands, square.0);
