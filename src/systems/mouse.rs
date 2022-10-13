@@ -241,7 +241,6 @@ pub fn piece_move(
                     // Move piece square
                     board_state.move_piece(square.0, mouse_square);
                     square.move_to(mouse_square);
-                    board_state.move_count += 1;
                     // Hide move hints
                     if showing_piece_moves.0.is_some() {
                         board_state.hide_piece_move_hints(&mut commands);

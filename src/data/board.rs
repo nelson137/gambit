@@ -95,7 +95,6 @@ pub struct MoveHints {
 }
 
 pub struct BoardState {
-    pub move_count: u32,
     pub pieces: HashMap<Square, BoardPiece>,
     pub move_hints: HashMap<Square, MoveHints>,
     pub move_gen_board: Board,
@@ -105,7 +104,6 @@ pub struct BoardState {
 impl Default for BoardState {
     fn default() -> Self {
         Self {
-            move_count: 0,
             pieces: HashMap::with_capacity(32),
             move_hints: HashMap::with_capacity(64),
             move_gen_board: Board::default(),
@@ -117,10 +115,7 @@ impl Default for BoardState {
 impl BoardState {
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
         let color = self.pieces.get(&square).expect("TODO").color;
-        match color {
-            PieceColor::Black => self.move_count % 2 == 1,
-            PieceColor::White => self.move_count % 2 == 0,
-        }
+        self.move_gen_board.side_to_move() == color.into()
     }
 
     fn get_hints(&self, square: Square) -> &MoveHints {
