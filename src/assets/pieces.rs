@@ -106,8 +106,8 @@ pub const PIECE_COLORS_TYPES: [&[(PieceColor, PieceType)]; 2] = [
     ],
 ];
 
-/// A 2D array of algebraic coordinates for the starting location of all chess pieces. Each
-/// coordinate is a tuple of `(File, Rank)`.
+/// A 2D array of algebraic coordinates for the starting square of all chess pieces. Each coordinate
+/// is a tuple of `(File, Rank)`.
 ///
 /// The array contains 2 sub-arrays containing the coordinates for a player's set of pieces. The
 /// first sub-array is for black, whose pieces start in ranks 7 and 8. The second sub-array is for

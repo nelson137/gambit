@@ -124,7 +124,7 @@ impl BoardState {
     }
 
     fn get_hints(&self, square: Square) -> &MoveHints {
-        self.move_hints.get(&square).expect("Failed to get hints: none at location")
+        self.move_hints.get(&square).expect("Failed to get hints: none at square")
     }
 
     pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Square) {
@@ -162,14 +162,14 @@ impl BoardState {
     }
 
     pub fn move_piece(&mut self, from: Square, to: Square) {
-        let (_old_loc, piece) = self
+        let (_old_square, piece) = self
             .pieces
             .remove_entry(&from)
-            .expect("Failed to move board state piece: no piece found at source location");
+            .expect("Failed to move board state piece: no piece found at source square");
         match self.pieces.entry(to) {
             Entry::Occupied(entry) => {
                 panic!(
-                    "Failed to move board state piece: piece already at destination location {}",
+                    "Failed to move board state piece: piece already at destination square {}",
                     entry.key()
                 )
             }

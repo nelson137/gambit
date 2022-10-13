@@ -4,8 +4,8 @@ use chess::{File, Rank, Square};
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
-        BoardPiece, BoardState, HighlightTile, Hoverable, Location, MainCamera, MoveHints, Tile,
-        UiBoard, UiPiece, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
+        BoardPiece, BoardState, HighlightTile, Hoverable, MainCamera, MoveHints, Tile, UiBoard,
+        UiPiece, UiSquare, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
         BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK,
         COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
         Z_TILE,
@@ -36,7 +36,7 @@ pub fn setup_board(
             for _ in 0..8 {
                 let file = square.get_file();
                 let rank = square.get_rank();
-                let location = Location::new_with_z(square, Z_TILE);
+                let ui_square = UiSquare::new(square);
 
                 // Tile
                 let file_rank_sum = rank.to_index() + file.to_index();
@@ -46,11 +46,12 @@ pub fn setup_board(
                         custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
                         ..default()
                     },
+                    transform: Transform::from_translation(Vec3::Z * Z_TILE),
                     ..default()
                 });
 
                 tile.insert(Tile);
-                tile.insert(location);
+                tile.insert(ui_square);
 
                 // File markers
                 if square.get_rank() == Rank::First {
@@ -61,7 +62,7 @@ pub fn setup_board(
                     };
                     tile.with_children(|cmds| {
                         cmds.spawn_bundle(Text2dBundle {
-                            text: Text::from_section(location.file_char(), style)
+                            text: Text::from_section(ui_square.file_char(), style)
                                 .with_alignment(TextAlignment::CENTER),
                             transform: Transform::from_translation(Vec3::from_slice(&[
                                 BOARD_FILE_TEXT_OFFSET_X,
@@ -82,7 +83,7 @@ pub fn setup_board(
                     };
                     tile.with_children(|cmds| {
                         cmds.spawn_bundle(Text2dBundle {
-                            text: Text::from_section(location.rank_char(), style)
+                            text: Text::from_section(ui_square.rank_char(), style)
                                 .with_alignment(TextAlignment::CENTER),
                             transform: Transform::from_translation(Vec3::new(
                                 BOARD_RANK_TEXT_OFFSET_X,
@@ -103,10 +104,11 @@ pub fn setup_board(
                             ..default()
                         },
                         visibility: Visibility { is_visible: false },
+                        transform: Transform::from_translation(Vec3::Z * Z_HIGHLIGHT_TILE),
                         ..default()
                     })
                     .insert(HighlightTile)
-                    .insert(location.with_z(Z_HIGHLIGHT_TILE))
+                    .insert(ui_square)
                     .insert(Hoverable);
 
                 // Move hint
@@ -114,9 +116,10 @@ pub fn setup_board(
                     .spawn_bundle(SpriteBundle {
                         texture: move_hint_texture.clone(),
                         visibility: Visibility { is_visible: false },
+                        transform: Transform::from_translation(Vec3::Z * Z_MOVE_HINT),
                         ..default()
                     })
-                    .insert(location.with_z(Z_MOVE_HINT))
+                    .insert(ui_square)
                     .id();
 
                 // Capture hint
@@ -124,15 +127,16 @@ pub fn setup_board(
                     .spawn_bundle(SpriteBundle {
                         texture: capture_hint_texture.clone(),
                         visibility: Visibility { is_visible: false },
+                        transform: Transform::from_translation(Vec3::Z * Z_MOVE_HINT),
                         ..default()
                     })
-                    .insert(location.with_z(Z_MOVE_HINT))
+                    .insert(ui_square)
                     .id();
 
                 let hint = MoveHints { entity_capture: capture_entity, entity_move: move_entity };
                 assert!(
                     board_state.move_hints.insert(square, hint).is_none(),
-                    "Failed to insert board hint into state: hint already at this location"
+                    "Failed to insert board hint into state: hint already at this square"
                 );
 
                 square = square.uright();
@@ -149,17 +153,20 @@ pub fn setup_board(
             .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
         for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
             let square = Square::make_square(rank, file);
-            let location = Location::new_with_z(square, Z_PIECE);
             assert!(
                 board_state.pieces.insert(square, BoardPiece::new(color, typ)).is_none(),
-                "Failed to insert board piece into state: piece already at this location"
+                "Failed to insert board piece into state: piece already at this square"
             );
             parent
-                .spawn_bundle(SpriteBundle { texture: asset_server.load(path), ..default() })
+                .spawn_bundle(SpriteBundle {
+                    texture: asset_server.load(path),
+                    transform: Transform::from_translation(Vec3::Z * Z_PIECE),
+                    ..default()
+                })
                 .insert(UiPiece)
                 .insert(color)
                 .insert(typ)
-                .insert(location)
+                .insert(UiSquare::new(square))
                 .insert(Hoverable);
         }
     });

@@ -11,8 +11,8 @@ mod window;
 use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor};
 use systems::{
     click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
-    mouse_world_position_to_location, piece_move, resize_window, selections, setup_board,
-    setup_camera, update_translation_for_location,
+    mouse_world_position_to_square, piece_move, resize_window, selections, setup_board,
+    setup_camera, update_translation_for_square,
 };
 use window::{WIN_HEIGHT, WIN_WIDTH};
 
@@ -41,12 +41,12 @@ fn main() {
             CoreStage::PreUpdate,
             SystemSet::new()
                 .with_system(mouse_screen_position_to_world)
-                .with_system(mouse_world_position_to_location.after(mouse_screen_position_to_world))
-                .with_system(mouse_hover.after(mouse_world_position_to_location)),
+                .with_system(mouse_world_position_to_square.after(mouse_screen_position_to_world))
+                .with_system(mouse_hover.after(mouse_world_position_to_square)),
         )
         .add_system_set_to_stage(
             CoreStage::PostUpdate,
-            SystemSet::new().with_system(update_translation_for_location),
+            SystemSet::new().with_system(update_translation_for_square),
         )
         .add_system(click_handler)
         .add_system(selections.after(click_handler))
