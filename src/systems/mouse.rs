@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-use chess::ChessMove;
 
 use crate::{
     assets::TILE_ASSET_SIZE,
@@ -129,10 +128,8 @@ pub fn click_handler(
                         cmds.insert(Selected);
                     }
                 } else {
-                    let move_with_mouse_square = ChessMove::new(square.0, mouse_square, None);
-                    // if board_state.is_colors_turn_at(*square)
-                    //     && board_state.get_piece_moves(square).contains(&move_with_mouse_square)
-                    if true {
+                    #[allow(clippy::collapsible_else_if)]
+                    if board_state.move_is_valid(square.0, mouse_square) {
                         // Move
                         // Mouse up in different square than the drag's mouse down and is a valid
                         // move

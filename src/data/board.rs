@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 
 use bevy::prelude::*;
-use chess::{Board, ChessMove, MoveGen, Piece, Square, EMPTY};
+use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
 
 #[derive(Component)]
 pub struct UiBoard;
@@ -154,6 +154,14 @@ impl BoardState {
         for entity in self.last_shown_hints.drain(..) {
             commands.entity(entity).insert(HideHint);
         }
+    }
+
+    pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
+        let mut move_gen = MoveGen::new_legal(&self.move_gen_board);
+        // Mask the generator to only gen moves (by any piece) to the destination.
+        move_gen.set_iterator_mask(BitBoard::from_square(dest));
+        // Return whether any of the generated moves are from the source.
+        move_gen.any(|m| m.get_source() == source)
     }
 
     pub fn move_piece(&mut self, from: Square, to: Square) {
