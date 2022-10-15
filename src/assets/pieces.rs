@@ -1,4 +1,4 @@
-use chess::{File, Piece, Rank};
+use chess::{Color, File, Piece, Rank};
 
 use crate::data::{PieceColor, PieceType};
 
@@ -66,43 +66,43 @@ pub const PIECE_ASSET_PATHS: [&[&str]; 2] = [
 pub const PIECE_COLORS_TYPES: [&[(PieceColor, PieceType)]; 2] = [
     &[
         // Rank 8
-        (PieceColor::Black, PieceType(Piece::Rook)),
-        (PieceColor::Black, PieceType(Piece::Knight)),
-        (PieceColor::Black, PieceType(Piece::Bishop)),
-        (PieceColor::Black, PieceType(Piece::Queen)),
-        (PieceColor::Black, PieceType(Piece::King)),
-        (PieceColor::Black, PieceType(Piece::Bishop)),
-        (PieceColor::Black, PieceType(Piece::Knight)),
-        (PieceColor::Black, PieceType(Piece::Rook)),
+        (PieceColor(Color::Black), PieceType(Piece::Rook)),
+        (PieceColor(Color::Black), PieceType(Piece::Knight)),
+        (PieceColor(Color::Black), PieceType(Piece::Bishop)),
+        (PieceColor(Color::Black), PieceType(Piece::Queen)),
+        (PieceColor(Color::Black), PieceType(Piece::King)),
+        (PieceColor(Color::Black), PieceType(Piece::Bishop)),
+        (PieceColor(Color::Black), PieceType(Piece::Knight)),
+        (PieceColor(Color::Black), PieceType(Piece::Rook)),
         // Rank 7
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
-        (PieceColor::Black, PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
+        (PieceColor(Color::Black), PieceType(Piece::Pawn)),
     ],
     &[
         // Rank 2
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
-        (PieceColor::White, PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
+        (PieceColor(Color::White), PieceType(Piece::Pawn)),
         // Rank 1
-        (PieceColor::White, PieceType(Piece::Rook)),
-        (PieceColor::White, PieceType(Piece::Knight)),
-        (PieceColor::White, PieceType(Piece::Bishop)),
-        (PieceColor::White, PieceType(Piece::Queen)),
-        (PieceColor::White, PieceType(Piece::King)),
-        (PieceColor::White, PieceType(Piece::Bishop)),
-        (PieceColor::White, PieceType(Piece::Knight)),
-        (PieceColor::White, PieceType(Piece::Rook)),
+        (PieceColor(Color::White), PieceType(Piece::Rook)),
+        (PieceColor(Color::White), PieceType(Piece::Knight)),
+        (PieceColor(Color::White), PieceType(Piece::Bishop)),
+        (PieceColor(Color::White), PieceType(Piece::Queen)),
+        (PieceColor(Color::White), PieceType(Piece::King)),
+        (PieceColor(Color::White), PieceType(Piece::Bishop)),
+        (PieceColor(Color::White), PieceType(Piece::Knight)),
+        (PieceColor(Color::White), PieceType(Piece::Rook)),
     ],
 ];
 

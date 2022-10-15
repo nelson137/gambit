@@ -57,21 +57,8 @@ pub struct HideHint;
 #[derive(Component)]
 pub struct UiPiece;
 
-#[derive(Clone, Copy, Component, PartialEq, Eq, Debug)]
-pub enum PieceColor {
-    Black,
-    White,
-}
-
-#[allow(clippy::from_over_into)]
-impl Into<chess::Color> for PieceColor {
-    fn into(self) -> chess::Color {
-        match self {
-            PieceColor::Black => chess::Color::Black,
-            PieceColor::White => chess::Color::White,
-        }
-    }
-}
+#[derive(Clone, Copy, Component, PartialEq, Eq, Debug, Deref, DerefMut)]
+pub struct PieceColor(pub chess::Color);
 
 #[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
 pub struct PieceType(pub Piece);
@@ -115,7 +102,7 @@ impl Default for BoardState {
 impl BoardState {
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
         let color = self.pieces.get(&square).expect("TODO").color;
-        self.move_gen_board.side_to_move() == color.into()
+        self.move_gen_board.side_to_move() == *color
     }
 
     fn get_hints(&self, square: Square) -> &MoveHints {
