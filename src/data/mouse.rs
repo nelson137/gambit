@@ -1,10 +1,10 @@
 use bevy::prelude::*;
 use chess::Square;
 
-#[derive(Default)]
+#[derive(Default, Deref, DerefMut)]
 pub struct MouseWorldPosition(pub Vec2);
 
-#[derive(Default)]
+#[derive(Default, Deref, DerefMut)]
 pub struct MouseSquare(pub Option<Square>);
 
 #[derive(Component)]

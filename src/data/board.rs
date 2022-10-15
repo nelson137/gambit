@@ -43,7 +43,7 @@ pub const BOARD_FILE_TEXT_OFFSET_Y: f32 = -BOARD_FILE_TEXT_OFFSET_X;
 pub const BOARD_RANK_TEXT_OFFSET_X: f32 = -BOARD_RANK_TEXT_OFFSET_Y;
 pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
 
-#[derive(Default)]
+#[derive(Default, Deref, DerefMut)]
 pub struct ShowingMovesFor(pub Option<Square>);
 
 #[derive(Component)]
@@ -60,7 +60,7 @@ pub struct UiPiece;
 #[derive(Clone, Copy, Component, PartialEq, Eq, Debug, Deref, DerefMut)]
 pub struct PieceColor(pub chess::Color);
 
-#[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Component, Debug, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
 
 #[derive(Debug)]

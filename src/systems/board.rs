@@ -33,6 +33,6 @@ pub fn update_translation_for_square(
 
     for (square, mut transf) in &mut squares {
         transf.scale = Vec3::splat(tile_scale);
-        square_to_coords(square.0, &mut transf.translation, win_size);
+        square_to_coords(**square, &mut transf.translation, win_size);
     }
 }

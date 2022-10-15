@@ -3,7 +3,7 @@ use core::{fmt, hash::Hash};
 use bevy::prelude::*;
 use chess::{File, Rank, Square};
 
-#[derive(Component, Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq, Hash, Deref, DerefMut)]
 pub struct UiSquare(pub Square);
 
 impl UiSquare {
@@ -42,6 +42,6 @@ impl UiSquare {
 
 impl fmt::Display for UiSquare {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!("{}", self.0))
+        f.write_fmt(format_args!("{}", *self))
     }
 }

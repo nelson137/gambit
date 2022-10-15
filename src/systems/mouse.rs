@@ -33,7 +33,7 @@ pub fn mouse_screen_position_to_world(
         // Convert ndc to world-space coordinates
         let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
 
-        mouse_world_pos.0 = world_pos.truncate();
+        **mouse_world_pos = world_pos.truncate();
 
         for mut transf in &mut q_dragging {
             transf.translation.x = world_pos.x;
@@ -47,7 +47,7 @@ pub fn mouse_world_position_to_square(
     mut mouse_square: ResMut<MouseSquare>,
     q_tiles: Query<(&UiSquare, &Transform), With<Tile>>,
 ) {
-    let mouse_pos = mouse_world_pos.0.extend(0.0);
+    let mouse_pos = mouse_world_pos.extend(0.0);
 
     for (square, transf) in &q_tiles {
         let collision = bevy::sprite::collide_aabb::collide(
@@ -57,12 +57,12 @@ pub fn mouse_world_position_to_square(
             Vec2::splat(TILE_ASSET_SIZE) * transf.scale.truncate(),
         );
         if collision.is_some() {
-            mouse_square.0 = Some(square.0);
+            **mouse_square = Some(**square);
             return;
         }
     }
 
-    mouse_square.0 = None;
+    **mouse_square = None;
 }
 
 pub fn mouse_hover(
@@ -70,10 +70,10 @@ pub fn mouse_hover(
     mouse_square: Res<MouseSquare>,
     q_hoverable: Query<(Entity, &UiSquare), With<Hoverable>>,
 ) {
-    if let Some(mouse_square) = mouse_square.0 {
+    if let Some(mouse_square) = **mouse_square {
         for (entity, square) in &q_hoverable {
             let mut entity_cmds = commands.entity(entity);
-            if square.0 == mouse_square {
+            if **square == mouse_square {
                 entity_cmds.insert(Hover);
             } else {
                 entity_cmds.remove::<Hover>();
@@ -101,7 +101,7 @@ pub fn click_handler(
         }
 
         // Start drag
-        if let Some(mouse_square) = mouse_square.0 {
+        if let Some(mouse_square) = **mouse_square {
             for entity in &mut q_new_select {
                 if board_state.pieces.contains_key(&mouse_square) {
                     commands.entity(entity).insert(Dragging::new(mouse_square));
@@ -111,7 +111,7 @@ pub fn click_handler(
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
-        if let Some(mouse_square) = mouse_square.0 {
+        if let Some(mouse_square) = **mouse_square {
             for (entity, square, dragging, selected) in &mut q_dragging {
                 let mut cmds = commands.entity(entity);
                 cmds.remove::<Dragging>().insert(Dropped);
@@ -129,7 +129,7 @@ pub fn click_handler(
                     }
                 } else {
                     #[allow(clippy::collapsible_else_if)]
-                    if board_state.move_is_valid(square.0, mouse_square) {
+                    if board_state.move_is_valid(**square, mouse_square) {
                         // Move
                         // Mouse up in different square than the drag's mouse down and is a valid
                         // move
@@ -165,9 +165,9 @@ pub fn selections(
             // Hide highlight tile
             vis.is_visible = false;
             // Hide previous move hints
-            if showing_piece_moves.0.is_some() {
+            if showing_piece_moves.is_some() {
                 board_state.hide_piece_move_hints(&mut commands);
-                showing_piece_moves.0 = None;
+                **showing_piece_moves = None;
             }
         }
     }
@@ -176,19 +176,19 @@ pub fn selections(
         if piece.is_some() {
             // Hide previous move hints
             // Note: this should not happen because q_unselect should take care of it
-            if let Some(showing_for_square) = showing_piece_moves.0 {
-                if showing_for_square != square.0 {
+            if let Some(showing_for_square) = **showing_piece_moves {
+                if showing_for_square != **square {
                     board_state.hide_piece_move_hints(&mut commands);
                 }
             }
-            if board_state.is_colors_turn_at(square.0) {
+            if board_state.is_colors_turn_at(**square) {
                 // Show move hints
-                showing_piece_moves.0 = Some(square.0);
-                board_state.show_piece_move_hints(&mut commands, square.0);
+                **showing_piece_moves = Some(**square);
+                board_state.show_piece_move_hints(&mut commands, **square);
             }
         } else if hl_tile.is_some() {
             #[allow(clippy::collapsible_if)]
-            if board_state.pieces.contains_key(&square.0) {
+            if board_state.pieces.contains_key(square) {
                 // Show if it's a highlight tile and it has a piece
                 vis.is_visible = true;
             }
@@ -222,7 +222,7 @@ pub fn piece_move(
         transf.translation.z = Z_PIECE_SELECTED;
     }
 
-    if let Some(mouse_square) = mouse_square.0 {
+    if let Some(mouse_square) = **mouse_square {
         // Finish select
         for (entity, piece, hl_tile, do_move, mut vis, mut transf, mut square) in &mut q_dropped {
             commands.entity(entity).remove::<Dropped>().remove::<DoMove>();
@@ -235,12 +235,12 @@ pub fn piece_move(
                 transf.translation.z = Z_PIECE;
                 if do_move.is_some() {
                     // Move piece square
-                    board_state.move_piece(square.0, mouse_square);
+                    board_state.move_piece(**square, mouse_square);
                     square.move_to(mouse_square);
                     // Hide move hints
-                    if showing_piece_moves.0.is_some() {
+                    if showing_piece_moves.is_some() {
                         board_state.hide_piece_move_hints(&mut commands);
-                        showing_piece_moves.0 = None;
+                        **showing_piece_moves = None;
                     }
                 }
             }
