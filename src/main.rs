@@ -11,8 +11,8 @@ mod window;
 use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor};
 use systems::{
     click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
-    mouse_world_position_to_square, piece_move, resize_window, selections, setup_board,
-    setup_camera, update_translation_for_square,
+    mouse_world_position_to_square, piece_drag_and_drop, piece_move, resize_window, selections,
+    setup_board, setup_camera, update_translation_for_square,
 };
 use window::{WIN_HEIGHT, WIN_WIDTH};
 
@@ -50,7 +50,8 @@ fn main() {
         )
         .add_system(click_handler)
         .add_system(selections.after(click_handler))
-        .add_system(piece_move.after(click_handler))
+        .add_system(piece_drag_and_drop.after(click_handler))
+        .add_system(piece_move.after(piece_drag_and_drop))
         .add_system(hints_hide.after(click_handler))
         .add_system(hints_show.after(hints_hide))
         // Run

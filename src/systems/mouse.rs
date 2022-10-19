@@ -1,11 +1,12 @@
 use bevy::prelude::*;
+use chess::{File, Square};
 
 use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, MainCamera, MouseSquare, MouseWorldPosition, Selected, ShowHint,
-        ShowingMovesFor, Tile, UiPiece, UiSquare, Z_PIECE, Z_PIECE_SELECTED,
+        Hoverable, MainCamera, MouseSquare, MouseWorldPosition, PieceColor, PieceType, Selected,
+        ShowHint, ShowingMovesFor, Tile, UiPiece, UiSquare, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
 };
@@ -133,7 +134,7 @@ pub fn click_handler(
                         // Move
                         // Mouse up in different square than the drag's mouse down and is a valid
                         // move
-                        cmds.insert(DoMove);
+                        cmds.insert(DoMove::new(mouse_square));
                     } else {
                         // Select
                         // Mouse up in different square than the drag's mouse down and is *not* a
@@ -196,15 +197,9 @@ pub fn selections(
     }
 }
 
-pub fn piece_move(
+pub fn piece_drag_and_drop(
     mut commands: Commands,
-    mouse_square: Res<MouseSquare>,
-    mut board_state: ResMut<BoardState>,
-    mut showing_piece_moves: ResMut<ShowingMovesFor>,
-    mut q_dragging_piece: Query<
-        &mut Transform,
-        (With<UiPiece>, Added<Dragging>, Without<Dropped>, Without<DoMove>),
-    >,
+    mut q_dragging_piece: Query<&mut Transform, (With<UiPiece>, Added<Dragging>, Without<Dropped>)>,
     mut q_dropped: Query<
         (
             Entity,
@@ -213,7 +208,6 @@ pub fn piece_move(
             Option<&DoMove>,
             &mut Visibility,
             &mut Transform,
-            &mut UiSquare,
         ),
         Added<Dropped>,
     >,
@@ -222,28 +216,79 @@ pub fn piece_move(
         transf.translation.z = Z_PIECE_SELECTED;
     }
 
-    if let Some(mouse_square) = **mouse_square {
-        // Finish select
-        for (entity, piece, hl_tile, do_move, mut vis, mut transf, mut square) in &mut q_dropped {
-            commands.entity(entity).remove::<Dropped>().remove::<DoMove>();
-            if hl_tile.is_some() {
-                if do_move.is_some() {
-                    // Hide highlight tile
-                    vis.is_visible = false;
-                }
-            } else if piece.is_some() {
-                transf.translation.z = Z_PIECE;
-                if do_move.is_some() {
-                    // Move piece square
-                    board_state.move_piece(**square, mouse_square);
-                    square.move_to(mouse_square);
-                    // Hide move hints
-                    if showing_piece_moves.is_some() {
-                        board_state.hide_piece_move_hints(&mut commands);
-                        **showing_piece_moves = None;
-                    }
-                }
+    // Finish select
+    for (entity, piece, hl_tile, do_move, mut vis, mut transf) in &mut q_dropped {
+        commands.entity(entity).remove::<Dropped>();
+        if hl_tile.is_some() {
+            if do_move.is_some() {
+                // Hide highlight tile
+                vis.is_visible = false;
             }
+        } else if piece.is_some() {
+            transf.translation.z = Z_PIECE;
+        }
+    }
+}
+
+pub fn piece_move(
+    mut commands: Commands,
+    mut board_state: ResMut<BoardState>,
+    mut showing_piece_moves: ResMut<ShowingMovesFor>,
+    mut q_do_move: Query<(
+        Entity,
+        Option<&UiPiece>,
+        Option<&PieceType>,
+        Option<&PieceColor>,
+        &mut UiSquare,
+        &DoMove,
+    )>,
+) {
+    // Finish select
+    for (entity, piece, typ, color, mut square, do_move) in &mut q_do_move {
+        commands.entity(entity).remove::<DoMove>();
+        let dest: Square = **do_move;
+
+        if piece.is_some() {
+            if **typ.unwrap() == chess::Piece::King {
+                let castle_rights = board_state.move_gen_board.my_castle_rights();
+                let back_rank = color.unwrap().to_my_backrank();
+                let kingside_sq = Square::make_square(back_rank, File::G);
+                let queenside_sq = Square::make_square(back_rank, File::C);
+                if castle_rights.has_kingside() && dest == kingside_sq {
+                    // Move king
+                    if do_move.update_state {
+                        board_state.move_piece(**square, dest);
+                    }
+                    square.move_to(dest);
+                    // Move rook
+                    let rook =
+                        board_state.pieces.get(&Square::make_square(back_rank, File::H)).expect(
+                            "castle is valid but the kingside rook is not on its starting square",
+                        );
+                    commands.entity(rook.entity).insert(DoMove::with_update_state(
+                        Square::make_square(back_rank, File::F),
+                        false,
+                    ));
+                } else if castle_rights.has_queenside() && dest == queenside_sq {
+                    // Move king
+                    if do_move.update_state {
+                        board_state.move_piece(**square, dest);
+                    }
+                    square.move_to(dest);
+                }
+            } else {
+                // Move piece square
+                if do_move.update_state {
+                    board_state.move_piece(**square, dest);
+                }
+                square.move_to(dest);
+            }
+        }
+
+        // Hide move hints
+        if showing_piece_moves.is_some() {
+            board_state.hide_piece_move_hints(&mut commands);
+            **showing_piece_moves = None;
         }
     }
 }
