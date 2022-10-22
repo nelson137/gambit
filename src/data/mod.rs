@@ -4,6 +4,9 @@ pub use board::*;
 mod camera;
 pub use camera::*;
 
+mod game;
+pub use game::*;
+
 mod mouse;
 pub use mouse::*;
 

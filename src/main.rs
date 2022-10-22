@@ -8,7 +8,7 @@ mod systems;
 mod util;
 mod window;
 
-use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor};
+use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor, COLOR_BG};
 use systems::{
     click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
     mouse_world_position_to_square, piece_drag_and_drop, piece_move, resize_window, selections,
@@ -28,6 +28,7 @@ fn main() {
             resizable: false,
             ..default()
         })
+        .insert_resource(ClearColor(COLOR_BG))
         .init_resource::<BoardState>()
         .init_resource::<MouseWorldPosition>()
         .init_resource::<MouseSquare>()
