@@ -20,14 +20,7 @@ pub fn update_translation_for_square(
     windows: Res<Windows>,
     mut squares: Query<(&UiSquare, &mut Transform), (Without<Dragging>, Without<DoMove>)>,
 ) {
-    let win = {
-        if let Some(w) = windows.get_primary() {
-            w
-        } else {
-            // eprintln!("ERROR: No primary window");
-            return;
-        }
-    };
+    let win = if let Some(w) = windows.get_primary() { w } else { return };
     let win_size = win.width().min(win.height());
     let tile_scale = win_size / 8.0 / PIECE_ASSET_SIZE;
 

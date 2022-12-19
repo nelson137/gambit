@@ -18,7 +18,7 @@ pub fn mouse_screen_position_to_world(
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
     mut q_dragging: Query<&mut Transform, (With<Dragging>, With<UiPiece>)>,
 ) {
-    let win = windows.primary();
+    let win = if let Some(w) = windows.get_primary() { w } else { return };
 
     if let Some(screen_pos) = win.cursor_position() {
         let (camera, camera_transf) = q_camera.single();
