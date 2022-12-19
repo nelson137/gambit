@@ -117,7 +117,6 @@ pub fn click_handler(
                 let mut cmds = commands.entity(entity);
                 cmds.remove::<Dragging>().insert(Dropped);
 
-                // If the mouse up square is the same as the drag's mouse down
                 if mouse_square == dragging.mouse_down_square {
                     if selected.is_some() {
                         // Un-select
@@ -128,19 +127,15 @@ pub fn click_handler(
                         // Mouse up in same square as mouse down when *not* selected
                         cmds.insert(Selected);
                     }
-                } else {
-                    #[allow(clippy::collapsible_else_if)]
-                    if board_state.move_is_valid(**square, mouse_square) {
-                        // Move
-                        // Mouse up in different square than the drag's mouse down and is a valid
-                        // move
-                        cmds.insert(DoMove::new(mouse_square));
-                    } else {
-                        // Select
-                        // Mouse up in different square than the drag's mouse down and is *not* a
-                        // valid move
-                        cmds.insert(Selected);
-                    }
+                } else if board_state.move_is_valid(**square, mouse_square) {
+                    // Move
+                    // Mouse up in different square than the last mouse down and is a valid move
+                    cmds.insert(DoMove::new(mouse_square));
+                } else if selected.is_none() {
+                    // Select
+                    // Mouse up in different square than the last mouse down and *not* a valid move
+                    // and not already selected
+                    cmds.insert(Selected);
                 }
             }
         }
