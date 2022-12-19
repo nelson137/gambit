@@ -10,15 +10,10 @@ use crate::{
         COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
         Z_TILE,
     },
-    WIN_HEIGHT, WIN_WIDTH,
 };
 
-pub fn resize_window(mut windows: ResMut<Windows>) {
-    windows.primary_mut().set_resolution(WIN_WIDTH, WIN_HEIGHT);
-}
-
 pub fn setup_camera(mut commands: Commands) {
-    commands.spawn_bundle(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
+    commands.spawn(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
 }
 
 pub fn setup_board(
@@ -26,7 +21,7 @@ pub fn setup_board(
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
 ) {
-    commands.spawn_bundle(SpatialBundle::default()).insert(UiBoard).with_children(|parent| {
+    commands.spawn(SpatialBundle::default()).insert(UiBoard).with_children(|parent| {
         let font = asset_server.load("fonts/FiraMono-Medium.ttf");
         let move_hint_texture = asset_server.load("hints/move.png");
         let capture_hint_texture = asset_server.load("hints/capture.png");
@@ -39,7 +34,7 @@ pub fn setup_board(
 
             // Tile
             let file_rank_sum = rank.to_index() + file.to_index();
-            let mut tile = parent.spawn_bundle(SpriteBundle {
+            let mut tile = parent.spawn(SpriteBundle {
                 sprite: Sprite {
                     color: if file_rank_sum % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE },
                     custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
@@ -60,7 +55,7 @@ pub fn setup_board(
                     font: font.clone(),
                 };
                 tile.with_children(|cmds| {
-                    cmds.spawn_bundle(Text2dBundle {
+                    cmds.spawn(Text2dBundle {
                         text: Text::from_section(ui_square.file_char(), style)
                             .with_alignment(TextAlignment::CENTER),
                         transform: Transform::from_translation(Vec3::from_slice(&[
@@ -81,7 +76,7 @@ pub fn setup_board(
                     font: font.clone(),
                 };
                 tile.with_children(|cmds| {
-                    cmds.spawn_bundle(Text2dBundle {
+                    cmds.spawn(Text2dBundle {
                         text: Text::from_section(ui_square.rank_char(), style)
                             .with_alignment(TextAlignment::CENTER),
                         transform: Transform::from_translation(Vec3::new(
@@ -96,7 +91,7 @@ pub fn setup_board(
 
             // Highlight tile
             parent
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     sprite: Sprite {
                         color: COLOR_HIGHLIGHT,
                         custom_size: Some(Vec2::splat(TILE_ASSET_SIZE)),
@@ -112,7 +107,7 @@ pub fn setup_board(
 
             // Move hint
             let move_entity = parent
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     texture: move_hint_texture.clone(),
                     visibility: Visibility { is_visible: false },
                     transform: Transform::from_translation(Vec3::Z * Z_MOVE_HINT),
@@ -123,7 +118,7 @@ pub fn setup_board(
 
             // Capture hint
             let capture_entity = parent
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     texture: capture_hint_texture.clone(),
                     visibility: Visibility { is_visible: false },
                     transform: Transform::from_translation(Vec3::Z * Z_MOVE_HINT),
@@ -148,7 +143,7 @@ pub fn setup_board(
         for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
             let square = Square::make_square(rank, file);
             let entity = parent
-                .spawn_bundle(SpriteBundle {
+                .spawn(SpriteBundle {
                     texture: asset_server.load(path),
                     transform: Transform::from_translation(Vec3::Z * Z_PIECE),
                     ..default()

@@ -43,7 +43,7 @@ pub const BOARD_FILE_TEXT_OFFSET_Y: f32 = -BOARD_FILE_TEXT_OFFSET_X;
 pub const BOARD_RANK_TEXT_OFFSET_X: f32 = -BOARD_RANK_TEXT_OFFSET_Y;
 pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
 
-#[derive(Default, Deref, DerefMut)]
+#[derive(Default, Deref, DerefMut, Resource)]
 pub struct ShowingMovesFor(pub Option<Square>);
 
 #[derive(Component)]
@@ -82,6 +82,7 @@ pub struct MoveHints {
     pub entity_capture: Entity,
 }
 
+#[derive(Resource)]
 pub struct BoardState {
     pub pieces: HashMap<Square, BoardPiece>,
     pub move_hints: HashMap<Square, MoveHints>,
