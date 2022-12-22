@@ -66,9 +66,11 @@ fn event_handler(
         match selection_state.current() {
             SelectionState::Unselected => match *event {
                 SelectionEvent::MouseDown(square) => {
-                    selection_state
-                        .set(SelectionState::SelectingDragging(square))
-                        .expect("failed to set SelectingDragging");
+                    if board_state.pieces.get(&square).is_some() {
+                        selection_state
+                            .set(SelectionState::SelectingDragging(square))
+                            .expect("failed to set SelectingDragging");
+                    }
                 }
                 SelectionEvent::MouseUp(_) => (),
             },
