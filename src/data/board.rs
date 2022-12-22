@@ -55,12 +55,21 @@ pub struct ShowHint;
 pub struct HideHint;
 
 #[derive(Component)]
-pub struct UiPiece;
+pub struct UiPiece {
+    pub color: PieceColor,
+    pub typ: PieceType,
+}
 
-#[derive(Clone, Copy, Component, PartialEq, Eq, Debug, Deref, DerefMut)]
+impl UiPiece {
+    pub fn new(color: PieceColor, typ: PieceType) -> Self {
+        Self { color, typ }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Deref, DerefMut)]
 pub struct PieceColor(pub chess::Color);
 
-#[derive(Clone, Copy, Component, Debug, PartialEq, Eq, Deref, DerefMut)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
 
 #[derive(Debug)]

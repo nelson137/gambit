@@ -5,8 +5,8 @@ use crate::{
     assets::TILE_ASSET_SIZE,
     data::{
         BoardState, DoMove, DoUnselect, Dragging, Dropped, HideHint, HighlightTile, Hover,
-        Hoverable, MainCamera, MouseSquare, MouseWorldPosition, PieceColor, PieceType, Selected,
-        ShowHint, ShowingMovesFor, Tile, UiPiece, UiSquare, Z_PIECE, Z_PIECE_SELECTED,
+        Hoverable, MainCamera, MouseSquare, MouseWorldPosition, Selected, ShowHint,
+        ShowingMovesFor, Tile, UiPiece, UiSquare, Z_PIECE, Z_PIECE_SELECTED,
     },
     util::consume,
 };
@@ -229,24 +229,17 @@ pub fn piece_move(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
-    mut q_do_move: Query<(
-        Entity,
-        Option<&UiPiece>,
-        Option<&PieceType>,
-        Option<&PieceColor>,
-        &mut UiSquare,
-        &DoMove,
-    )>,
+    mut q_do_move: Query<(Entity, Option<&UiPiece>, &mut UiSquare, &DoMove)>,
 ) {
     // Finish select
-    for (entity, piece, typ, color, mut square, do_move) in &mut q_do_move {
+    for (entity, piece, mut square, do_move) in &mut q_do_move {
         commands.entity(entity).remove::<DoMove>();
         let dest: Square = **do_move;
 
-        if piece.is_some() {
-            if **typ.unwrap() == chess::Piece::King {
+        if let Some(piece) = piece {
+            if *piece.typ == chess::Piece::King {
                 let castle_rights = board_state.move_gen_board.my_castle_rights();
-                let back_rank = color.unwrap().to_my_backrank();
+                let back_rank = piece.color.to_my_backrank();
                 let kingside_sq = Square::make_square(back_rank, File::G);
                 let queenside_sq = Square::make_square(back_rank, File::C);
                 if castle_rights.has_kingside() && dest == kingside_sq {

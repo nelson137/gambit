@@ -148,9 +148,7 @@ pub fn setup_board(
                     transform: Transform::from_translation(Vec3::Z * Z_PIECE),
                     ..default()
                 })
-                .insert(UiPiece)
-                .insert(color)
-                .insert(typ)
+                .insert(UiPiece::new(color, typ))
                 .insert(UiSquare::new(square))
                 .insert(Hoverable)
                 .id();
