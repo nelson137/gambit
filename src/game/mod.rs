@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use chess::{File, Square};
 
 use crate::data::{
-    BoardState, DoMove, Dragging, Dropped, HideHighlight, HideHint, ShowHighlight, ShowHint,
-    ShowingMovesFor, UiPiece, UiSquare,
+    BoardState, DoMove, DoUpdatePieceSquare, Dragging, Dropped, HideHighlight, HideHint,
+    ShowHighlight, ShowHint, ShowingMovesFor, UiPiece, UiSquare,
 };
 
 pub mod mouse;
@@ -52,7 +52,8 @@ impl Plugin for GameLogicPlugin {
             .add_system(show_highlight)
             .add_system(hide_hints)
             .add_system(show_hints)
-            .add_system(move_piece);
+            .add_system(move_piece)
+            .add_system(update_piece_square);
     }
 }
 
@@ -162,7 +163,7 @@ fn on_enter(
         SelectionState::DoMove(from_sq, to_sq) => {
             // Drop piece & start move
             let piece = board_state.pieces.get(from_sq).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert((Dropped, DoMove::new(*to_sq)));
+            commands.entity(piece).insert((Dropped, DoMove(*to_sq)));
             // Hide highlight tile
             let hl_tile =
                 *board_state.highlights.get(from_sq).expect("failed to get highlight tile entity");
@@ -241,10 +242,12 @@ fn hide_hints(
 fn move_piece(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
-    mut q_move: Query<(Entity, &UiPiece, &mut UiSquare, &DoMove), Added<DoMove>>,
+    mut q_move: Query<(Entity, &UiPiece, &UiSquare, &DoMove), Added<DoMove>>,
 ) {
-    for (entity, piece, mut square, do_move) in &mut q_move {
-        commands.entity(entity).remove::<DoMove>();
+    for (entity, piece, square, do_move) in &mut q_move {
+        let mut cmds = commands.entity(entity);
+        cmds.remove::<DoMove>();
+
         let dest = **do_move;
 
         if *piece.typ == chess::Piece::King {
@@ -252,33 +255,36 @@ fn move_piece(
             let back_rank = piece.color.to_my_backrank();
             let kingside_sq = Square::make_square(back_rank, File::G);
             let queenside_sq = Square::make_square(back_rank, File::C);
+
+            // Move king
+            board_state.move_piece(**square, dest);
+            cmds.insert(DoUpdatePieceSquare(dest));
+
+            // Move rook
             if castle_rights.has_kingside() && dest == kingside_sq {
-                // Move king
-                if do_move.update_state {
-                    board_state.move_piece(**square, dest);
-                }
-                square.move_to(dest);
-                // Move rook
                 let rook = board_state
                     .pieces
                     .get(&Square::make_square(back_rank, File::H))
                     .expect("castle is valid but the kingside rook is not on its starting square");
-                commands.entity(rook.entity).insert(DoMove::with_update_state(
-                    Square::make_square(back_rank, File::F),
-                    false,
-                ));
+                commands
+                    .entity(rook.entity)
+                    .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::F)));
             } else if castle_rights.has_queenside() && dest == queenside_sq {
-                // Move king
-                if do_move.update_state {
-                    board_state.move_piece(**square, dest);
-                }
-                square.move_to(dest);
+                warn!("TODO: move rook"); // TODO
             }
         } else {
-            if do_move.update_state {
-                board_state.move_piece(**square, dest);
-            }
-            square.move_to(dest);
+            board_state.move_piece(**square, dest);
+            cmds.insert(DoUpdatePieceSquare(dest));
         }
+    }
+}
+
+fn update_piece_square(
+    mut commands: Commands,
+    mut q_update: Query<(Entity, &mut UiSquare, &DoUpdatePieceSquare), Added<DoUpdatePieceSquare>>,
+) {
+    for (entity, mut square, update) in &mut q_update {
+        commands.entity(entity).remove::<DoUpdatePieceSquare>();
+        square.move_to(**update);
     }
 }

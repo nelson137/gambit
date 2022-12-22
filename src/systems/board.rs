@@ -3,7 +3,7 @@ use chess::Square;
 
 use crate::{
     assets::PIECE_ASSET_SIZE,
-    data::{DoMove, Dragging, UiSquare},
+    data::{DoMove, DoUpdatePieceSquare, Dragging, UiSquare},
 };
 
 fn square_to_coords(square: Square, transl: &mut Vec3, win_size: f32) {
@@ -18,7 +18,10 @@ fn square_to_coords(square: Square, transl: &mut Vec3, win_size: f32) {
 
 pub fn update_translation_for_square(
     windows: Res<Windows>,
-    mut squares: Query<(&UiSquare, &mut Transform), (Without<Dragging>, Without<DoMove>)>,
+    mut squares: Query<
+        (&UiSquare, &mut Transform),
+        (Without<Dragging>, Without<DoMove>, Without<DoUpdatePieceSquare>),
+    >,
 ) {
     let win = if let Some(w) = windows.get_primary() { w } else { return };
     let win_size = win.width().min(win.height());
