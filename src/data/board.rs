@@ -85,6 +85,14 @@ impl BoardPiece {
     }
 }
 
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct ShowHighlight;
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct HideHighlight;
+
 #[derive(Debug)]
 pub struct MoveHints {
     pub entity_move: Entity,
@@ -94,6 +102,7 @@ pub struct MoveHints {
 #[derive(Resource)]
 pub struct BoardState {
     pub pieces: HashMap<Square, BoardPiece>,
+    pub highlights: HashMap<Square, Entity>,
     pub move_hints: HashMap<Square, MoveHints>,
     pub move_gen_board: Board,
     last_shown_hints: Vec<Entity>,
@@ -103,6 +112,7 @@ impl Default for BoardState {
     fn default() -> Self {
         Self {
             pieces: HashMap::with_capacity(32),
+            highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             move_gen_board: Board::default(),
             last_shown_hints: Vec::with_capacity(27),

@@ -4,11 +4,10 @@ use chess::{File, Rank, Square};
 use crate::{
     assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
-        BoardPiece, BoardState, HighlightTile, Hoverable, MainCamera, MoveHints, Tile, UiBoard,
-        UiPiece, UiSquare, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y,
-        BOARD_RANK_TEXT_OFFSET_X, BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK,
-        COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
-        Z_TILE,
+        BoardPiece, BoardState, HighlightTile, MainCamera, MoveHints, Tile, UiBoard, UiPiece,
+        UiSquare, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
+        BOARD_RANK_TEXT_OFFSET_Y, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
+        Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
     },
 };
 
@@ -90,7 +89,7 @@ pub fn setup_board(
             }
 
             // Highlight tile
-            parent
+            let hl_tile = parent
                 .spawn(SpriteBundle {
                     sprite: Sprite {
                         color: COLOR_HIGHLIGHT,
@@ -103,7 +102,11 @@ pub fn setup_board(
                 })
                 .insert(HighlightTile)
                 .insert(ui_square)
-                .insert(Hoverable);
+                .id();
+            assert!(
+                board_state.highlights.insert(square, hl_tile).is_none(),
+                "Failed to insert highlight tile into state: tile already at this square"
+            );
 
             // Move hint
             let move_entity = parent
@@ -150,7 +153,6 @@ pub fn setup_board(
                 })
                 .insert(UiPiece::new(color, typ))
                 .insert(UiSquare::new(square))
-                .insert(Hoverable)
                 .id();
             assert!(
                 board_state.pieces.insert(square, BoardPiece::new(entity, color, typ)).is_none(),

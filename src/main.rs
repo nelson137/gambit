@@ -4,15 +4,15 @@ use bevy::{audio::AudioPlugin, prelude::*};
 
 mod assets;
 mod data;
+mod game;
 mod systems;
-mod util;
 mod window;
 
-use data::{BoardState, MouseSquare, MouseWorldPosition, ShowingMovesFor, COLOR_BG};
+use data::{BoardState, MouseSquare, MouseWorldPosition, COLOR_BG};
+use game::GameLogicPlugin;
 use systems::{
-    click_handler, hints_hide, hints_show, mouse_hover, mouse_screen_position_to_world,
-    mouse_world_position_to_square, piece_drag_and_drop, piece_move, selections, setup_board,
-    setup_camera, update_translation_for_square,
+    mouse_screen_position_to_world, mouse_world_position_to_square, setup_board, setup_camera,
+    update_translation_for_square,
 };
 use window::{WIN_HEIGHT, WIN_WIDTH};
 
@@ -34,12 +34,12 @@ fn main() {
                 })
                 .disable::<AudioPlugin>(),
         )
+        .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         .init_resource::<BoardState>()
         .init_resource::<MouseWorldPosition>()
         .init_resource::<MouseSquare>()
-        .init_resource::<ShowingMovesFor>()
         // Startup Systems
         .add_startup_system(setup_camera)
         .add_startup_system(setup_board)
@@ -48,19 +48,12 @@ fn main() {
             CoreStage::PreUpdate,
             SystemSet::new()
                 .with_system(mouse_screen_position_to_world)
-                .with_system(mouse_world_position_to_square.after(mouse_screen_position_to_world))
-                .with_system(mouse_hover.after(mouse_world_position_to_square)),
+                .with_system(mouse_world_position_to_square.after(mouse_screen_position_to_world)),
         )
         .add_system_set_to_stage(
             CoreStage::PostUpdate,
             SystemSet::new().with_system(update_translation_for_square),
         )
-        .add_system(click_handler)
-        .add_system(selections.after(click_handler))
-        .add_system(piece_drag_and_drop.after(click_handler))
-        .add_system(piece_move.after(piece_drag_and_drop))
-        .add_system(hints_hide.after(click_handler))
-        .add_system(hints_show.after(hints_hide))
         // Run
         .run();
 }
