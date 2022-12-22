@@ -147,11 +147,7 @@ pub fn setup_board(
             .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
         for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
             let square = Square::make_square(rank, file);
-            assert!(
-                board_state.pieces.insert(square, BoardPiece::new(color, typ)).is_none(),
-                "Failed to insert board piece into state: piece already at this square"
-            );
-            parent
+            let entity = parent
                 .spawn_bundle(SpriteBundle {
                     texture: asset_server.load(path),
                     transform: Transform::from_translation(Vec3::Z * Z_PIECE),
@@ -161,7 +157,12 @@ pub fn setup_board(
                 .insert(color)
                 .insert(typ)
                 .insert(UiSquare::new(square))
-                .insert(Hoverable);
+                .insert(Hoverable)
+                .id();
+            assert!(
+                board_state.pieces.insert(square, BoardPiece::new(entity, color, typ)).is_none(),
+                "Failed to insert board piece into state: piece already at this square"
+            );
         }
     });
 }

@@ -65,13 +65,14 @@ pub struct PieceType(pub Piece);
 
 #[derive(Debug)]
 pub struct BoardPiece {
+    pub entity: Entity,
     pub color: PieceColor,
     pub typ: PieceType,
 }
 
 impl BoardPiece {
-    pub fn new(color: PieceColor, typ: PieceType) -> Self {
-        Self { color, typ }
+    pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
+        Self { entity, color, typ }
     }
 }
 
