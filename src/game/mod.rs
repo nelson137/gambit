@@ -277,7 +277,13 @@ fn move_piece(
                     .entity(rook.entity)
                     .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::F)));
             } else if castle_rights.has_queenside() && dest == queenside_sq {
-                warn!("TODO: move rook"); // TODO
+                let rook = board_state
+                    .pieces
+                    .get(&Square::make_square(back_rank, File::A))
+                    .expect("castle is valid but the queenside rook is not on its starting square");
+                commands
+                    .entity(rook.entity)
+                    .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::D)));
             }
         } else {
             captured = board_state.move_piece(**square, dest);
