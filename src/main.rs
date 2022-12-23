@@ -9,7 +9,7 @@ mod systems;
 mod window;
 
 use data::{BoardState, COLOR_BG};
-use game::GameLogicPlugin;
+use game::{capture::CaptureState, GameLogicPlugin};
 use systems::{setup_board, setup_camera, update_translation_for_square, MousePositionPlugin};
 use window::{WIN_HEIGHT, WIN_WIDTH};
 
@@ -36,6 +36,7 @@ fn main() {
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         .init_resource::<BoardState>()
+        .init_resource::<CaptureState>()
         // Startup Systems
         .add_startup_system(setup_camera)
         .add_startup_system(setup_board)

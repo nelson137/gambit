@@ -6,10 +6,12 @@ use crate::data::{
     ShowHighlight, ShowHint, ShowingMovesFor, UiPiece, UiSquare,
 };
 
+pub mod capture;
 pub mod mouse;
 pub mod selection;
 
 use self::{
+    capture::{capture_piece, Captured},
     mouse::{end_drag, mouse_handler, start_drag},
     selection::{SelectionEvent, SelectionState},
 };
@@ -53,7 +55,8 @@ impl Plugin for GameLogicPlugin {
             .add_system(hide_hints)
             .add_system(show_hints)
             .add_system(move_piece)
-            .add_system(update_piece_square);
+            .add_system(update_piece_square)
+            .add_system(capture_piece);
     }
 }
 
@@ -246,6 +249,8 @@ fn move_piece(
     mut board_state: ResMut<BoardState>,
     mut q_move: Query<(Entity, &UiPiece, &UiSquare, &DoMove), Added<DoMove>>,
 ) {
+    let mut captured;
+
     for (entity, piece, square, do_move) in &mut q_move {
         let mut cmds = commands.entity(entity);
         cmds.remove::<DoMove>();
@@ -259,7 +264,7 @@ fn move_piece(
             let queenside_sq = Square::make_square(back_rank, File::C);
 
             // Move king
-            board_state.move_piece(**square, dest);
+            captured = board_state.move_piece(**square, dest);
             cmds.insert(DoUpdatePieceSquare(dest));
 
             // Move rook
@@ -275,8 +280,12 @@ fn move_piece(
                 warn!("TODO: move rook"); // TODO
             }
         } else {
-            board_state.move_piece(**square, dest);
+            captured = board_state.move_piece(**square, dest);
             cmds.insert(DoUpdatePieceSquare(dest));
+        }
+
+        if let Some(piece) = captured {
+            commands.entity(piece.entity).insert(Captured(piece));
         }
     }
 }

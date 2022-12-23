@@ -72,7 +72,7 @@ pub struct PieceColor(pub chess::Color);
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct BoardPiece {
     pub entity: Entity,
     pub color: PieceColor,
@@ -172,22 +172,25 @@ impl BoardState {
         move_gen.any(|m| m.get_source() == source)
     }
 
-    pub fn move_piece(&mut self, from: Square, to: Square) {
+    pub fn move_piece(&mut self, from: Square, to: Square) -> Option<BoardPiece> {
+        self.move_gen_board = self.move_gen_board.make_move_new(ChessMove::new(from, to, None));
         let (_old_square, piece) = self
             .pieces
             .remove_entry(&from)
             .expect("Failed to move board state piece: no piece found at source square");
         match self.pieces.entry(to) {
-            Entry::Occupied(entry) => {
-                panic!(
-                    "Failed to move board state piece: piece already at destination square {}",
-                    entry.key()
-                )
+            // Capture
+            Entry::Occupied(mut entry) => {
+                let value = entry.get_mut();
+                let old_piece = *value;
+                *value = piece;
+                Some(old_piece)
             }
+            // Move
             Entry::Vacant(entry) => {
                 entry.insert(piece);
+                None
             }
         }
-        self.move_gen_board = self.move_gen_board.make_move_new(ChessMove::new(from, to, None));
     }
 }
