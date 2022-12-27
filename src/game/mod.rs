@@ -6,12 +6,12 @@ use crate::data::{
     ShowHighlight, ShowHint, ShowingMovesFor, UiPiece, UiSquare,
 };
 
-pub mod capture;
+pub mod captures;
 pub mod mouse;
 pub mod selection;
 
 use self::{
-    capture::{capture_piece, Captured},
+    captures::{capture_piece, Captured},
     mouse::{end_drag, mouse_handler, start_drag},
     selection::{SelectionEvent, SelectionState},
 };

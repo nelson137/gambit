@@ -6,11 +6,16 @@ mod assets;
 mod data;
 mod game;
 mod systems;
+mod utils;
 mod window;
 
 use data::{BoardState, COLOR_BG};
-use game::{capture::CaptureState, GameLogicPlugin};
-use systems::{setup_board, setup_camera, update_translation_for_square, MousePositionPlugin};
+use game::{captures::CaptureState, GameLogicPlugin};
+use systems::{
+    setup_camera, spawn_board, spawn_tiles_hints_pieces, update_translation_for_square,
+    MousePositionPlugin, SpawnStage,
+};
+use utils::AppPushOrderedStartupStages;
 use window::{WIN_HEIGHT, WIN_WIDTH};
 
 fn main() {
@@ -39,7 +44,10 @@ fn main() {
         .init_resource::<CaptureState>()
         // Startup Systems
         .add_startup_system(setup_camera)
-        .add_startup_system(setup_board)
+        .push_ordered_startup_stages([
+            (SpawnStage::Board, SystemStage::single(spawn_board)),
+            (SpawnStage::TilesHintsPieces, SystemStage::single(spawn_tiles_hints_pieces)),
+        ])
         // Systems
         .add_system_set_to_stage(
             CoreStage::PostUpdate,

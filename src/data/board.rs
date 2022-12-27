@@ -95,8 +95,8 @@ pub struct HideHighlight;
 
 #[derive(Debug)]
 pub struct MoveHints {
-    pub entity_move: Entity,
-    pub entity_capture: Entity,
+    pub move_entity: Entity,
+    pub capture_entity: Entity,
 }
 
 #[derive(Resource)]
@@ -142,7 +142,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.get_hints(r#move.get_dest()).entity_capture;
+            let entity = self.get_hints(r#move.get_dest()).capture_entity;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
@@ -152,7 +152,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.get_hints(r#move.get_dest()).entity_move;
+            let entity = self.get_hints(r#move.get_dest()).move_entity;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
