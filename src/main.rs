@@ -9,14 +9,16 @@ mod systems;
 mod utils;
 mod window;
 
-use data::{BoardState, COLOR_BG};
-use game::{captures::CaptureState, GameLogicPlugin};
-use systems::{
-    setup_camera, spawn_board, spawn_tiles_hints_pieces, update_translation_for_square,
-    MousePositionPlugin, SpawnStage,
+use self::{
+    data::{BoardState, COLOR_BG},
+    game::{captures::CaptureState, GameLogicPlugin},
+    systems::{
+        setup_camera, spawn_board, spawn_tiles_hints_pieces, update_translation_for_square,
+        MousePositionPlugin, SpawnStage,
+    },
+    utils::AppPushOrderedStartupStages,
+    window::{WIN_HEIGHT, WIN_WIDTH},
 };
-use utils::AppPushOrderedStartupStages;
-use window::{WIN_HEIGHT, WIN_WIDTH};
 
 fn main() {
     App::new()
