@@ -13,15 +13,7 @@ pub struct Selected;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-pub struct Dragging {
-    pub mouse_down_square: Square,
-}
-
-impl Dragging {
-    pub fn new(mouse_down_square: Square) -> Self {
-        Self { mouse_down_square }
-    }
-}
+pub struct Dragging;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]

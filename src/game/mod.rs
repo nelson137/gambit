@@ -135,7 +135,7 @@ fn on_enter(
         SelectionState::SelectingDragging(square) => {
             // Start piece drag
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dragging::new(*square));
+            commands.entity(piece).insert(Dragging);
             // Show highlight tile
             let hl_tile =
                 *board_state.highlights.get(square).expect("failed to get highlight tile entity");
@@ -154,7 +154,7 @@ fn on_enter(
         SelectionState::SelectedDragging(square) => {
             // Start piece drag
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dragging::new(*square));
+            commands.entity(piece).insert(Dragging);
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Drop piece & start move
