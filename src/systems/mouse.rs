@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-    assets::TILE_ASSET_SIZE,
-    data::{Dragging, MainCamera, MouseSquare, MouseWorldPosition, Tile, UiPiece, UiSquare},
-};
+use crate::data::{Dragging, MainCamera, MouseSquare, MouseWorldPosition, Tile, UiPiece, UiSquare};
 
 pub struct MousePositionPlugin;
 
@@ -34,8 +31,8 @@ fn mouse_screen_position_to_world(
 
         let window_size = Vec2::new(win.width(), win.height());
 
-        // Convert mouse position on screen [0..resolution] to ndc [-1..1] (gpu coordinates)
-        let ndc = 2.0 * (screen_pos / window_size) - Vec2::ONE;
+        // Convert mouse position on screen [0..resolution] to ndc [0..2] (gpu coordinates)
+        let ndc = 2.0 * (Vec2::new(0.0, 1.0) - (screen_pos / window_size)).abs();
 
         // Matrix for undoing the projection and camera transform
         let ndc_to_world = camera_transf.compute_matrix() * camera.projection_matrix().inverse();
@@ -55,16 +52,16 @@ fn mouse_screen_position_to_world(
 fn mouse_world_position_to_square(
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_square: ResMut<MouseSquare>,
-    q_tiles: Query<(&UiSquare, &Transform), With<Tile>>,
+    q_tiles: Query<(&UiSquare, &GlobalTransform, &Node), With<Tile>>,
 ) {
     let mouse_pos = mouse_world_pos.extend(0.0);
 
-    for (square, transf) in &q_tiles {
+    for (square, global_transf, node) in &q_tiles {
         let collision = bevy::sprite::collide_aabb::collide(
             mouse_pos,
             Vec2::ZERO,
-            transf.translation, // The z component doesn't matter, it is truncated away
-            Vec2::splat(TILE_ASSET_SIZE) * transf.scale.truncate(),
+            global_transf.translation(), // The z component doesn't matter, it is truncated away
+            node.size(),
         );
         if collision.is_some() {
             **mouse_square = Some(**square);
