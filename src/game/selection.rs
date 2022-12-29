@@ -47,6 +47,14 @@ impl PartialEq for SelectionState {
     }
 }
 
+impl SelectionState {
+    pub const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
+    pub const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
+    pub const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
+    pub const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
+    pub const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
+}
+
 pub enum SelectionEvent {
     MouseDown(Square),
     MouseUp(Square),

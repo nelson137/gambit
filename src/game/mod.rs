@@ -31,23 +31,14 @@ impl Plugin for GameLogicPlugin {
             .add_system(mouse_handler)
             .add_system(event_handler.at_end())
             .add_system_set(
-                SystemSet::on_enter(SelectionState::SelectingDragging(default()))
-                    .with_system(on_enter),
+                SystemSet::on_enter(SelectionState::SELECTING_DRAGGING).with_system(on_enter),
             )
+            .add_system_set(SystemSet::on_enter(SelectionState::SELECTED).with_system(on_enter))
             .add_system_set(
-                SystemSet::on_enter(SelectionState::Selected(default())).with_system(on_enter),
+                SystemSet::on_enter(SelectionState::SELECTED_DRAGGING).with_system(on_enter),
             )
-            .add_system_set(
-                SystemSet::on_enter(SelectionState::SelectedDragging(default()))
-                    .with_system(on_enter),
-            )
-            .add_system_set(
-                SystemSet::on_enter(SelectionState::DoMove(default(), default()))
-                    .with_system(on_enter),
-            )
-            .add_system_set(
-                SystemSet::on_enter(SelectionState::DoUnselect(default())).with_system(on_enter),
-            )
+            .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
+            .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
             .add_system(start_drag)
             .add_system(end_drag)
             .add_system(hide_highlight)
