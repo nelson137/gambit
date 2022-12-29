@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use chess::{File, Rank, Square};
 
 use crate::{
-    assets::{PIECE_ASSET_COORDS, PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
+    assets::{PIECE_ASSET_PATHS, PIECE_COLORS_TYPES, TILE_ASSET_SIZE},
     data::{
         BoardPiece, BoardState, HighlightTile, MainCamera, MoveHints, Tile, UiBoard, UiPiece,
         UiSquare, BOARD_FILE_TEXT_OFFSET_X, BOARD_FILE_TEXT_OFFSET_Y, BOARD_RANK_TEXT_OFFSET_X,
@@ -161,9 +161,8 @@ pub fn spawn_tiles_hints_pieces(
         .iter()
         .copied()
         .flatten()
-        .zip(PIECE_ASSET_COORDS.iter().copied().flatten())
         .zip(PIECE_COLORS_TYPES.iter().copied().flatten());
-    for ((&path, &(rank, file)), &(color, typ)) in pice_paths_and_coords {
+    for (&path, (rank, file, color, typ)) in pice_paths_and_coords {
         let square = Square::make_square(rank, file);
         let entity = commands
             .spawn(SpriteBundle {
