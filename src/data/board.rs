@@ -4,6 +4,9 @@ use bevy::prelude::*;
 use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
 
 #[derive(Component)]
+pub struct Ui;
+
+#[derive(Component)]
 pub struct UiBoard;
 
 /// The color used to highlight tiles.
@@ -33,15 +36,7 @@ pub const COLOR_WHITE: Color = Color::rgb(
     0xd2 as f32 / u8::MAX as f32,
 );
 
-pub const BOARD_TEXT_FONT_SIZE: f32 = 28.0;
-
-const _BOARD_LOCATION_TEXT_OFFSET: f32 = 60.0;
-
-pub const BOARD_FILE_TEXT_OFFSET_X: f32 = _BOARD_LOCATION_TEXT_OFFSET;
-pub const BOARD_FILE_TEXT_OFFSET_Y: f32 = -BOARD_FILE_TEXT_OFFSET_X;
-
-pub const BOARD_RANK_TEXT_OFFSET_X: f32 = -BOARD_RANK_TEXT_OFFSET_Y;
-pub const BOARD_RANK_TEXT_OFFSET_Y: f32 = _BOARD_LOCATION_TEXT_OFFSET;
+pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 
 #[derive(Default, Deref, DerefMut, Resource)]
 pub struct ShowingMovesFor(pub Option<Square>);

@@ -13,8 +13,8 @@ use self::{
     data::{BoardState, COLOR_BG},
     game::{captures::CaptureState, GameLogicPlugin},
     systems::{
-        setup_camera, spawn_board, spawn_tiles_hints_pieces, update_translation_for_square,
-        MousePositionPlugin, SpawnStage,
+        setup_camera, spawn_board, spawn_tiles_hints_pieces, spawn_ui,
+        update_translation_for_square, MousePositionPlugin, SpawnStage,
     },
     utils::AppPushOrderedStartupStages,
     window::{WIN_HEIGHT, WIN_WIDTH},
@@ -39,7 +39,7 @@ fn main() {
                 .disable::<AudioPlugin>(),
         )
         .add_plugin(MousePositionPlugin)
-        .add_plugin(GameLogicPlugin)
+        // .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         .init_resource::<BoardState>()
@@ -47,14 +47,15 @@ fn main() {
         // Startup Systems
         .add_startup_system(setup_camera)
         .push_ordered_startup_stages([
+            (SpawnStage::Ui, SystemStage::single(spawn_ui)),
             (SpawnStage::Board, SystemStage::single(spawn_board)),
             (SpawnStage::TilesHintsPieces, SystemStage::single(spawn_tiles_hints_pieces)),
         ])
         // Systems
-        .add_system_set_to_stage(
-            CoreStage::PostUpdate,
-            SystemSet::new().with_system(update_translation_for_square),
-        )
+        // .add_system_set_to_stage(
+        //     CoreStage::PostUpdate,
+        //     SystemSet::new().with_system(update_translation_for_square),
+        // )
         // Run
         .run();
 }

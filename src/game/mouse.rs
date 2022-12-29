@@ -24,7 +24,7 @@ pub fn mouse_handler(
 
 pub fn start_drag(mut q_added_dragging: Query<&mut Transform, Added<Dragging>>) {
     for mut transf in &mut q_added_dragging {
-        transf.translation.z = Z_PIECE_SELECTED;
+        // transf.translation.z = Z_PIECE_SELECTED;
     }
 }
 
@@ -34,6 +34,6 @@ pub fn end_drag(
 ) {
     for (entity, mut transf) in &mut q_added_dragging {
         commands.entity(entity).remove::<(Dragging, Dropped)>();
-        transf.translation.z = Z_PIECE;
+        // transf.translation.z = Z_PIECE;
     }
 }
