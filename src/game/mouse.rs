@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::data::{Dragging, Dropped, MouseSquare, Z_PIECE, Z_PIECE_SELECTED};
+use crate::data::{DragContainer, MouseSquare, MouseWorldPosition, Tile};
 
 use super::selection::SelectionEvent;
 
@@ -22,18 +22,15 @@ pub fn mouse_handler(
     }
 }
 
-pub fn start_drag(mut q_added_dragging: Query<&mut Transform, Added<Dragging>>) {
-    for mut transf in &mut q_added_dragging {
-        // transf.translation.z = Z_PIECE_SELECTED;
-    }
-}
-
-pub fn end_drag(
-    mut commands: Commands,
-    mut q_added_dragging: Query<(Entity, &mut Transform), Added<Dropped>>,
+pub fn update_drag_container(
+    mouse_world_pos: Res<MouseWorldPosition>,
+    q_tiles: Query<&Node, With<Tile>>,
+    mut q_container: Query<&mut Style, With<DragContainer>>,
 ) {
-    for (entity, mut transf) in &mut q_added_dragging {
-        commands.entity(entity).remove::<(Dragging, Dropped)>();
-        // transf.translation.z = Z_PIECE;
-    }
+    let Vec2 { x: width, y: height } = q_tiles.iter().next().unwrap().size();
+    let mut style = q_container.single_mut();
+    style.size.width = Val::Px(width);
+    style.size.height = Val::Px(height);
+    style.position.top = Val::Px(mouse_world_pos.y - height / 2.0);
+    style.position.left = Val::Px(mouse_world_pos.x - width / 2.0);
 }

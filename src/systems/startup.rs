@@ -4,9 +4,10 @@ use chess::{File, Rank};
 use crate::{
     assets::SquareStartingPieceInfo,
     data::{
-        BoardPiece, BoardState, HighlightTile, MainCamera, MoveHints, PieceColor, PieceType, Tile,
-        Ui, UiBoard, UiPiece, UiSquare, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT,
-        COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_TILE,
+        BoardPiece, BoardState, DragContainer, HighlightTile, MainCamera, MoveHints, PieceColor,
+        PieceType, Tile, Ui, UiBoard, UiPiece, UiSquare, BOARD_TEXT_FONT_SIZE, COLOR_BLACK,
+        COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
+        Z_PIECE_SELECTED, Z_TILE,
     },
 };
 
@@ -268,5 +269,16 @@ pub fn spawn_tiles_hints_pieces(
             })
             .id();
         commands.entity(board).add_child(tile_entity);
+        assert!(
+            board_state.tiles.insert(square, tile_entity).is_none(),
+            "Failed to insert board tile into state: tile already at this square"
+        );
     }
+}
+
+pub fn spawn_drag_container(mut commands: Commands) {
+    commands.spawn((
+        DragContainer,
+        NodeBundle { z_index: ZIndex::Global(Z_PIECE_SELECTED), ..default() },
+    ));
 }

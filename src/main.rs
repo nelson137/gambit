@@ -13,7 +13,7 @@ use self::{
     data::{BoardState, COLOR_BG},
     game::{captures::CaptureState, GameLogicPlugin},
     systems::{
-        setup_camera, spawn_board, spawn_tiles_hints_pieces, spawn_ui,
+        setup_camera, spawn_board, spawn_drag_container, spawn_tiles_hints_pieces, spawn_ui,
         update_translation_for_square, MousePositionPlugin, SpawnStage,
     },
     utils::AppPushOrderedStartupStages,
@@ -39,13 +39,14 @@ fn main() {
                 .disable::<AudioPlugin>(),
         )
         .add_plugin(MousePositionPlugin)
-        // .add_plugin(GameLogicPlugin)
+        .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         .init_resource::<BoardState>()
         .init_resource::<CaptureState>()
         // Startup Systems
         .add_startup_system(setup_camera)
+        .add_startup_system(spawn_drag_container)
         .push_ordered_startup_stages([
             (SpawnStage::Ui, SystemStage::single(spawn_ui)),
             (SpawnStage::Board, SystemStage::single(spawn_board)),

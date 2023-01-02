@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use chess::{File, Square};
 
 use crate::data::{
-    BoardState, DoMove, DoUpdatePieceSquare, Dragging, Dropped, HideHighlight, HideHint,
-    ShowHighlight, ShowHint, ShowingMovesFor, UiPiece, UiSquare,
+    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, HideHint, ShowHighlight,
+    ShowHint, ShowingMovesFor, UiPiece, UiSquare,
 };
 
 pub mod captures;
@@ -12,7 +12,7 @@ pub mod selection;
 
 use self::{
     captures::{capture_piece, Captured},
-    mouse::{end_drag, mouse_handler, start_drag},
+    mouse::{mouse_handler, update_drag_container},
     selection::{SelectionEvent, SelectionState},
 };
 
@@ -39,8 +39,7 @@ impl Plugin for GameLogicPlugin {
             )
             .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
-            .add_system(start_drag)
-            .add_system(end_drag)
+            .add_system(update_drag_container)
             .add_system(hide_highlight)
             .add_system(show_highlight)
             .add_system(hide_hints)
@@ -129,13 +128,14 @@ fn on_enter(
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
+    q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
     match selection_state.current() {
         SelectionState::Unselected => (),
         SelectionState::SelectingDragging(square) => {
-            // Start piece drag
+            // Re-parent piece to drag container
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dragging);
+            commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
             let hl_tile =
                 *board_state.highlights.get(square).expect("failed to get highlight tile entity");
@@ -147,19 +147,21 @@ fn on_enter(
             }
         }
         SelectionState::Selected(square) => {
-            // Start piece drop
+            // Re-parent piece back to its tile
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dropped);
+            let tile = board_state.tiles.get(square).copied().expect("failed to get tile entity");
+            commands.entity(piece).set_parent(tile);
         }
         SelectionState::SelectedDragging(square) => {
-            // Start piece drag
+            // Re-parent piece to drag container
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dragging);
+            commands.entity(piece).set_parent(q_drag_container.single());
         }
         SelectionState::DoMove(from_sq, to_sq) => {
-            // Drop piece & start move
+            // Re-parent piece to destination tile & start move
             let piece = board_state.pieces.get(from_sq).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert((Dropped, DoMove(*to_sq)));
+            let to_tile = board_state.tiles.get(to_sq).copied().expect("failed to get tile entity");
+            commands.entity(piece).insert(DoMove(*to_sq)).set_parent(to_tile);
             // Hide highlight tile
             let hl_tile =
                 *board_state.highlights.get(from_sq).expect("failed to get highlight tile entity");
@@ -175,9 +177,10 @@ fn on_enter(
                 .expect("failed to set Unselected");
         }
         SelectionState::DoUnselect(square) => {
-            // Drop piece
+            // Re-parent piece back to its tile
             let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            commands.entity(piece).insert(Dropped);
+            let tile = board_state.tiles.get(square).copied().expect("failed to get tile entity");
+            commands.entity(piece).set_parent(tile);
             // Hide highlight tile
             let hl_tile =
                 *board_state.highlights.get(square).expect("failed to get highlight tile entity");

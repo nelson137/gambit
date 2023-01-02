@@ -96,6 +96,7 @@ pub struct MoveHints {
 
 #[derive(Resource)]
 pub struct BoardState {
+    pub tiles: HashMap<Square, Entity>,
     pub pieces: HashMap<Square, BoardPiece>,
     pub highlights: HashMap<Square, Entity>,
     pub move_hints: HashMap<Square, MoveHints>,
@@ -106,6 +107,7 @@ pub struct BoardState {
 impl Default for BoardState {
     fn default() -> Self {
         Self {
+            tiles: HashMap::with_capacity(64),
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),

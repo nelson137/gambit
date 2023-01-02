@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::data::{Dragging, MainCamera, MouseSquare, MouseWorldPosition, Tile, UiPiece, UiSquare};
+use crate::data::{MainCamera, MouseSquare, MouseWorldPosition, Tile, UiSquare};
 
 pub struct MousePositionPlugin;
 
@@ -22,7 +22,6 @@ fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
-    mut q_dragging: Query<&mut Transform, (With<Dragging>, With<UiPiece>)>,
 ) {
     let win = if let Some(w) = windows.get_primary() { w } else { return };
 
@@ -41,11 +40,6 @@ fn mouse_screen_position_to_world(
         let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
 
         **mouse_world_pos = world_pos.truncate();
-
-        for mut transf in &mut q_dragging {
-            transf.translation.x = world_pos.x;
-            transf.translation.y = world_pos.y;
-        }
     }
 }
 

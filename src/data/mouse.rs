@@ -8,6 +8,9 @@ pub struct MouseWorldPosition(pub Vec2);
 pub struct MouseSquare(pub Option<Square>);
 
 #[derive(Component)]
+pub struct DragContainer;
+
+#[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct Selected;
 
