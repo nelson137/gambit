@@ -55,6 +55,7 @@ impl SelectionState {
     pub const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
 }
 
+#[derive(Clone, Copy)]
 pub enum SelectionEvent {
     MouseDown(Square),
     MouseUp(Square),

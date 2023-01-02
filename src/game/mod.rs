@@ -55,9 +55,9 @@ fn event_handler(
     board_state: Res<BoardState>,
     mut event_reader: EventReader<SelectionEvent>,
 ) {
-    for event in event_reader.iter() {
-        match selection_state.current() {
-            SelectionState::Unselected => match *event {
+    for &event in event_reader.iter() {
+        match *selection_state.current() {
+            SelectionState::Unselected => match event {
                 SelectionEvent::MouseDown(square) => {
                     if board_state.pieces.get(&square).is_some() {
                         selection_state
@@ -67,7 +67,7 @@ fn event_handler(
                 }
                 SelectionEvent::MouseUp(_) => (),
             },
-            &SelectionState::SelectingDragging(selecting_sq) => match *event {
+            SelectionState::SelectingDragging(selecting_sq) => match event {
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if board_state.move_is_valid(selecting_sq, square) {
@@ -81,7 +81,7 @@ fn event_handler(
                     }
                 }
             },
-            &SelectionState::Selected(selected_sq) => match *event {
+            SelectionState::Selected(selected_sq) => match event {
                 SelectionEvent::MouseDown(square) => {
                     if square == selected_sq {
                         selection_state
@@ -99,7 +99,7 @@ fn event_handler(
                 }
                 SelectionEvent::MouseUp(_) => (),
             },
-            &SelectionState::SelectedDragging(selected_sq) => match *event {
+            SelectionState::SelectedDragging(selected_sq) => match event {
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if square == selected_sq {
@@ -130,41 +130,43 @@ fn on_enter(
     mut showing_piece_moves: ResMut<ShowingMovesFor>,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
-    match selection_state.current() {
+    match *selection_state.current() {
         SelectionState::Unselected => (),
         SelectionState::SelectingDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
+            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
             commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
             let hl_tile =
-                *board_state.highlights.get(square).expect("failed to get highlight tile entity");
+                *board_state.highlights.get(&square).expect("failed to get highlight tile entity");
             commands.entity(hl_tile).insert(ShowHighlight);
             // Show move hints
-            if board_state.is_colors_turn_at(*square) {
-                **showing_piece_moves = Some(*square);
-                board_state.show_piece_move_hints(&mut commands, *square);
+            if board_state.is_colors_turn_at(square) {
+                **showing_piece_moves = Some(square);
+                board_state.show_piece_move_hints(&mut commands, square);
             }
         }
         SelectionState::Selected(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            let tile = board_state.tiles.get(square).copied().expect("failed to get tile entity");
+            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
+            let tile = board_state.tiles.get(&square).copied().expect("failed to get tile entity");
             commands.entity(piece).set_parent(tile);
         }
         SelectionState::SelectedDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
+            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
             commands.entity(piece).set_parent(q_drag_container.single());
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece = board_state.pieces.get(from_sq).expect("failed to get piece entity").entity;
-            let to_tile = board_state.tiles.get(to_sq).copied().expect("failed to get tile entity");
-            commands.entity(piece).insert(DoMove(*to_sq)).set_parent(to_tile);
+            let piece =
+                board_state.pieces.get(&from_sq).expect("failed to get piece entity").entity;
+            let to_tile =
+                board_state.tiles.get(&to_sq).copied().expect("failed to get tile entity");
+            commands.entity(piece).insert(DoMove(to_sq)).set_parent(to_tile);
             // Hide highlight tile
             let hl_tile =
-                *board_state.highlights.get(from_sq).expect("failed to get highlight tile entity");
+                *board_state.highlights.get(&from_sq).expect("failed to get highlight tile entity");
             commands.entity(hl_tile).insert(HideHighlight);
             // Hide move hints
             if showing_piece_moves.is_some() {
@@ -178,12 +180,12 @@ fn on_enter(
         }
         SelectionState::DoUnselect(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.pieces.get(square).expect("failed to get piece entity").entity;
-            let tile = board_state.tiles.get(square).copied().expect("failed to get tile entity");
+            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
+            let tile = board_state.tiles.get(&square).copied().expect("failed to get tile entity");
             commands.entity(piece).set_parent(tile);
             // Hide highlight tile
             let hl_tile =
-                *board_state.highlights.get(square).expect("failed to get highlight tile entity");
+                *board_state.highlights.get(&square).expect("failed to get highlight tile entity");
             commands.entity(hl_tile).insert(HideHighlight);
             // Hide move hints
             if showing_piece_moves.is_some() {
