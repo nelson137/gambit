@@ -1,8 +1,5 @@
 use chess::{Color, Piece, Square};
 
-/// The width and height dimension of all piece asset images.
-pub const PIECE_ASSET_SIZE: f32 = 150.0;
-
 pub trait SquareStartingPieceInfo {
     fn starting_piece_info(self) -> Option<(&'static str, Color, Piece)>;
 }

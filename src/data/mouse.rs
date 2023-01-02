@@ -10,22 +10,6 @@ pub struct MouseSquare(pub Option<Square>);
 #[derive(Component)]
 pub struct DragContainer;
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct Selected;
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct Dragging;
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct Dropped;
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct DoUnselect;
-
 #[derive(Component, Deref, DerefMut)]
 #[component(storage = "SparseSet")]
 pub struct DoMove(pub Square);

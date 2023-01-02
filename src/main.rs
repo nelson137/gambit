@@ -14,7 +14,7 @@ use self::{
     game::{captures::CaptureState, GameLogicPlugin},
     systems::{
         setup_camera, spawn_board, spawn_drag_container, spawn_tiles_hints_pieces, spawn_ui,
-        update_translation_for_square, MousePositionPlugin, SpawnStage,
+        MousePositionPlugin, SpawnStage,
     },
     utils::AppPushOrderedStartupStages,
     window::{WIN_HEIGHT, WIN_WIDTH},
@@ -52,11 +52,6 @@ fn main() {
             (SpawnStage::Board, SystemStage::single(spawn_board)),
             (SpawnStage::TilesHintsPieces, SystemStage::single(spawn_tiles_hints_pieces)),
         ])
-        // Systems
-        // .add_system_set_to_stage(
-        //     CoreStage::PostUpdate,
-        //     SystemSet::new().with_system(update_translation_for_square),
-        // )
         // Run
         .run();
 }
