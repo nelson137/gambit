@@ -94,6 +94,38 @@ pub struct MoveHints {
     pub capture_entity: Entity,
 }
 
+/// The maximum possible valid moves that any piece could ever have in a game: 27.
+///
+/// This is the number of valid moves that a queen can make when on one of the four middle squares
+/// of the board (d4, e4, d5, or e5), with no other pieces blocking any of the eight rays of
+/// possible movement.
+///
+/// Below is a diagram showing one of such configurations. When a queen is on, e.g., d4, she can
+/// move to any of the squares that contain an `x`.
+///
+/// ```
+///   ┌───┬───┬───┬───┬───┬───┬───┬───┐
+/// 8 │   │   │   │ x │   │   │   │ x │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 7 │ x │   │   │ x │   │   │ x │   │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 6 │   │ x │   │ x │   │ x │   │   │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 5 │   │   │ x │ x │ x │   │   │   │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 4 │ x │ x │ x │ Q │ x │ x │ x │ x │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 3 │   │   │ x │ x │ x │   │   │   │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 2 │   │ x │   │ x │   │ x │   │   │
+///   ├───┼───┼───┼───┼───┼───┼───┼───┤
+/// 1 │ x │   │   │ x │   │   │ x │   │
+///   └───┴───┴───┴───┴───┴───┴───┴───┘
+///     a   b   c   d   e   f   g   h
+/// ```
+///
+const MAX_POSSIBLE_MOVES: usize = 27;
+
 #[derive(Resource)]
 pub struct BoardState {
     tiles: HashMap<Square, Entity>,
@@ -112,7 +144,7 @@ impl Default for BoardState {
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             board: Board::default(),
-            last_shown_hints: Vec::with_capacity(27),
+            last_shown_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
     }
 }
