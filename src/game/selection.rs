@@ -11,6 +11,7 @@ pub enum SelectionState {
     SelectingDragging(Square),
     Selected(Square),
     SelectedDragging(Square),
+    DoChangeSelection(Square, Square),
     DoMove(Square, Square),
     DoUnselect(Square),
 }
@@ -26,6 +27,9 @@ impl std::fmt::Display for SelectionState {
             SelectionState::Selected(sq) => f.write_fmt(format_args!("Selected({sq})")),
             SelectionState::SelectedDragging(sq) => {
                 f.write_fmt(format_args!("SelectedDragging({sq})"))
+            }
+            SelectionState::DoChangeSelection(from_sq, to_sq) => {
+                f.write_fmt(format_args!("DoChangeSelected({from_sq} -> {to_sq})"))
             }
             SelectionState::DoMove(from_sq, to_sq) => {
                 f.write_fmt(format_args!("DoMove({from_sq} -> {to_sq})"))
@@ -51,6 +55,8 @@ impl SelectionState {
     pub const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
     pub const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
     pub const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
+    pub const DO_CHANGE_SELECTION: SelectionState =
+        SelectionState::DoChangeSelection(Square::A1, Square::A1);
     pub const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
     pub const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
 }

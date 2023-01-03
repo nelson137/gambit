@@ -37,6 +37,9 @@ impl Plugin for GameLogicPlugin {
             .add_system_set(
                 SystemSet::on_enter(SelectionState::SELECTED_DRAGGING).with_system(on_enter),
             )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::DO_CHANGE_SELECTION).with_system(on_enter),
+            )
             .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
             .add_system(update_drag_container)
@@ -91,6 +94,10 @@ fn event_handler(
                         selection_state
                             .set(SelectionState::DoMove(selected_sq, square))
                             .expect("failed to set Move");
+                    } else if board_state.pieces.contains_key(&square) {
+                        selection_state
+                            .set(SelectionState::DoChangeSelection(selected_sq, square))
+                            .expect("failed to set Selected");
                     } else {
                         selection_state
                             .set(SelectionState::DoUnselect(selected_sq))
@@ -117,6 +124,7 @@ fn event_handler(
                     }
                 }
             },
+            SelectionState::DoChangeSelection(_, _) => (),
             SelectionState::DoMove(_, _) => (),
             SelectionState::DoUnselect(_) => (),
         }
@@ -156,6 +164,21 @@ fn on_enter(
             // Re-parent piece to drag container
             let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
             commands.entity(piece).set_parent(q_drag_container.single());
+        }
+        SelectionState::DoChangeSelection(from_sq, to_sq) => {
+            // Hide highlight tile
+            let hl_tile =
+                *board_state.highlights.get(&from_sq).expect("failed to get highlight tile entity");
+            commands.entity(hl_tile).insert(HideHighlight);
+            // Hide move hints
+            if showing_piece_moves.is_some() {
+                board_state.hide_piece_move_hints(&mut commands);
+                **showing_piece_moves = None;
+            }
+            // Transition to SelectingDragging
+            selection_state
+                .overwrite_set(SelectionState::SelectingDragging(to_sq))
+                .expect("failed to set SelectingDragging");
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
