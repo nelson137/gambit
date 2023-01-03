@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use chess::{File, Square};
 
 use crate::data::{
-    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, ShowHighlight,
-    ShowingMovesFor, UiPiece, UiSquare,
+    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, ShowHighlight, UiPiece,
+    UiSquare,
 };
 
 pub mod captures;
@@ -23,8 +23,6 @@ impl Plugin for GameLogicPlugin {
         app
             // States
             .add_state(SelectionState::Unselected)
-            // Resources
-            .init_resource::<ShowingMovesFor>()
             // Events
             .add_event::<SelectionEvent>()
             // Systems
@@ -131,7 +129,6 @@ fn on_enter(
     mut commands: Commands,
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,
-    mut showing_piece_moves: ResMut<ShowingMovesFor>,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
     match *selection_state.current() {
@@ -144,10 +141,7 @@ fn on_enter(
             let hl_tile = board_state.highlight(square);
             commands.add(ShowHighlight(hl_tile));
             // Show move hints
-            if board_state.is_colors_turn_at(square) {
-                **showing_piece_moves = Some(square);
-                commands.add(board_state.show_move_hints_for(square));
-            }
+            commands.add(board_state.show_move_hints_for(square));
         }
         SelectionState::Selected(square) => {
             // Re-parent piece back to its tile
@@ -165,10 +159,7 @@ fn on_enter(
             let hl_tile = board_state.highlight(from_sq);
             commands.add(HideHighlight(hl_tile));
             // Hide move hints
-            if showing_piece_moves.is_some() {
-                commands.add(board_state.hide_move_hints());
-                **showing_piece_moves = None;
-            }
+            commands.add(board_state.hide_move_hints());
             // Transition to SelectingDragging
             selection_state
                 .overwrite_set(SelectionState::SelectingDragging(to_sq))
@@ -183,10 +174,7 @@ fn on_enter(
             let hl_tile = board_state.highlight(from_sq);
             commands.add(HideHighlight(hl_tile));
             // Hide move hints
-            if showing_piece_moves.is_some() {
-                commands.add(board_state.hide_move_hints());
-                **showing_piece_moves = None;
-            }
+            commands.add(board_state.hide_move_hints());
             // Transition to Unselected
             selection_state
                 .overwrite_set(SelectionState::Unselected)
@@ -201,10 +189,7 @@ fn on_enter(
             let hl_tile = board_state.highlight(square);
             commands.add(HideHighlight(hl_tile));
             // Hide move hints
-            if showing_piece_moves.is_some() {
-                commands.add(board_state.hide_move_hints());
-                **showing_piece_moves = None;
-            }
+            commands.add(board_state.hide_move_hints());
             // Transition to Unselected
             selection_state
                 .overwrite_set(SelectionState::Unselected)

@@ -38,9 +38,7 @@ pub const COLOR_WHITE: Color = Color::rgb(
 
 pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 
-#[derive(Default, Deref, DerefMut, Resource)]
-pub struct ShowingMovesFor(pub Option<Square>);
-
+#[derive(Default)]
 pub struct ShowHints(Vec<Entity>);
 
 impl Command for ShowHints {
@@ -53,6 +51,7 @@ impl Command for ShowHints {
     }
 }
 
+#[derive(Default)]
 pub struct HideHints(Vec<Entity>);
 
 impl Command for HideHints {
@@ -242,6 +241,10 @@ impl BoardState {
 
     #[must_use]
     pub fn show_move_hints_for(&mut self, source: Square) -> ShowHints {
+        if !self.is_colors_turn_at(source) {
+            return Default::default();
+        }
+
         let mut move_gen = MoveGen::new_legal(&self.board);
         let mut moves = Vec::with_capacity(move_gen.len());
 
@@ -262,13 +265,19 @@ impl BoardState {
             moves.push(self.move_hints(r#move.get_dest()).move_entity);
         }
 
-        self.showing_hints.extend(&moves);
+        if !moves.is_empty() {
+            self.showing_hints.extend(&moves);
+        }
         ShowHints(moves)
     }
 
     #[must_use]
     pub fn hide_move_hints(&mut self) -> HideHints {
-        HideHints(self.showing_hints.drain(..).collect())
+        HideHints(if self.showing_hints.is_empty() {
+            Vec::new()
+        } else {
+            self.showing_hints.drain(..).collect()
+        })
     }
 
     pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
