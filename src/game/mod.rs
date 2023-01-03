@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use chess::{File, Square};
 
 use crate::data::{
-    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, HideHint, ShowHighlight,
-    ShowHint, ShowingMovesFor, UiPiece, UiSquare,
+    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, ShowHighlight,
+    ShowingMovesFor, UiPiece, UiSquare,
 };
 
 pub mod captures;
@@ -43,10 +43,6 @@ impl Plugin for GameLogicPlugin {
             .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
             .add_system(update_drag_container)
-            .add_system(hide_highlight)
-            .add_system(show_highlight)
-            .add_system(hide_hints)
-            .add_system(show_hints)
             .add_system(move_piece)
             .add_system(update_piece_square)
             .add_system(capture_piece);
@@ -146,11 +142,11 @@ fn on_enter(
             commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
             let hl_tile = board_state.highlight(square);
-            commands.entity(hl_tile).insert(ShowHighlight);
+            commands.add(ShowHighlight(hl_tile));
             // Show move hints
             if board_state.is_colors_turn_at(square) {
                 **showing_piece_moves = Some(square);
-                board_state.show_piece_move_hints(&mut commands, square);
+                commands.add(board_state.show_move_hints_for(square));
             }
         }
         SelectionState::Selected(square) => {
@@ -167,10 +163,10 @@ fn on_enter(
         SelectionState::DoChangeSelection(from_sq, to_sq) => {
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
-            commands.entity(hl_tile).insert(HideHighlight);
+            commands.add(HideHighlight(hl_tile));
             // Hide move hints
             if showing_piece_moves.is_some() {
-                board_state.hide_piece_move_hints(&mut commands);
+                commands.add(board_state.hide_move_hints());
                 **showing_piece_moves = None;
             }
             // Transition to SelectingDragging
@@ -185,10 +181,10 @@ fn on_enter(
             commands.entity(piece).insert(DoMove(to_sq)).set_parent(to_tile);
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
-            commands.entity(hl_tile).insert(HideHighlight);
+            commands.add(HideHighlight(hl_tile));
             // Hide move hints
             if showing_piece_moves.is_some() {
-                board_state.hide_piece_move_hints(&mut commands);
+                commands.add(board_state.hide_move_hints());
                 **showing_piece_moves = None;
             }
             // Transition to Unselected
@@ -203,10 +199,10 @@ fn on_enter(
             commands.entity(piece).set_parent(tile);
             // Hide highlight tile
             let hl_tile = board_state.highlight(square);
-            commands.entity(hl_tile).insert(HideHighlight);
+            commands.add(HideHighlight(hl_tile));
             // Hide move hints
             if showing_piece_moves.is_some() {
-                board_state.hide_piece_move_hints(&mut commands);
+                commands.add(board_state.hide_move_hints());
                 **showing_piece_moves = None;
             }
             // Transition to Unselected
@@ -214,46 +210,6 @@ fn on_enter(
                 .overwrite_set(SelectionState::Unselected)
                 .expect("failed to set Unselected");
         }
-    }
-}
-
-fn show_highlight(
-    mut commands: Commands,
-    mut q_added_show: Query<(Entity, &mut Visibility), Added<ShowHighlight>>,
-) {
-    for (entity, mut vis) in &mut q_added_show {
-        commands.entity(entity).remove::<ShowHighlight>();
-        vis.is_visible = true;
-    }
-}
-
-fn hide_highlight(
-    mut commands: Commands,
-    mut q_added_hide: Query<(Entity, &mut Visibility), Added<HideHighlight>>,
-) {
-    for (entity, mut vis) in &mut q_added_hide {
-        commands.entity(entity).remove::<HideHighlight>();
-        vis.is_visible = false;
-    }
-}
-
-fn show_hints(
-    mut commands: Commands,
-    mut q_show_hints: Query<(Entity, &mut Visibility), Added<ShowHint>>,
-) {
-    for (entity, mut vis) in &mut q_show_hints {
-        commands.entity(entity).remove::<ShowHint>();
-        vis.is_visible = true;
-    }
-}
-
-fn hide_hints(
-    mut commands: Commands,
-    mut q_hide_hints: Query<(Entity, &mut Visibility), Added<HideHint>>,
-) {
-    for (entity, mut vis) in &mut q_hide_hints {
-        commands.entity(entity).remove::<HideHint>();
-        vis.is_visible = false;
     }
 }
 

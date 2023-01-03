@@ -1,6 +1,6 @@
 use std::collections::{hash_map::Entry, HashMap};
 
-use bevy::prelude::*;
+use bevy::{ecs::system::Command, prelude::*};
 use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
 
 #[derive(Component)]
@@ -41,13 +41,29 @@ pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 #[derive(Default, Deref, DerefMut, Resource)]
 pub struct ShowingMovesFor(pub Option<Square>);
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct ShowHint;
+pub struct ShowHints(Vec<Entity>);
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct HideHint;
+impl Command for ShowHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = true;
+            }
+        }
+    }
+}
+
+pub struct HideHints(Vec<Entity>);
+
+impl Command for HideHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = false;
+            }
+        }
+    }
+}
 
 #[derive(Component)]
 pub struct UiPiece {
@@ -80,13 +96,27 @@ impl BoardPiece {
     }
 }
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct ShowHighlight;
+#[derive(Deref, DerefMut)]
+pub struct ShowHighlight(pub Entity);
 
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct HideHighlight;
+impl Command for ShowHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = true;
+        }
+    }
+}
+
+#[derive(Deref, DerefMut)]
+pub struct HideHighlight(pub Entity);
+
+impl Command for HideHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = false;
+        }
+    }
+}
 
 #[derive(Debug)]
 pub struct MoveHints {
@@ -133,7 +163,7 @@ pub struct BoardState {
     highlights: HashMap<Square, Entity>,
     move_hints: HashMap<Square, MoveHints>,
     board: Board,
-    last_shown_hints: Vec<Entity>,
+    showing_hints: Vec<Entity>,
 }
 
 impl Default for BoardState {
@@ -144,7 +174,7 @@ impl Default for BoardState {
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             board: Board::default(),
-            last_shown_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
+            showing_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
     }
 }
@@ -210,37 +240,35 @@ impl BoardState {
         self.board
     }
 
-    pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Square) {
-        self.last_shown_hints.clear();
+    #[must_use]
+    pub fn show_move_hints_for(&mut self, source: Square) -> ShowHints {
+        let mut move_gen = MoveGen::new_legal(&self.board);
+        let mut moves = Vec::with_capacity(move_gen.len());
 
-        let mut moves = MoveGen::new_legal(&self.board);
-
-        let side_to_move_mask = self.board.color_combined(!self.board.side_to_move());
-        moves.set_iterator_mask(*side_to_move_mask);
-        for r#move in &mut moves {
+        let side_to_move_mask = *self.board.color_combined(!self.board.side_to_move());
+        move_gen.set_iterator_mask(side_to_move_mask);
+        for r#move in &mut move_gen {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.move_hints(r#move.get_dest()).capture_entity;
-            commands.entity(entity).insert(ShowHint);
-            self.last_shown_hints.push(entity);
+            moves.push(self.move_hints(r#move.get_dest()).capture_entity);
         }
 
-        moves.set_iterator_mask(!EMPTY);
-        for r#move in &mut moves {
+        move_gen.set_iterator_mask(!EMPTY);
+        for r#move in &mut move_gen {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.move_hints(r#move.get_dest()).move_entity;
-            commands.entity(entity).insert(ShowHint);
-            self.last_shown_hints.push(entity);
+            moves.push(self.move_hints(r#move.get_dest()).move_entity);
         }
+
+        self.showing_hints.extend(&moves);
+        ShowHints(moves)
     }
 
-    pub fn hide_piece_move_hints(&mut self, commands: &mut Commands) {
-        for entity in self.last_shown_hints.drain(..) {
-            commands.entity(entity).insert(HideHint);
-        }
+    #[must_use]
+    pub fn hide_move_hints(&mut self) -> HideHints {
+        HideHints(self.showing_hints.drain(..).collect())
     }
 
     pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
