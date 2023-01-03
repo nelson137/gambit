@@ -96,11 +96,11 @@ pub struct MoveHints {
 
 #[derive(Resource)]
 pub struct BoardState {
-    pub tiles: HashMap<Square, Entity>,
-    pub pieces: HashMap<Square, BoardPiece>,
-    pub highlights: HashMap<Square, Entity>,
-    pub move_hints: HashMap<Square, MoveHints>,
-    pub move_gen_board: Board,
+    tiles: HashMap<Square, Entity>,
+    pieces: HashMap<Square, BoardPiece>,
+    highlights: HashMap<Square, Entity>,
+    move_hints: HashMap<Square, MoveHints>,
+    board: Board,
     last_shown_hints: Vec<Entity>,
 }
 
@@ -111,7 +111,7 @@ impl Default for BoardState {
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
-            move_gen_board: Board::default(),
+            board: Board::default(),
             last_shown_hints: Vec::with_capacity(27),
         }
     }
@@ -119,27 +119,77 @@ impl Default for BoardState {
 
 impl BoardState {
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
-        let color = self.pieces.get(&square).expect("TODO").color;
-        self.move_gen_board.side_to_move() == *color
+        self.board.side_to_move() == *self.piece(square).color
     }
 
-    fn get_hints(&self, square: Square) -> &MoveHints {
-        self.move_hints.get(&square).expect("Failed to get hints: none at square")
+    pub fn tile(&self, square: Square) -> Entity {
+        self.tiles.get(&square).copied().unwrap_or_else(|| panic!("no tile at {square}"))
+    }
+
+    pub fn set_tile(&mut self, square: Square, entity: Entity) {
+        match self.tiles.entry(square) {
+            Entry::Occupied(_) => panic!("tile already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(entity),
+        };
+    }
+
+    pub fn has_piece_at(&self, square: Square) -> bool {
+        self.pieces.contains_key(&square)
+    }
+
+    pub fn piece(&self, square: Square) -> BoardPiece {
+        self.get_piece(square).unwrap_or_else(|| panic!("no piece at {square}"))
+    }
+
+    pub fn get_piece(&self, square: Square) -> Option<BoardPiece> {
+        self.pieces.get(&square).copied()
+    }
+
+    pub fn set_piece(&mut self, square: Square, piece: BoardPiece) {
+        match self.pieces.entry(square) {
+            Entry::Occupied(_) => panic!("piece already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(piece),
+        };
+    }
+
+    pub fn highlight(&self, square: Square) -> Entity {
+        self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
+    }
+
+    pub fn set_highlight(&mut self, square: Square, entity: Entity) {
+        match self.highlights.entry(square) {
+            Entry::Occupied(_) => panic!("highlight already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(entity),
+        };
+    }
+
+    pub fn move_hints(&self, square: Square) -> &MoveHints {
+        self.move_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
+    }
+
+    pub fn set_move_hints(&mut self, square: Square, hints: MoveHints) {
+        match self.move_hints.entry(square) {
+            Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(hints),
+        };
+    }
+
+    pub fn board(&self) -> Board {
+        self.board
     }
 
     pub fn show_piece_move_hints(&mut self, commands: &mut Commands, source: Square) {
         self.last_shown_hints.clear();
 
-        let mut moves = MoveGen::new_legal(&self.move_gen_board);
+        let mut moves = MoveGen::new_legal(&self.board);
 
-        let side_to_move_mask =
-            self.move_gen_board.color_combined(!self.move_gen_board.side_to_move());
+        let side_to_move_mask = self.board.color_combined(!self.board.side_to_move());
         moves.set_iterator_mask(*side_to_move_mask);
         for r#move in &mut moves {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.get_hints(r#move.get_dest()).capture_entity;
+            let entity = self.move_hints(r#move.get_dest()).capture_entity;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
@@ -149,7 +199,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            let entity = self.get_hints(r#move.get_dest()).move_entity;
+            let entity = self.move_hints(r#move.get_dest()).move_entity;
             commands.entity(entity).insert(ShowHint);
             self.last_shown_hints.push(entity);
         }
@@ -162,7 +212,7 @@ impl BoardState {
     }
 
     pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
-        let mut move_gen = MoveGen::new_legal(&self.move_gen_board);
+        let mut move_gen = MoveGen::new_legal(&self.board);
         // Mask the generator to only gen moves (by any piece) to the destination.
         move_gen.set_iterator_mask(BitBoard::from_square(dest));
         // Return whether any of the generated moves are from the source.
@@ -170,7 +220,7 @@ impl BoardState {
     }
 
     pub fn move_piece(&mut self, from: Square, to: Square) -> Option<BoardPiece> {
-        self.move_gen_board = self.move_gen_board.make_move_new(ChessMove::new(from, to, None));
+        self.board = self.board.make_move_new(ChessMove::new(from, to, None));
         let (_old_square, piece) = self
             .pieces
             .remove_entry(&from)

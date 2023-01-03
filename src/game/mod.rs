@@ -62,7 +62,7 @@ fn event_handler(
         match *selection_state.current() {
             SelectionState::Unselected => match event {
                 SelectionEvent::MouseDown(square) => {
-                    if board_state.pieces.get(&square).is_some() {
+                    if board_state.has_piece_at(square) {
                         selection_state
                             .set(SelectionState::SelectingDragging(square))
                             .expect("failed to set SelectingDragging");
@@ -94,7 +94,7 @@ fn event_handler(
                         selection_state
                             .set(SelectionState::DoMove(selected_sq, square))
                             .expect("failed to set Move");
-                    } else if board_state.pieces.contains_key(&square) {
+                    } else if board_state.has_piece_at(square) {
                         selection_state
                             .set(SelectionState::DoChangeSelection(selected_sq, square))
                             .expect("failed to set Selected");
@@ -142,11 +142,10 @@ fn on_enter(
         SelectionState::Unselected => (),
         SelectionState::SelectingDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
+            let piece = board_state.piece(square).entity;
             commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
-            let hl_tile =
-                *board_state.highlights.get(&square).expect("failed to get highlight tile entity");
+            let hl_tile = board_state.highlight(square);
             commands.entity(hl_tile).insert(ShowHighlight);
             // Show move hints
             if board_state.is_colors_turn_at(square) {
@@ -156,19 +155,18 @@ fn on_enter(
         }
         SelectionState::Selected(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
-            let tile = board_state.tiles.get(&square).copied().expect("failed to get tile entity");
+            let piece = board_state.piece(square).entity;
+            let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
         }
         SelectionState::SelectedDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
+            let piece = board_state.piece(square).entity;
             commands.entity(piece).set_parent(q_drag_container.single());
         }
         SelectionState::DoChangeSelection(from_sq, to_sq) => {
             // Hide highlight tile
-            let hl_tile =
-                *board_state.highlights.get(&from_sq).expect("failed to get highlight tile entity");
+            let hl_tile = board_state.highlight(from_sq);
             commands.entity(hl_tile).insert(HideHighlight);
             // Hide move hints
             if showing_piece_moves.is_some() {
@@ -182,14 +180,11 @@ fn on_enter(
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece =
-                board_state.pieces.get(&from_sq).expect("failed to get piece entity").entity;
-            let to_tile =
-                board_state.tiles.get(&to_sq).copied().expect("failed to get tile entity");
+            let piece = board_state.piece(from_sq).entity;
+            let to_tile = board_state.tile(to_sq);
             commands.entity(piece).insert(DoMove(to_sq)).set_parent(to_tile);
             // Hide highlight tile
-            let hl_tile =
-                *board_state.highlights.get(&from_sq).expect("failed to get highlight tile entity");
+            let hl_tile = board_state.highlight(from_sq);
             commands.entity(hl_tile).insert(HideHighlight);
             // Hide move hints
             if showing_piece_moves.is_some() {
@@ -203,12 +198,11 @@ fn on_enter(
         }
         SelectionState::DoUnselect(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.pieces.get(&square).expect("failed to get piece entity").entity;
-            let tile = board_state.tiles.get(&square).copied().expect("failed to get tile entity");
+            let piece = board_state.piece(square).entity;
+            let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
             // Hide highlight tile
-            let hl_tile =
-                *board_state.highlights.get(&square).expect("failed to get highlight tile entity");
+            let hl_tile = board_state.highlight(square);
             commands.entity(hl_tile).insert(HideHighlight);
             // Hide move hints
             if showing_piece_moves.is_some() {
@@ -277,7 +271,7 @@ fn move_piece(
         let dest = **do_move;
 
         if *piece.typ == chess::Piece::King {
-            let castle_rights = board_state.move_gen_board.my_castle_rights();
+            let castle_rights = board_state.board().my_castle_rights();
             let back_rank = piece.color.to_my_backrank();
             let kingside_sq = Square::make_square(back_rank, File::G);
             let queenside_sq = Square::make_square(back_rank, File::C);
@@ -288,20 +282,14 @@ fn move_piece(
 
             // Move rook
             if castle_rights.has_kingside() && dest == kingside_sq {
-                let rook = board_state
-                    .pieces
-                    .get(&Square::make_square(back_rank, File::H))
-                    .expect("castle is valid but the kingside rook is not on its starting square");
+                let rook = board_state.piece(Square::make_square(back_rank, File::H)).entity;
                 commands
-                    .entity(rook.entity)
+                    .entity(rook)
                     .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::F)));
             } else if castle_rights.has_queenside() && dest == queenside_sq {
-                let rook = board_state
-                    .pieces
-                    .get(&Square::make_square(back_rank, File::A))
-                    .expect("castle is valid but the queenside rook is not on its starting square");
+                let rook = board_state.piece(Square::make_square(back_rank, File::A)).entity;
                 commands
-                    .entity(rook.entity)
+                    .entity(rook)
                     .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::D)));
             }
         } else {

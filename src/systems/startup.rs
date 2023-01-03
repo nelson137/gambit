@@ -175,10 +175,7 @@ pub fn spawn_tiles_hints_pieces(
                         },
                     ))
                     .id();
-                assert!(
-                    board_state.highlights.insert(square, hl_tile_entity).is_none(),
-                    "Failed to insert highlight tile into state: tile already at this square"
-                );
+                board_state.set_highlight(square, hl_tile_entity);
 
                 // Move hint
                 let move_entity = cmds
@@ -232,11 +229,7 @@ pub fn spawn_tiles_hints_pieces(
                     ))
                     .id();
 
-                let hint = MoveHints { capture_entity, move_entity };
-                assert!(
-                    board_state.move_hints.insert(square, hint).is_none(),
-                    "Failed to insert board hint into state: hint already at this square"
-                );
+                board_state.set_move_hints(square, MoveHints { capture_entity, move_entity });
 
                 // Piece
                 if let Some((image_path, color, typ)) = square.starting_piece_info() {
@@ -258,21 +251,13 @@ pub fn spawn_tiles_hints_pieces(
                             },
                         ))
                         .id();
-                    assert!(
-                        board_state
-                            .pieces
-                            .insert(square, BoardPiece::new(piece_entity, piece_color, piece_type))
-                            .is_none(),
-                        "Failed to insert board piece into state: piece already at this square"
-                    );
+                    board_state
+                        .set_piece(square, BoardPiece::new(piece_entity, piece_color, piece_type));
                 }
             })
             .id();
         commands.entity(board).add_child(tile_entity);
-        assert!(
-            board_state.tiles.insert(square, tile_entity).is_none(),
-            "Failed to insert board tile into state: tile already at this square"
-        );
+        board_state.set_tile(square, tile_entity);
     }
 }
 
