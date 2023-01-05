@@ -53,9 +53,7 @@ fn event_handler(
             SelectionState::Unselected => match event {
                 SelectionEvent::MouseDown(square) => {
                     if board_state.has_piece_at(square) {
-                        selection_state
-                            .set(SelectionState::SelectingDragging(square))
-                            .expect("failed to set SelectingDragging");
+                        selection_state.set(SelectionState::SelectingDragging(square)).unwrap();
                     }
                 }
                 SelectionEvent::MouseUp(_) => (),
@@ -64,34 +62,24 @@ fn event_handler(
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if board_state.move_is_valid(selecting_sq, square) {
-                        selection_state
-                            .set(SelectionState::DoMove(selecting_sq, square))
-                            .expect("failed to set Move");
+                        selection_state.set(SelectionState::DoMove(selecting_sq, square)).unwrap();
                     } else {
-                        selection_state
-                            .set(SelectionState::Selected(selecting_sq))
-                            .expect("failed to set Selected");
+                        selection_state.set(SelectionState::Selected(selecting_sq)).unwrap();
                     }
                 }
             },
             SelectionState::Selected(selected_sq) => match event {
                 SelectionEvent::MouseDown(square) => {
                     if square == selected_sq {
-                        selection_state
-                            .set(SelectionState::SelectedDragging(selected_sq))
-                            .expect("failed to set SelectedDragging");
+                        selection_state.set(SelectionState::SelectedDragging(selected_sq)).unwrap();
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        selection_state
-                            .set(SelectionState::DoMove(selected_sq, square))
-                            .expect("failed to set Move");
+                        selection_state.set(SelectionState::DoMove(selected_sq, square)).unwrap();
                     } else if board_state.has_piece_at(square) {
                         selection_state
                             .set(SelectionState::DoChangeSelection(selected_sq, square))
-                            .expect("failed to set Selected");
+                            .unwrap();
                     } else {
-                        selection_state
-                            .set(SelectionState::DoUnselect(selected_sq))
-                            .expect("failed to set Unselected");
+                        selection_state.set(SelectionState::DoUnselect(selected_sq)).unwrap();
                     }
                 }
                 SelectionEvent::MouseUp(_) => (),
@@ -100,17 +88,11 @@ fn event_handler(
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if square == selected_sq {
-                        selection_state
-                            .set(SelectionState::DoUnselect(selected_sq))
-                            .expect("failed to set Unselected");
+                        selection_state.set(SelectionState::DoUnselect(selected_sq)).unwrap();
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        selection_state
-                            .set(SelectionState::DoMove(selected_sq, square))
-                            .expect("failed to set Move");
+                        selection_state.set(SelectionState::DoMove(selected_sq, square)).unwrap();
                     } else {
-                        selection_state
-                            .set(SelectionState::Selected(selected_sq))
-                            .expect("failed to set Selected");
+                        selection_state.set(SelectionState::Selected(selected_sq)).unwrap();
                     }
                 }
             },
@@ -158,9 +140,7 @@ fn on_enter(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to SelectingDragging
-            selection_state
-                .overwrite_set(SelectionState::SelectingDragging(to_sq))
-                .expect("failed to set SelectingDragging");
+            selection_state.overwrite_set(SelectionState::SelectingDragging(to_sq)).unwrap();
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
@@ -172,9 +152,7 @@ fn on_enter(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
-            selection_state
-                .overwrite_set(SelectionState::Unselected)
-                .expect("failed to set Unselected");
+            selection_state.overwrite_set(SelectionState::Unselected).unwrap();
         }
         SelectionState::DoUnselect(square) => {
             // Re-parent piece back to its tile
@@ -187,9 +165,7 @@ fn on_enter(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
-            selection_state
-                .overwrite_set(SelectionState::Unselected)
-                .expect("failed to set Unselected");
+            selection_state.overwrite_set(SelectionState::Unselected).unwrap();
         }
     }
 }
