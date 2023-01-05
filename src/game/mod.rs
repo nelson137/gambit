@@ -11,7 +11,7 @@ pub mod mouse;
 pub mod selection;
 
 use self::{
-    captures::{capture_piece, Captured},
+    captures::Captured,
     mouse::{mouse_handler, update_drag_container},
     selection::{SelectionEvent, SelectionState},
 };
@@ -42,8 +42,7 @@ impl Plugin for GameLogicPlugin {
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
             .add_system(update_drag_container)
             .add_system(move_piece)
-            .add_system(update_piece_square)
-            .add_system(capture_piece);
+            .add_system(update_piece_square);
     }
 }
 
@@ -239,7 +238,7 @@ fn move_piece(
         }
 
         if let Some(piece) = captured {
-            commands.entity(piece.entity).insert(Captured(piece));
+            commands.add(Captured(piece));
         }
     }
 }

@@ -13,8 +13,8 @@ use self::{
     data::{BoardState, COLOR_BG},
     game::{captures::CaptureState, GameLogicPlugin},
     systems::{
-        setup_camera, spawn_board, spawn_drag_container, spawn_tiles_hints_pieces, spawn_ui,
-        MousePositionPlugin, SpawnStage,
+        setup_camera, spawn_board, spawn_drag_container, spawn_panels, spawn_tiles_hints_pieces,
+        spawn_ui, MousePositionPlugin, SpawnStage,
     },
     utils::AppPushOrderedStartupStages,
     window::{WIN_HEIGHT, WIN_WIDTH},
@@ -48,9 +48,14 @@ fn main() {
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_drag_container)
         .push_ordered_startup_stages([
-            (SpawnStage::Ui, SystemStage::single(spawn_ui)),
-            (SpawnStage::Board, SystemStage::single(spawn_board)),
-            (SpawnStage::TilesHintsPieces, SystemStage::single(spawn_tiles_hints_pieces)),
+            (SpawnStage::Phase1, SystemStage::single(spawn_ui)),
+            (SpawnStage::Phase2, SystemStage::single(spawn_board)),
+            (
+                SpawnStage::Phase3,
+                SystemStage::parallel()
+                    .with_system(spawn_tiles_hints_pieces)
+                    .with_system(spawn_panels),
+            ),
         ])
         // Run
         .run();

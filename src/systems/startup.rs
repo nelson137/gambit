@@ -1,4 +1,6 @@
-use bevy::prelude::*;
+use std::sync::Arc;
+
+use bevy::{ecs::system::Command, prelude::*};
 use chess::{File, Rank};
 
 use crate::{
@@ -9,6 +11,7 @@ use crate::{
         COLOR_HIGHLIGHT, COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE,
         Z_PIECE_SELECTED, Z_TILE,
     },
+    game::captures::CaptureState,
 };
 
 pub fn setup_camera(mut commands: Commands) {
@@ -17,9 +20,9 @@ pub fn setup_camera(mut commands: Commands) {
 
 #[derive(Clone, StageLabel)]
 pub enum SpawnStage {
-    Ui,
-    Board,
-    TilesHintsPieces,
+    Phase1,
+    Phase2,
+    Phase3,
 }
 
 pub fn spawn_ui(mut commands: Commands) {
@@ -258,6 +261,143 @@ pub fn spawn_tiles_hints_pieces(
             .id();
         commands.entity(board).add_child(tile_entity);
         board_state.set_tile(square, tile_entity);
+    }
+}
+
+pub fn spawn_panels(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut capture_state: ResMut<CaptureState>,
+    q_ui: Query<Entity, With<Ui>>,
+) {
+    const BLACK: PieceColor = PieceColor(chess::Color::Black);
+    const WHITE: PieceColor = PieceColor(chess::Color::White);
+    const PAWN: PieceType = PieceType(chess::Piece::Pawn);
+    const BISHOP: PieceType = PieceType(chess::Piece::Bishop);
+    const KNIGHT: PieceType = PieceType(chess::Piece::Knight);
+    const ROOK: PieceType = PieceType(chess::Piece::Rook);
+    const QUEEN: PieceType = PieceType(chess::Piece::Queen);
+    let images = Arc::get_mut(&mut capture_state.image_handles).unwrap();
+    images[BLACK][PAWN].extend([
+        asset_server.load("captures/white-pawns-8.png"),
+        asset_server.load("captures/white-pawns-7.png"),
+        asset_server.load("captures/white-pawns-6.png"),
+        asset_server.load("captures/white-pawns-5.png"),
+        asset_server.load("captures/white-pawns-4.png"),
+        asset_server.load("captures/white-pawns-3.png"),
+        asset_server.load("captures/white-pawns-2.png"),
+        asset_server.load("captures/white-pawns-1.png"),
+    ]);
+    images[BLACK][BISHOP].extend([
+        asset_server.load("captures/white-bishops-2.png"),
+        asset_server.load("captures/white-bishops-1.png"),
+    ]);
+    images[BLACK][KNIGHT].extend([
+        asset_server.load("captures/white-knights-2.png"),
+        asset_server.load("captures/white-knights-1.png"),
+    ]);
+    images[BLACK][ROOK].extend([
+        asset_server.load("captures/white-rooks-2.png"),
+        asset_server.load("captures/white-rooks-1.png"),
+    ]);
+    images[BLACK][QUEEN].extend([asset_server.load("captures/white-queen.png")]);
+    images[WHITE][PAWN].extend([
+        asset_server.load("captures/black-pawns-8.png"),
+        asset_server.load("captures/black-pawns-7.png"),
+        asset_server.load("captures/black-pawns-6.png"),
+        asset_server.load("captures/black-pawns-5.png"),
+        asset_server.load("captures/black-pawns-4.png"),
+        asset_server.load("captures/black-pawns-3.png"),
+        asset_server.load("captures/black-pawns-2.png"),
+        asset_server.load("captures/black-pawns-1.png"),
+    ]);
+    images[WHITE][BISHOP].extend([
+        asset_server.load("captures/black-bishops-2.png"),
+        asset_server.load("captures/black-bishops-1.png"),
+    ]);
+    images[WHITE][KNIGHT].extend([
+        asset_server.load("captures/black-knights-2.png"),
+        asset_server.load("captures/black-knights-1.png"),
+    ]);
+    images[WHITE][ROOK].extend([
+        asset_server.load("captures/black-rooks-2.png"),
+        asset_server.load("captures/black-rooks-1.png"),
+    ]);
+    images[WHITE][QUEEN].extend([asset_server.load("captures/black-queen.png")]);
+
+    let container = commands
+        .spawn(NodeBundle {
+            style: Style {
+                flex_grow: 1.0,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::SpaceBetween,
+                ..default()
+            },
+            ..default()
+        })
+        .id();
+    commands.entity(q_ui.single()).add_child(container);
+
+    commands.add(PanelData { container, color: PieceColor(chess::Color::Black) });
+
+    commands.add(PanelData { container, color: PieceColor(chess::Color::White) });
+}
+
+struct PanelData {
+    container: Entity,
+    color: PieceColor,
+}
+
+const CAPTURES_IMAGE_MARGIN: Val = Val::Px(8.0);
+
+impl PanelData {
+    fn into_bundle(self) -> impl Bundle {
+        NodeBundle {
+            style: Style {
+                size: Size::new(Val::Percent(100.0), Val::Px(32.0)),
+                margin: UiRect {
+                    top: CAPTURES_IMAGE_MARGIN,
+                    bottom: CAPTURES_IMAGE_MARGIN,
+                    ..default()
+                },
+                ..default()
+            },
+            ..default()
+        }
+    }
+}
+
+impl Command for PanelData {
+    fn write(self, world: &mut World) {
+        let color = self.color;
+
+        let capture_state = world.resource::<CaptureState>();
+        let image_handles = Arc::clone(&capture_state.image_handles);
+        let mut image_entities = Vec::with_capacity(5);
+
+        world.entity_mut(self.container).with_children(|cmds| {
+            cmds.spawn(self.into_bundle()).with_children(|cmds| {
+                for img_set in &*image_handles[color] {
+                    let entity = cmds
+                        .spawn(ImageBundle {
+                            image: UiImage(img_set[img_set.len() - 1].clone()),
+                            style: Style {
+                                display: Display::None,
+                                margin: UiRect { left: CAPTURES_IMAGE_MARGIN, ..default() },
+                                flex_shrink: 0.0,
+                                ..default()
+                            },
+                            ..default()
+                        })
+                        .id();
+                    image_entities.push(entity);
+                }
+            });
+        });
+
+        let mut capture_state = world.resource_mut::<CaptureState>();
+        let state_entities = Arc::get_mut(&mut capture_state.image_entities).unwrap();
+        state_entities[color].copy_from_slice(&image_entities);
     }
 }
 

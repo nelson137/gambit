@@ -1,4 +1,7 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    ops::Not,
+};
 
 use bevy::{ecs::system::Command, prelude::*};
 use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
@@ -78,6 +81,14 @@ impl UiPiece {
 
 #[derive(Clone, Copy, PartialEq, Eq, Debug, Deref, DerefMut)]
 pub struct PieceColor(pub chess::Color);
+
+impl Not for PieceColor {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        Self(self.0.not())
+    }
+}
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
