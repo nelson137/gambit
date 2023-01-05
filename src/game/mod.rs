@@ -1,10 +1,7 @@
 use bevy::prelude::*;
 use chess::{File, Square};
 
-use crate::data::{
-    BoardState, DoUpdatePieceSquare, DragContainer, HideHighlight, MakeMove, ShowHighlight,
-    UiSquare,
-};
+use crate::data::{BoardState, DoMove, DragContainer, HideHighlight, MoveUiPiece, ShowHighlight};
 
 pub mod captures;
 pub mod mouse;
@@ -25,7 +22,7 @@ impl Plugin for GameLogicPlugin {
             .add_state(SelectionState::Unselected)
             // Events
             .add_event::<SelectionEvent>()
-            .add_event::<MakeMove>()
+            .add_event::<DoMove>()
             // Systems
             .add_system(mouse_handler)
             .add_system(event_handler.at_end())
@@ -42,8 +39,7 @@ impl Plugin for GameLogicPlugin {
             .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
             .add_system(update_drag_container)
-            .add_system(move_piece)
-            .add_system(update_piece_square);
+            .add_system(move_piece);
     }
 }
 
@@ -130,7 +126,7 @@ fn on_enter(
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,
     q_drag_container: Query<Entity, With<DragContainer>>,
-    mut do_move_writer: EventWriter<MakeMove>,
+    mut do_move_writer: EventWriter<DoMove>,
 ) {
     match *selection_state.current() {
         SelectionState::Unselected => (),
@@ -169,7 +165,7 @@ fn on_enter(
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
             let piece = board_state.piece(from_sq);
-            do_move_writer.send(MakeMove { piece, from_sq, to_sq });
+            do_move_writer.send(DoMove { piece, from_sq, to_sq });
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
             commands.add(HideHighlight(hl_tile));
@@ -201,53 +197,31 @@ fn on_enter(
 fn move_piece(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
-    mut do_move_reader: EventReader<MakeMove>,
+    mut do_move_reader: EventReader<DoMove>,
 ) {
-    let mut captured;
-
-    for &MakeMove { piece, from_sq, to_sq } in do_move_reader.iter() {
-        let mut cmds = commands.entity(piece.entity);
-
+    for &DoMove { piece, from_sq, to_sq } in do_move_reader.iter() {
         if *piece.typ == chess::Piece::King {
             let castle_rights = board_state.board().my_castle_rights();
             let back_rank = piece.color.to_my_backrank();
             let kingside_sq = Square::make_square(back_rank, File::G);
             let queenside_sq = Square::make_square(back_rank, File::C);
 
-            // Move king
-            captured = board_state.move_piece(from_sq, to_sq);
-            cmds.insert(DoUpdatePieceSquare(to_sq)).set_parent(board_state.tile(to_sq));
-
             // Move rook
             if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let rook = board_state.piece(Square::make_square(back_rank, File::H)).entity;
+                let piece = board_state.piece(Square::make_square(back_rank, File::H));
                 let to_sq = Square::make_square(back_rank, File::F);
-                let to_tile = board_state.tile(to_sq);
-                commands.entity(rook).insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
+                commands.add(MoveUiPiece { piece, to_sq });
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let rook = board_state.piece(Square::make_square(back_rank, File::A)).entity;
+                let piece = board_state.piece(Square::make_square(back_rank, File::A));
                 let to_sq = Square::make_square(back_rank, File::D);
-                let to_tile = board_state.tile(to_sq);
-                commands.entity(rook).insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
+                commands.add(MoveUiPiece { piece, to_sq });
             }
-        } else {
-            captured = board_state.move_piece(from_sq, to_sq);
-            let to_tile = board_state.tile(to_sq);
-            cmds.insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
         }
 
-        if let Some(piece) = captured {
+        // Move piece
+        commands.add(MoveUiPiece { piece, to_sq });
+        if let Some(piece) = board_state.move_piece(from_sq, to_sq) {
             commands.add(Captured(piece));
         }
-    }
-}
-
-fn update_piece_square(
-    mut commands: Commands,
-    mut q_update: Query<(Entity, &mut UiSquare, &DoUpdatePieceSquare), Added<DoUpdatePieceSquare>>,
-) {
-    for (entity, mut square, update) in &mut q_update {
-        commands.entity(entity).remove::<DoUpdatePieceSquare>();
-        square.move_to(**update);
     }
 }
