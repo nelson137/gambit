@@ -3,11 +3,13 @@ use chess::{File, Square};
 
 use crate::data::{BoardState, DoMove, DragContainer, HideHighlight, MoveUiPiece, ShowHighlight};
 
+pub mod audio;
 pub mod captures;
 pub mod mouse;
 pub mod selection;
 
 use self::{
+    audio::GameAudioHandles,
     captures::Captured,
     mouse::{mouse_handler, update_drag_container},
     selection::{SelectionEvent, SelectionState},
@@ -18,6 +20,8 @@ pub struct GameLogicPlugin;
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Resources
+            .init_resource::<GameAudioHandles>()
             // States
             .add_state(SelectionState::Unselected)
             // Events
@@ -172,10 +176,14 @@ fn on_enter(
 
 fn move_piece(
     mut commands: Commands,
+    audio: Res<Audio>,
+    audio_handles: Res<GameAudioHandles>,
     mut board_state: ResMut<BoardState>,
     mut do_move_reader: EventReader<DoMove>,
 ) {
     for &DoMove { piece, from_sq, to_sq } in do_move_reader.iter() {
+        let mut was_castle = false;
+
         if *piece.typ == chess::Piece::King {
             let castle_rights = board_state.board().my_castle_rights();
             let back_rank = piece.color.to_my_backrank();
@@ -187,17 +195,27 @@ fn move_piece(
                 let piece = board_state.piece(Square::make_square(back_rank, File::H));
                 let to_sq = Square::make_square(back_rank, File::F);
                 commands.add(MoveUiPiece { piece, to_sq });
+                was_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let piece = board_state.piece(Square::make_square(back_rank, File::A));
                 let to_sq = Square::make_square(back_rank, File::D);
                 commands.add(MoveUiPiece { piece, to_sq });
+                was_castle = true;
             }
         }
 
-        // Move piece
+        // Move piece & play audio
         commands.add(MoveUiPiece { piece, to_sq });
         if let Some(piece) = board_state.move_piece(from_sq, to_sq) {
             commands.add(Captured(piece));
+            audio.play(audio_handles.capture.clone_weak());
+        } else if was_castle {
+            audio.play(audio_handles.castle.clone_weak());
+        } else {
+            audio.play(match *piece.color {
+                chess::Color::Black => audio_handles.move_opponent.clone_weak(),
+                chess::Color::White => audio_handles.move_self.clone_weak(),
+            });
         }
     }
 }

@@ -1,6 +1,6 @@
 #![allow(clippy::type_complexity)]
 
-use bevy::{audio::AudioPlugin, prelude::*};
+use bevy::prelude::*;
 
 mod assets;
 mod data;
@@ -23,21 +23,16 @@ use self::{
 fn main() {
     App::new()
         // Plugins
-        .add_plugins(
-            DefaultPlugins
-                .build()
-                .set(WindowPlugin {
-                    window: WindowDescriptor {
-                        title: "Gambit".into(),
-                        width: WIN_WIDTH,
-                        height: WIN_HEIGHT,
-                        resizable: true,
-                        ..default()
-                    },
-                    ..default()
-                })
-                .disable::<AudioPlugin>(),
-        )
+        .add_plugins(DefaultPlugins.set(WindowPlugin {
+            window: WindowDescriptor {
+                title: "Gambit".into(),
+                width: WIN_WIDTH,
+                height: WIN_HEIGHT,
+                resizable: true,
+                ..default()
+            },
+            ..default()
+        }))
         .add_plugin(MousePositionPlugin)
         .add_plugin(GameLogicPlugin)
         // Resources
