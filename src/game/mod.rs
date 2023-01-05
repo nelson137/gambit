@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use chess::{File, Square};
 
 use crate::data::{
-    BoardState, DoMove, DoUpdatePieceSquare, DragContainer, HideHighlight, ShowHighlight, UiPiece,
+    BoardState, DoUpdatePieceSquare, DragContainer, HideHighlight, MakeMove, ShowHighlight,
     UiSquare,
 };
 
@@ -25,6 +25,7 @@ impl Plugin for GameLogicPlugin {
             .add_state(SelectionState::Unselected)
             // Events
             .add_event::<SelectionEvent>()
+            .add_event::<MakeMove>()
             // Systems
             .add_system(mouse_handler)
             .add_system(event_handler.at_end())
@@ -129,6 +130,7 @@ fn on_enter(
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,
     q_drag_container: Query<Entity, With<DragContainer>>,
+    mut do_move_writer: EventWriter<MakeMove>,
 ) {
     match *selection_state.current() {
         SelectionState::Unselected => (),
@@ -166,9 +168,8 @@ fn on_enter(
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece = board_state.piece(from_sq).entity;
-            let to_tile = board_state.tile(to_sq);
-            commands.entity(piece).insert(DoMove(to_sq)).set_parent(to_tile);
+            let piece = board_state.piece(from_sq);
+            do_move_writer.send(MakeMove { piece, from_sq, to_sq });
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
             commands.add(HideHighlight(hl_tile));
@@ -200,15 +201,12 @@ fn on_enter(
 fn move_piece(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
-    mut q_move: Query<(Entity, &UiPiece, &UiSquare, &DoMove), Added<DoMove>>,
+    mut do_move_reader: EventReader<MakeMove>,
 ) {
     let mut captured;
 
-    for (entity, piece, square, do_move) in &mut q_move {
-        let mut cmds = commands.entity(entity);
-        cmds.remove::<DoMove>();
-
-        let dest = **do_move;
+    for &MakeMove { piece, from_sq, to_sq } in do_move_reader.iter() {
+        let mut cmds = commands.entity(piece.entity);
 
         if *piece.typ == chess::Piece::King {
             let castle_rights = board_state.board().my_castle_rights();
@@ -217,24 +215,25 @@ fn move_piece(
             let queenside_sq = Square::make_square(back_rank, File::C);
 
             // Move king
-            captured = board_state.move_piece(**square, dest);
-            cmds.insert(DoUpdatePieceSquare(dest));
+            captured = board_state.move_piece(from_sq, to_sq);
+            cmds.insert(DoUpdatePieceSquare(to_sq)).set_parent(board_state.tile(to_sq));
 
             // Move rook
-            if castle_rights.has_kingside() && dest == kingside_sq {
+            if castle_rights.has_kingside() && to_sq == kingside_sq {
                 let rook = board_state.piece(Square::make_square(back_rank, File::H)).entity;
-                commands
-                    .entity(rook)
-                    .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::F)));
-            } else if castle_rights.has_queenside() && dest == queenside_sq {
+                let to_sq = Square::make_square(back_rank, File::F);
+                let to_tile = board_state.tile(to_sq);
+                commands.entity(rook).insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
+            } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let rook = board_state.piece(Square::make_square(back_rank, File::A)).entity;
-                commands
-                    .entity(rook)
-                    .insert(DoUpdatePieceSquare(Square::make_square(back_rank, File::D)));
+                let to_sq = Square::make_square(back_rank, File::D);
+                let to_tile = board_state.tile(to_sq);
+                commands.entity(rook).insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
             }
         } else {
-            captured = board_state.move_piece(**square, dest);
-            cmds.insert(DoUpdatePieceSquare(dest));
+            captured = board_state.move_piece(from_sq, to_sq);
+            let to_tile = board_state.tile(to_sq);
+            cmds.insert(DoUpdatePieceSquare(to_sq)).set_parent(to_tile);
         }
 
         if let Some(piece) = captured {
