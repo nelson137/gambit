@@ -70,8 +70,8 @@ pub fn spawn_tiles_hints_pieces(
 ) {
     let board = q_board.single();
     let font = asset_server.load("fonts/FiraMono-Medium.ttf");
-    let move_hint_texture = asset_server.load("hints/move.png");
-    let capture_hint_texture = asset_server.load("hints/capture.png");
+    let move_hint_texture = asset_server.load("images/hints/move.png");
+    let capture_hint_texture = asset_server.load("images/hints/capture.png");
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
     let file_label_margins =
         UiRect { bottom: Val::Percent(3.5), right: Val::Percent(8.0), ..default() };
@@ -279,51 +279,55 @@ pub fn spawn_panels(
     const QUEEN: PieceType = PieceType(chess::Piece::Queen);
     let capture_state = Arc::get_mut(&mut capture_state).unwrap();
     capture_state[BLACK][PAWN].image_handles.extend([
-        asset_server.load("captures/white-pawns-8.png"),
-        asset_server.load("captures/white-pawns-7.png"),
-        asset_server.load("captures/white-pawns-6.png"),
-        asset_server.load("captures/white-pawns-5.png"),
-        asset_server.load("captures/white-pawns-4.png"),
-        asset_server.load("captures/white-pawns-3.png"),
-        asset_server.load("captures/white-pawns-2.png"),
-        asset_server.load("captures/white-pawns-1.png"),
+        asset_server.load("images/captures/white-pawns-8.png"),
+        asset_server.load("images/captures/white-pawns-7.png"),
+        asset_server.load("images/captures/white-pawns-6.png"),
+        asset_server.load("images/captures/white-pawns-5.png"),
+        asset_server.load("images/captures/white-pawns-4.png"),
+        asset_server.load("images/captures/white-pawns-3.png"),
+        asset_server.load("images/captures/white-pawns-2.png"),
+        asset_server.load("images/captures/white-pawns-1.png"),
     ]);
     capture_state[BLACK][BISHOP].image_handles.extend([
-        asset_server.load("captures/white-bishops-2.png"),
-        asset_server.load("captures/white-bishops-1.png"),
+        asset_server.load("images/captures/white-bishops-2.png"),
+        asset_server.load("images/captures/white-bishops-1.png"),
     ]);
     capture_state[BLACK][KNIGHT].image_handles.extend([
-        asset_server.load("captures/white-knights-2.png"),
-        asset_server.load("captures/white-knights-1.png"),
+        asset_server.load("images/captures/white-knights-2.png"),
+        asset_server.load("images/captures/white-knights-1.png"),
     ]);
     capture_state[BLACK][ROOK].image_handles.extend([
-        asset_server.load("captures/white-rooks-2.png"),
-        asset_server.load("captures/white-rooks-1.png"),
+        asset_server.load("images/captures/white-rooks-2.png"),
+        asset_server.load("images/captures/white-rooks-1.png"),
     ]);
-    capture_state[BLACK][QUEEN].image_handles.push(asset_server.load("captures/white-queen.png"));
+    capture_state[BLACK][QUEEN]
+        .image_handles
+        .push(asset_server.load("images/captures/white-queen.png"));
     capture_state[WHITE][PAWN].image_handles.extend([
-        asset_server.load("captures/black-pawns-8.png"),
-        asset_server.load("captures/black-pawns-7.png"),
-        asset_server.load("captures/black-pawns-6.png"),
-        asset_server.load("captures/black-pawns-5.png"),
-        asset_server.load("captures/black-pawns-4.png"),
-        asset_server.load("captures/black-pawns-3.png"),
-        asset_server.load("captures/black-pawns-2.png"),
-        asset_server.load("captures/black-pawns-1.png"),
+        asset_server.load("images/captures/black-pawns-8.png"),
+        asset_server.load("images/captures/black-pawns-7.png"),
+        asset_server.load("images/captures/black-pawns-6.png"),
+        asset_server.load("images/captures/black-pawns-5.png"),
+        asset_server.load("images/captures/black-pawns-4.png"),
+        asset_server.load("images/captures/black-pawns-3.png"),
+        asset_server.load("images/captures/black-pawns-2.png"),
+        asset_server.load("images/captures/black-pawns-1.png"),
     ]);
     capture_state[WHITE][BISHOP].image_handles.extend([
-        asset_server.load("captures/black-bishops-2.png"),
-        asset_server.load("captures/black-bishops-1.png"),
+        asset_server.load("images/captures/black-bishops-2.png"),
+        asset_server.load("images/captures/black-bishops-1.png"),
     ]);
     capture_state[WHITE][KNIGHT].image_handles.extend([
-        asset_server.load("captures/black-knights-2.png"),
-        asset_server.load("captures/black-knights-1.png"),
+        asset_server.load("images/captures/black-knights-2.png"),
+        asset_server.load("images/captures/black-knights-1.png"),
     ]);
     capture_state[WHITE][ROOK].image_handles.extend([
-        asset_server.load("captures/black-rooks-2.png"),
-        asset_server.load("captures/black-rooks-1.png"),
+        asset_server.load("images/captures/black-rooks-2.png"),
+        asset_server.load("images/captures/black-rooks-1.png"),
     ]);
-    capture_state[WHITE][QUEEN].image_handles.push(asset_server.load("captures/black-queen.png"));
+    capture_state[WHITE][QUEEN]
+        .image_handles
+        .push(asset_server.load("images/captures/black-queen.png"));
 
     let container = commands
         .spawn(NodeBundle {

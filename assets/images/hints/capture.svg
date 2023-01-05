@@ -9,7 +9,7 @@
    id="svg5"
    inkscape:version="1.1.2 (b8e25be8, 2022-02-05)"
    sodipodi:docname="capture.svg"
-   inkscape:export-filename="/Users/nelson/Projects/gambit/assets/hints/capture.png"
+   inkscape:export-filename="/Users/nelson/Projects/gambit/assets/images/hints/capture.png"
    inkscape:export-xdpi="96"
    inkscape:export-ydpi="96"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
@@ -47,7 +47,7 @@
        id="path846"
        style="fill-opacity:0.2;stroke-width:2.07206;fill:#000000"
        d="M 75 0 A 75 75 0 0 0 0 75 A 75 75 0 0 0 75 150 A 75 75 0 0 0 150 75 A 75 75 0 0 0 75 0 z M 75 10 A 65 65 0 0 1 140 75 A 65 65 0 0 1 75 140 A 65 65 0 0 1 10 75 A 65 65 0 0 1 75 10 z "
-       inkscape:export-filename="/Users/nelson/Projects/gambit/assets/hints/capture.png"
+       inkscape:export-filename="/Users/nelson/Projects/gambit/assets/images/hints/capture.png"
        inkscape:export-xdpi="96"
        inkscape:export-ydpi="96" />
   </g>
