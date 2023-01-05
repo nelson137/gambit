@@ -277,8 +277,8 @@ pub fn spawn_panels(
     const KNIGHT: PieceType = PieceType(chess::Piece::Knight);
     const ROOK: PieceType = PieceType(chess::Piece::Rook);
     const QUEEN: PieceType = PieceType(chess::Piece::Queen);
-    let images = Arc::get_mut(&mut capture_state.image_handles).unwrap();
-    images[BLACK][PAWN].extend([
+    let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+    capture_state[BLACK][PAWN].image_handles.extend([
         asset_server.load("captures/white-pawns-8.png"),
         asset_server.load("captures/white-pawns-7.png"),
         asset_server.load("captures/white-pawns-6.png"),
@@ -288,20 +288,20 @@ pub fn spawn_panels(
         asset_server.load("captures/white-pawns-2.png"),
         asset_server.load("captures/white-pawns-1.png"),
     ]);
-    images[BLACK][BISHOP].extend([
+    capture_state[BLACK][BISHOP].image_handles.extend([
         asset_server.load("captures/white-bishops-2.png"),
         asset_server.load("captures/white-bishops-1.png"),
     ]);
-    images[BLACK][KNIGHT].extend([
+    capture_state[BLACK][KNIGHT].image_handles.extend([
         asset_server.load("captures/white-knights-2.png"),
         asset_server.load("captures/white-knights-1.png"),
     ]);
-    images[BLACK][ROOK].extend([
+    capture_state[BLACK][ROOK].image_handles.extend([
         asset_server.load("captures/white-rooks-2.png"),
         asset_server.load("captures/white-rooks-1.png"),
     ]);
-    images[BLACK][QUEEN].extend([asset_server.load("captures/white-queen.png")]);
-    images[WHITE][PAWN].extend([
+    capture_state[BLACK][QUEEN].image_handles.push(asset_server.load("captures/white-queen.png"));
+    capture_state[WHITE][PAWN].image_handles.extend([
         asset_server.load("captures/black-pawns-8.png"),
         asset_server.load("captures/black-pawns-7.png"),
         asset_server.load("captures/black-pawns-6.png"),
@@ -311,19 +311,19 @@ pub fn spawn_panels(
         asset_server.load("captures/black-pawns-2.png"),
         asset_server.load("captures/black-pawns-1.png"),
     ]);
-    images[WHITE][BISHOP].extend([
+    capture_state[WHITE][BISHOP].image_handles.extend([
         asset_server.load("captures/black-bishops-2.png"),
         asset_server.load("captures/black-bishops-1.png"),
     ]);
-    images[WHITE][KNIGHT].extend([
+    capture_state[WHITE][KNIGHT].image_handles.extend([
         asset_server.load("captures/black-knights-2.png"),
         asset_server.load("captures/black-knights-1.png"),
     ]);
-    images[WHITE][ROOK].extend([
+    capture_state[WHITE][ROOK].image_handles.extend([
         asset_server.load("captures/black-rooks-2.png"),
         asset_server.load("captures/black-rooks-1.png"),
     ]);
-    images[WHITE][QUEEN].extend([asset_server.load("captures/black-queen.png")]);
+    capture_state[WHITE][QUEEN].image_handles.push(asset_server.load("captures/black-queen.png"));
 
     let container = commands
         .spawn(NodeBundle {
@@ -371,16 +371,16 @@ impl Command for PanelData {
     fn write(self, world: &mut World) {
         let color = self.color;
 
-        let capture_state = world.resource::<CaptureState>();
-        let image_handles = Arc::clone(&capture_state.image_handles);
         let mut image_entities = Vec::with_capacity(5);
 
+        let capture_state = Arc::clone(world.resource::<CaptureState>());
         world.entity_mut(self.container).with_children(|cmds| {
             cmds.spawn(self.into_bundle()).with_children(|cmds| {
-                for img_set in &*image_handles[color] {
+                for cap_state in capture_state[color].iter() {
+                    let handles = &cap_state.image_handles;
                     let entity = cmds
                         .spawn(ImageBundle {
-                            image: UiImage(img_set[img_set.len() - 1].clone()),
+                            image: UiImage(handles[handles.len() - 1].clone()),
                             style: Style {
                                 display: Display::None,
                                 margin: UiRect { left: CAPTURES_IMAGE_MARGIN, ..default() },
@@ -394,10 +394,13 @@ impl Command for PanelData {
                 }
             });
         });
+        drop(capture_state);
 
         let mut capture_state = world.resource_mut::<CaptureState>();
-        let state_entities = Arc::get_mut(&mut capture_state.image_entities).unwrap();
-        state_entities[color].copy_from_slice(&image_entities);
+        let state_entities = Arc::get_mut(&mut capture_state).unwrap();
+        for (cap_state, entity) in state_entities[color].iter_mut().zip(image_entities) {
+            cap_state.image_entity = entity;
+        }
     }
 }
 

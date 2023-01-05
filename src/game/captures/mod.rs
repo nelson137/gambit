@@ -7,33 +7,44 @@ use bevy::{ecs::system::Command, prelude::*};
 
 use crate::data::{BoardPiece, PieceColor, PieceType};
 
-#[derive(Resource)]
-pub struct CaptureState {
-    pub image_handles: Arc<PlayerCaptures<Vec<Handle<Image>>>>,
-    pub image_entities: Arc<PlayerCaptures<Entity>>,
-    pub counts: PlayerCaptures<u8>,
+#[derive(Default, Deref, DerefMut, Resource)]
+pub struct CaptureState(Arc<PlayerCaptures<CapState>>);
+
+impl CaptureState {
+    #[cfg(debug_assertions)]
+    #[allow(dead_code)]
+    pub fn log_counts(&self) {
+        fn log(color: &str, caps: &PieceCaptures<CapState>) {
+            info!(
+                pawns = caps[PieceType(chess::Piece::Pawn)].count,
+                bishops = caps[PieceType(chess::Piece::Bishop)].count,
+                knights = caps[PieceType(chess::Piece::Knight)].count,
+                rooks = caps[PieceType(chess::Piece::Rook)].count,
+                queens = caps[PieceType(chess::Piece::Queen)].count,
+                "{color}"
+            );
+        }
+        info!("");
+        info!("================== Capture Counts ==================");
+        log("White :", &self.0[PieceColor(chess::Color::White)]);
+        log("Black :", &self.0[PieceColor(chess::Color::Black)]);
+    }
 }
 
-const DEFAULT_ENTITY: Entity = Entity::from_raw(u32::MAX);
+pub struct CapState {
+    pub image_handles: Vec<Handle<Image>>,
+    pub image_entity: Entity,
+    pub count: u8,
+}
 
-impl Default for CaptureState {
+impl Default for CapState {
     fn default() -> Self {
-        Self {
-            image_handles: Default::default(),
-            image_entities: Arc::new(PlayerCaptures::with(DEFAULT_ENTITY)),
-            counts: Default::default(),
-        }
+        Self { image_handles: Vec::new(), image_entity: Entity::from_raw(u32::MAX), count: 0 }
     }
 }
 
 #[derive(Clone, Copy, Default, Deref, DerefMut)]
 pub struct PlayerCaptures<C>(pub [PieceCaptures<C>; 2]);
-
-impl<C: Copy> PlayerCaptures<C> {
-    const fn with(c: C) -> Self {
-        Self([PieceCaptures::new(c); 2])
-    }
-}
 
 impl<C> Index<PieceColor> for PlayerCaptures<C> {
     type Output = PieceCaptures<C>;
@@ -51,12 +62,6 @@ impl<C> IndexMut<PieceColor> for PlayerCaptures<C> {
 
 #[derive(Clone, Copy, Default, Deref, DerefMut)]
 pub struct PieceCaptures<C>(pub [C; 5]);
-
-impl<C: Copy> PieceCaptures<C> {
-    const fn new(c: C) -> Self {
-        Self([c; 5])
-    }
-}
 
 impl<C> Index<usize> for PieceCaptures<C> {
     type Output = C;
@@ -86,14 +91,6 @@ impl<C> IndexMut<PieceType> for PieceCaptures<C> {
     }
 }
 
-impl CaptureState {
-    pub fn update_count(&mut self, BoardPiece { color, typ, .. }: BoardPiece) -> u8 {
-        let count = &mut self.counts[color][typ];
-        *count += 1;
-        *count
-    }
-}
-
 #[derive(Clone, Copy, Deref, DerefMut)]
 pub struct Captured(pub BoardPiece);
 
@@ -110,17 +107,19 @@ impl Command for Captured {
         }
 
         let mut capture_state = world.resource_mut::<CaptureState>();
+        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+        let cap_state = &mut capture_state[color][typ];
 
         // Update count
-        let count = capture_state.update_count(*self);
+        cap_state.count += 1;
+        let count = cap_state.count;
 
         // Get the handle to the correct image for the updated count
-        let image_handles = &capture_state.image_handles[color][typ];
-        let index = image_handles.len() - count as usize;
-        let handle = image_handles[index].clone();
+        let index = cap_state.image_handles.len() - count as usize;
+        let handle = cap_state.image_handles[index].clone();
 
         // Get the image entity
-        let image_entity = capture_state.image_entities[color][typ];
+        let image_entity = cap_state.image_entity;
         let mut image_entity = world.entity_mut(image_entity);
 
         // Set display to not-none if the count was previously 0
