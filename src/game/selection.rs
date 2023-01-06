@@ -6,9 +6,9 @@ use std::{
 use bevy::prelude::*;
 use chess::Square;
 
-use crate::data::{BoardState, DragContainer, HideHighlight, ShowHighlight};
+use crate::data::{BoardState, HideHighlight, ShowHighlight};
 
-use super::moves::DoMove;
+use super::{mouse::handler::DragContainer, moves::DoMove};
 
 #[derive(Clone, Copy, Debug, Eq)]
 pub enum SelectionState {

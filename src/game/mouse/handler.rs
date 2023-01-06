@@ -1,9 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{
-    data::{DragContainer, Tile},
-    game::selection::SelectionEvent,
-};
+use crate::{data::Tile, game::selection::SelectionEvent};
 
 use super::position::{MouseSquare, MouseWorldPosition};
 
@@ -24,6 +21,9 @@ pub(super) fn mouse_handler(
         }
     }
 }
+
+#[derive(Component)]
+pub struct DragContainer;
 
 pub(super) fn update_drag_container(
     mouse_world_pos: Res<MouseWorldPosition>,
