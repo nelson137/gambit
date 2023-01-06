@@ -6,6 +6,3 @@ pub use game::*;
 
 mod square;
 pub use square::*;
-
-mod z;
-pub use z::*;
