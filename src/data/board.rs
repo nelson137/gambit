@@ -90,8 +90,21 @@ impl Not for PieceColor {
     }
 }
 
+impl PieceColor {
+    pub const BLACK: Self = Self(chess::Color::Black);
+    pub const WHITE: Self = Self(chess::Color::White);
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
+
+impl PieceType {
+    pub const PAWN: Self = Self(chess::Piece::Pawn);
+    pub const BISHOP: Self = Self(chess::Piece::Bishop);
+    pub const KNIGHT: Self = Self(chess::Piece::Knight);
+    pub const ROOK: Self = Self(chess::Piece::Rook);
+    pub const QUEEN: Self = Self(chess::Piece::Queen);
+}
 
 #[derive(Clone, Copy, Debug)]
 pub struct BoardPiece {
