@@ -6,12 +6,11 @@ use chess::{File, Rank};
 use crate::{
     assets::SquareStartingPieceInfo,
     data::{
-        BoardPiece, BoardState, HighlightTile, MainCamera, MoveHints, PieceColor, PieceType, Tile,
-        Ui, UiBoard, UiPiece, UiSquare, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT,
-        COLOR_WHITE, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_PIECE_SELECTED,
-        Z_TILE,
+        BoardPiece, BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, Ui, UiBoard,
+        UiPiece, UiSquare, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
+        Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE, Z_PIECE_SELECTED, Z_TILE,
     },
-    game::{captures::CaptureState, mouse::handler::DragContainer},
+    game::{camera::MainCamera, captures::CaptureState, mouse::handler::DragContainer},
     utils::AppPushOrderedStartupStages,
 };
 

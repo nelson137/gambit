@@ -3,6 +3,7 @@ use bevy::prelude::*;
 use crate::data::BoardState;
 
 pub mod audio;
+pub mod camera;
 pub mod captures;
 pub mod mouse;
 pub mod moves;

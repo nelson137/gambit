@@ -1,9 +1,6 @@
 mod board;
 pub use board::*;
 
-mod camera;
-pub use camera::*;
-
 mod game;
 pub use game::*;
 

@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use chess::Square;
 
-use crate::data::{MainCamera, Tile, UiSquare};
+use crate::{
+    data::{Tile, UiSquare},
+    game::camera::MainCamera,
+};
 
 #[derive(Default, Deref, DerefMut, Resource)]
 pub(super) struct MouseWorldPosition(pub Vec2);
