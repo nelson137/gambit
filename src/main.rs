@@ -10,8 +10,8 @@ mod utils;
 mod window;
 
 use self::{
-    data::{BoardState, COLOR_BG},
-    game::{captures::CaptureState, GameLogicPlugin},
+    data::COLOR_BG,
+    game::GameLogicPlugin,
     systems::{
         setup_camera, spawn_board, spawn_drag_container, spawn_panels, spawn_tiles_hints_pieces,
         spawn_ui, SpawnStage,
@@ -36,8 +36,6 @@ fn main() {
         .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
-        .init_resource::<BoardState>()
-        .init_resource::<CaptureState>()
         // Startup Systems
         .add_startup_system(setup_camera)
         .add_startup_system(spawn_drag_container)

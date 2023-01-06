@@ -10,6 +10,7 @@ pub mod selection;
 
 use self::{
     audio::GameAudioHandles,
+    captures::CaptureState,
     mouse::MouseLogicPlugin,
     moves::{move_piece, DoMove},
     selection::{SelectionEvent, SelectionState},
@@ -24,6 +25,8 @@ impl Plugin for GameLogicPlugin {
             .add_plugin(MouseLogicPlugin)
             // Resources
             .init_resource::<GameAudioHandles>()
+            .init_resource::<BoardState>()
+            .init_resource::<CaptureState>()
             // States
             .add_state(SelectionState::Unselected)
             // Events
