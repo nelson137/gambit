@@ -5,18 +5,14 @@ use bevy::prelude::*;
 mod assets;
 mod data;
 mod game;
-mod systems;
+mod startup;
 mod utils;
 mod window;
 
 use self::{
     data::COLOR_BG,
     game::GameLogicPlugin,
-    systems::{
-        setup_camera, spawn_board, spawn_drag_container, spawn_panels, spawn_tiles_hints_pieces,
-        spawn_ui, SpawnStage,
-    },
-    utils::AppPushOrderedStartupStages,
+    startup::StartupLogicPlugin,
     window::{WIN_HEIGHT, WIN_WIDTH},
 };
 
@@ -33,22 +29,10 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(StartupLogicPlugin)
         .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
-        // Startup Systems
-        .add_startup_system(setup_camera)
-        .add_startup_system(spawn_drag_container)
-        .push_ordered_startup_stages([
-            (SpawnStage::Phase1, SystemStage::single(spawn_ui)),
-            (SpawnStage::Phase2, SystemStage::single(spawn_board)),
-            (
-                SpawnStage::Phase3,
-                SystemStage::parallel()
-                    .with_system(spawn_tiles_hints_pieces)
-                    .with_system(spawn_panels),
-            ),
-        ])
         // Run
         .run();
 }

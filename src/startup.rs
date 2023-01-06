@@ -12,20 +12,40 @@ use crate::{
         Z_PIECE_SELECTED, Z_TILE,
     },
     game::captures::CaptureState,
+    utils::AppPushOrderedStartupStages,
 };
 
-pub fn setup_camera(mut commands: Commands) {
+pub struct StartupLogicPlugin;
+
+impl Plugin for StartupLogicPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_system(setup_camera)
+            .add_startup_system(spawn_drag_container)
+            .push_ordered_startup_stages([
+                (SpawnStage::Phase1, SystemStage::single(spawn_ui)),
+                (SpawnStage::Phase2, SystemStage::single(spawn_board)),
+                (
+                    SpawnStage::Phase3,
+                    SystemStage::parallel()
+                        .with_system(spawn_tiles_hints_pieces)
+                        .with_system(spawn_panels),
+                ),
+            ]);
+    }
+}
+
+fn setup_camera(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
 }
 
 #[derive(Clone, StageLabel)]
-pub enum SpawnStage {
+enum SpawnStage {
     Phase1,
     Phase2,
     Phase3,
 }
 
-pub fn spawn_ui(mut commands: Commands) {
+fn spawn_ui(mut commands: Commands) {
     commands.spawn((
         Ui,
         NodeBundle {
@@ -41,7 +61,7 @@ pub fn spawn_ui(mut commands: Commands) {
     ));
 }
 
-pub fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
+fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     // let min_size = PANEL_HEIGHT * 2.0;
     let entity = commands
         .spawn((
@@ -62,7 +82,7 @@ pub fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     commands.entity(q_ui.single()).add_child(entity);
 }
 
-pub fn spawn_tiles_hints_pieces(
+fn spawn_tiles_hints_pieces(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
@@ -264,7 +284,7 @@ pub fn spawn_tiles_hints_pieces(
     }
 }
 
-pub fn spawn_panels(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
+fn spawn_panels(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     let container = commands
         .spawn(NodeBundle {
             style: Style {
@@ -344,7 +364,7 @@ impl Command for PanelData {
     }
 }
 
-pub fn spawn_drag_container(mut commands: Commands) {
+fn spawn_drag_container(mut commands: Commands) {
     commands.spawn((
         DragContainer,
         NodeBundle { z_index: ZIndex::Global(Z_PIECE_SELECTED), ..default() },
