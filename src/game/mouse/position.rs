@@ -3,26 +3,11 @@ use chess::Square;
 
 use crate::data::{MainCamera, Tile, UiSquare};
 
-pub struct MousePositionPlugin;
-
-impl Plugin for MousePositionPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<MouseWorldPosition>()
-            .init_resource::<MouseSquare>()
-            .add_system_set_to_stage(
-                CoreStage::PreUpdate,
-                SystemSet::new().with_system(mouse_screen_position_to_world).with_system(
-                    mouse_world_position_to_square.after(mouse_screen_position_to_world),
-                ),
-            );
-    }
-}
-
 #[derive(Default, Deref, DerefMut, Resource)]
-pub struct MouseWorldPosition(pub Vec2);
+pub(super) struct MouseWorldPosition(pub Vec2);
 
 // Source: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
-pub fn mouse_screen_position_to_world(
+pub(super) fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
@@ -48,9 +33,9 @@ pub fn mouse_screen_position_to_world(
 }
 
 #[derive(Default, Deref, DerefMut, Resource)]
-pub struct MouseSquare(pub Option<Square>);
+pub(super) struct MouseSquare(pub Option<Square>);
 
-pub fn mouse_world_position_to_square(
+pub(super) fn mouse_world_position_to_square(
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_square: ResMut<MouseSquare>,
     q_tiles: Query<(&UiSquare, &GlobalTransform, &Node), With<Tile>>,

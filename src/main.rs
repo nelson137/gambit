@@ -11,7 +11,7 @@ mod window;
 
 use self::{
     data::{BoardState, COLOR_BG},
-    game::{captures::CaptureState, mouse::position::MousePositionPlugin, GameLogicPlugin},
+    game::{captures::CaptureState, GameLogicPlugin},
     systems::{
         setup_camera, spawn_board, spawn_drag_container, spawn_panels, spawn_tiles_hints_pieces,
         spawn_ui, SpawnStage,
@@ -33,7 +33,6 @@ fn main() {
             },
             ..default()
         }))
-        .add_plugin(MousePositionPlugin)
         .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))

@@ -10,7 +10,7 @@ pub mod selection;
 
 use self::{
     audio::GameAudioHandles,
-    mouse::handler::{mouse_handler, update_drag_container},
+    mouse::MouseLogicPlugin,
     moves::{move_piece, DoMove},
     selection::{SelectionEvent, SelectionState},
 };
@@ -20,6 +20,8 @@ pub struct GameLogicPlugin;
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Plugins
+            .add_plugin(MouseLogicPlugin)
             // Resources
             .init_resource::<GameAudioHandles>()
             // States
@@ -28,7 +30,6 @@ impl Plugin for GameLogicPlugin {
             .add_event::<SelectionEvent>()
             .add_event::<DoMove>()
             // Systems
-            .add_system(mouse_handler)
             .add_system(event_handler.at_end())
             .add_system_set(
                 SystemSet::on_enter(SelectionState::SELECTING_DRAGGING).with_system(on_enter),
@@ -42,7 +43,6 @@ impl Plugin for GameLogicPlugin {
             )
             .add_system_set(SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter))
             .add_system_set(SystemSet::on_enter(SelectionState::DO_UNSELECT).with_system(on_enter))
-            .add_system(update_drag_container)
             .add_system(move_piece);
     }
 }

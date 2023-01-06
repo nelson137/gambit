@@ -7,7 +7,7 @@ use crate::{
 
 use super::position::{MouseSquare, MouseWorldPosition};
 
-pub fn mouse_handler(
+pub(super) fn mouse_handler(
     mouse_buttons: Res<Input<MouseButton>>,
     mouse_square: Res<MouseSquare>,
     mut event_writer: EventWriter<SelectionEvent>,
@@ -25,7 +25,7 @@ pub fn mouse_handler(
     }
 }
 
-pub fn update_drag_container(
+pub(super) fn update_drag_container(
     mouse_world_pos: Res<MouseWorldPosition>,
     q_tiles: Query<&Node, With<Tile>>,
     mut q_container: Query<&mut Style, With<DragContainer>>,
