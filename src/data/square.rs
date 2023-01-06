@@ -4,9 +4,9 @@ use bevy::prelude::*;
 use chess::{File, Rank, Square};
 
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq, Hash, Deref, DerefMut)]
-pub struct UiSquare(pub Square);
+pub struct BoardLocation(pub Square);
 
-impl UiSquare {
+impl BoardLocation {
     pub fn file_to_char(file: File) -> char {
         (b'a' + file.to_index() as u8) as char
     }
@@ -40,7 +40,7 @@ impl UiSquare {
     }
 }
 
-impl fmt::Display for UiSquare {
+impl fmt::Display for BoardLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_fmt(format_args!("{}", **self))
     }

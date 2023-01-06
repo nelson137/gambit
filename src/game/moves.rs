@@ -2,7 +2,7 @@ use bevy::{ecs::system::Command, prelude::*};
 use chess::{File, Square};
 
 use crate::{
-    data::UiSquare,
+    data::BoardLocation,
     game::{
         audio::PlayGameAudio,
         board::{BoardPiece, BoardState},
@@ -25,7 +25,7 @@ pub struct MoveUiPiece {
 impl Command for MoveUiPiece {
     fn write(self, world: &mut World) {
         let mut entity = world.entity_mut(self.piece.entity);
-        if let Some(mut square) = entity.get_mut::<UiSquare>() {
+        if let Some(mut square) = entity.get_mut::<BoardLocation>() {
             square.move_to(self.to_sq);
         }
 

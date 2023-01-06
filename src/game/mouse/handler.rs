@@ -2,22 +2,22 @@ use bevy::prelude::*;
 
 use crate::game::{board::Tile, selection::SelectionEvent};
 
-use super::position::{MouseSquare, MouseWorldPosition};
+use super::position::{MouseBoardLocation, MouseWorldPosition};
 
 pub(super) fn mouse_handler(
     mouse_buttons: Res<Input<MouseButton>>,
-    mouse_square: Res<MouseSquare>,
+    mouse_loc: Res<MouseBoardLocation>,
     mut event_writer: EventWriter<SelectionEvent>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
-        if let Some(mouse_square) = **mouse_square {
-            event_writer.send(SelectionEvent::MouseDown(mouse_square));
+        if let Some(square) = **mouse_loc {
+            event_writer.send(SelectionEvent::MouseDown(square));
         }
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
-        if let Some(mouse_square) = **mouse_square {
-            event_writer.send(SelectionEvent::MouseUp(mouse_square));
+        if let Some(square) = **mouse_loc {
+            event_writer.send(SelectionEvent::MouseUp(square));
         }
     }
 }

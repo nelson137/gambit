@@ -5,7 +5,7 @@ use chess::{File, Rank};
 
 use crate::{
     assets::SquareStartingPieceInfo,
-    data::UiSquare,
+    data::BoardLocation,
     game::{
         board::{
             BoardPiece, BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiPiece,
@@ -123,7 +123,7 @@ fn spawn_tiles_hints_pieces(
     for square in !chess::EMPTY {
         let file = square.get_file();
         let rank = square.get_rank();
-        let ui_square = UiSquare::new(square);
+        let location = BoardLocation::new(square);
 
         // Tile
         let file_rank_sum = rank.to_index() + file.to_index();
@@ -131,7 +131,7 @@ fn spawn_tiles_hints_pieces(
         let tile_entity = commands
             .spawn((
                 Tile,
-                ui_square,
+                location,
                 NodeBundle {
                     background_color: color.into(),
                     style: Style {
@@ -167,7 +167,7 @@ fn spawn_tiles_hints_pieces(
                     })
                     .with_children(|cmds| {
                         cmds.spawn(TextBundle {
-                            text: Text::from_section(ui_square.file_char(), text_style),
+                            text: Text::from_section(location.file_char(), text_style),
                             style: Style { margin: file_label_margins, ..default() },
                             ..default()
                         });
@@ -195,7 +195,7 @@ fn spawn_tiles_hints_pieces(
                     })
                     .with_children(|cmds| {
                         cmds.spawn(TextBundle {
-                            text: Text::from_section(ui_square.rank_char(), text_style),
+                            text: Text::from_section(location.rank_char(), text_style),
                             style: Style { margin: rank_label_margins, ..default() },
                             ..default()
                         });
@@ -206,7 +206,7 @@ fn spawn_tiles_hints_pieces(
                 let hl_tile_entity = cmds
                     .spawn((
                         HighlightTile,
-                        ui_square,
+                        location,
                         NodeBundle {
                             background_color: COLOR_HIGHLIGHT.into(),
                             style: Style {
@@ -226,7 +226,7 @@ fn spawn_tiles_hints_pieces(
                 // Move hint
                 let move_entity = cmds
                     .spawn((
-                        ui_square,
+                        location,
                         NodeBundle {
                             style: Style {
                                 position_type: PositionType::Absolute,
@@ -259,7 +259,7 @@ fn spawn_tiles_hints_pieces(
                 // Capture hint
                 let capture_entity = cmds
                     .spawn((
-                        ui_square,
+                        location,
                         ImageBundle {
                             image: UiImage(capture_hint_texture.clone()),
                             style: Style {
@@ -283,7 +283,7 @@ fn spawn_tiles_hints_pieces(
                     let piece_entity = cmds
                         .spawn((
                             UiPiece::new(piece_color, piece_type),
-                            ui_square,
+                            location,
                             ImageBundle {
                                 image: UiImage(asset_server.load(image_path)),
                                 style: Style {

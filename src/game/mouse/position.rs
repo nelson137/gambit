@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use chess::Square;
 
 use crate::{
-    data::UiSquare,
+    data::BoardLocation,
     game::{board::Tile, camera::MainCamera},
 };
 
@@ -36,16 +36,16 @@ pub(super) fn mouse_screen_position_to_world(
 }
 
 #[derive(Default, Deref, DerefMut, Resource)]
-pub(super) struct MouseSquare(pub Option<Square>);
+pub(super) struct MouseBoardLocation(pub Option<Square>);
 
 pub(super) fn mouse_world_position_to_square(
     mouse_world_pos: Res<MouseWorldPosition>,
-    mut mouse_square: ResMut<MouseSquare>,
-    q_tiles: Query<(&UiSquare, &GlobalTransform, &Node), With<Tile>>,
+    mut mouse_loc: ResMut<MouseBoardLocation>,
+    q_tiles: Query<(&BoardLocation, &GlobalTransform, &Node), With<Tile>>,
 ) {
     let mouse_pos = mouse_world_pos.extend(0.0);
 
-    for (square, global_transf, node) in &q_tiles {
+    for (loc, global_transf, node) in &q_tiles {
         let collision = bevy::sprite::collide_aabb::collide(
             mouse_pos,
             Vec2::ZERO,
@@ -53,10 +53,10 @@ pub(super) fn mouse_world_position_to_square(
             node.size(),
         );
         if collision.is_some() {
-            **mouse_square = Some(**square);
+            **mouse_loc = Some(**loc);
             return;
         }
     }
 
-    **mouse_square = None;
+    **mouse_loc = None;
 }

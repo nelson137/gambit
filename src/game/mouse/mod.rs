@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use self::{
     handler::{mouse_handler, update_drag_container},
     position::{
-        mouse_screen_position_to_world, mouse_world_position_to_square, MouseSquare,
+        mouse_screen_position_to_world, mouse_world_position_to_square, MouseBoardLocation,
         MouseWorldPosition,
     },
 };
@@ -16,7 +16,7 @@ pub struct MouseLogicPlugin;
 impl Plugin for MouseLogicPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<MouseWorldPosition>()
-            .init_resource::<MouseSquare>()
+            .init_resource::<MouseBoardLocation>()
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
                 SystemSet::new().with_system(mouse_screen_position_to_world).with_system(
