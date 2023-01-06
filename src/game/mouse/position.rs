@@ -1,6 +1,7 @@
 use bevy::prelude::*;
+use chess::Square;
 
-use crate::data::{MainCamera, MouseSquare, MouseWorldPosition, Tile, UiSquare};
+use crate::data::{MainCamera, Tile, UiSquare};
 
 pub struct MousePositionPlugin;
 
@@ -17,8 +18,11 @@ impl Plugin for MousePositionPlugin {
     }
 }
 
+#[derive(Default, Deref, DerefMut, Resource)]
+pub struct MouseWorldPosition(pub Vec2);
+
 // Source: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
-fn mouse_screen_position_to_world(
+pub fn mouse_screen_position_to_world(
     windows: Res<Windows>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
@@ -43,7 +47,10 @@ fn mouse_screen_position_to_world(
     }
 }
 
-fn mouse_world_position_to_square(
+#[derive(Default, Deref, DerefMut, Resource)]
+pub struct MouseSquare(pub Option<Square>);
+
+pub fn mouse_world_position_to_square(
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_square: ResMut<MouseSquare>,
     q_tiles: Query<(&UiSquare, &GlobalTransform, &Node), With<Tile>>,

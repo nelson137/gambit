@@ -10,7 +10,7 @@ pub mod selection;
 
 use self::{
     audio::GameAudioHandles,
-    mouse::{mouse_handler, update_drag_container},
+    mouse::handler::{mouse_handler, update_drag_container},
     moves::{move_piece, DoMove},
     selection::{SelectionEvent, SelectionState},
 };

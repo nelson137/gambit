@@ -11,10 +11,10 @@ mod window;
 
 use self::{
     data::{BoardState, COLOR_BG},
-    game::{captures::CaptureState, GameLogicPlugin},
+    game::{captures::CaptureState, mouse::position::MousePositionPlugin, GameLogicPlugin},
     systems::{
         setup_camera, spawn_board, spawn_drag_container, spawn_panels, spawn_tiles_hints_pieces,
-        spawn_ui, MousePositionPlugin, SpawnStage,
+        spawn_ui, SpawnStage,
     },
     utils::AppPushOrderedStartupStages,
     window::{WIN_HEIGHT, WIN_WIDTH},
