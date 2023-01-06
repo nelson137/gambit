@@ -264,71 +264,7 @@ pub fn spawn_tiles_hints_pieces(
     }
 }
 
-pub fn spawn_panels(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut capture_state: ResMut<CaptureState>,
-    q_ui: Query<Entity, With<Ui>>,
-) {
-    const BLACK: PieceColor = PieceColor(chess::Color::Black);
-    const WHITE: PieceColor = PieceColor(chess::Color::White);
-    const PAWN: PieceType = PieceType(chess::Piece::Pawn);
-    const BISHOP: PieceType = PieceType(chess::Piece::Bishop);
-    const KNIGHT: PieceType = PieceType(chess::Piece::Knight);
-    const ROOK: PieceType = PieceType(chess::Piece::Rook);
-    const QUEEN: PieceType = PieceType(chess::Piece::Queen);
-    let capture_state = Arc::get_mut(&mut capture_state).unwrap();
-    capture_state[BLACK][PAWN].image_handles.extend([
-        asset_server.load("images/captures/white-pawns-8.png"),
-        asset_server.load("images/captures/white-pawns-7.png"),
-        asset_server.load("images/captures/white-pawns-6.png"),
-        asset_server.load("images/captures/white-pawns-5.png"),
-        asset_server.load("images/captures/white-pawns-4.png"),
-        asset_server.load("images/captures/white-pawns-3.png"),
-        asset_server.load("images/captures/white-pawns-2.png"),
-        asset_server.load("images/captures/white-pawns-1.png"),
-    ]);
-    capture_state[BLACK][BISHOP].image_handles.extend([
-        asset_server.load("images/captures/white-bishops-2.png"),
-        asset_server.load("images/captures/white-bishops-1.png"),
-    ]);
-    capture_state[BLACK][KNIGHT].image_handles.extend([
-        asset_server.load("images/captures/white-knights-2.png"),
-        asset_server.load("images/captures/white-knights-1.png"),
-    ]);
-    capture_state[BLACK][ROOK].image_handles.extend([
-        asset_server.load("images/captures/white-rooks-2.png"),
-        asset_server.load("images/captures/white-rooks-1.png"),
-    ]);
-    capture_state[BLACK][QUEEN]
-        .image_handles
-        .push(asset_server.load("images/captures/white-queen.png"));
-    capture_state[WHITE][PAWN].image_handles.extend([
-        asset_server.load("images/captures/black-pawns-8.png"),
-        asset_server.load("images/captures/black-pawns-7.png"),
-        asset_server.load("images/captures/black-pawns-6.png"),
-        asset_server.load("images/captures/black-pawns-5.png"),
-        asset_server.load("images/captures/black-pawns-4.png"),
-        asset_server.load("images/captures/black-pawns-3.png"),
-        asset_server.load("images/captures/black-pawns-2.png"),
-        asset_server.load("images/captures/black-pawns-1.png"),
-    ]);
-    capture_state[WHITE][BISHOP].image_handles.extend([
-        asset_server.load("images/captures/black-bishops-2.png"),
-        asset_server.load("images/captures/black-bishops-1.png"),
-    ]);
-    capture_state[WHITE][KNIGHT].image_handles.extend([
-        asset_server.load("images/captures/black-knights-2.png"),
-        asset_server.load("images/captures/black-knights-1.png"),
-    ]);
-    capture_state[WHITE][ROOK].image_handles.extend([
-        asset_server.load("images/captures/black-rooks-2.png"),
-        asset_server.load("images/captures/black-rooks-1.png"),
-    ]);
-    capture_state[WHITE][QUEEN]
-        .image_handles
-        .push(asset_server.load("images/captures/black-queen.png"));
-
+pub fn spawn_panels(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     let container = commands
         .spawn(NodeBundle {
             style: Style {
