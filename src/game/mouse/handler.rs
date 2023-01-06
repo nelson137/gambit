@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::{data::Tile, game::selection::SelectionEvent};
+use crate::game::{board::Tile, selection::SelectionEvent};
 
 use super::position::{MouseSquare, MouseWorldPosition};
 

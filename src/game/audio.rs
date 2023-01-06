@@ -1,7 +1,7 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::BitBoard;
 
-use crate::data::BoardState;
+use crate::game::board::BoardState;
 
 #[derive(Resource)]
 pub struct GameAudioHandles {

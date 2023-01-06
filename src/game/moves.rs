@@ -2,8 +2,11 @@ use bevy::{ecs::system::Command, prelude::*};
 use chess::{File, Square};
 
 use crate::{
-    data::{BoardPiece, BoardState, UiSquare},
-    game::audio::PlayGameAudio,
+    data::UiSquare,
+    game::{
+        audio::PlayGameAudio,
+        board::{BoardPiece, BoardState},
+    },
 };
 
 use super::captures::Captured;

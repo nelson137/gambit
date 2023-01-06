@@ -1,8 +1,7 @@
 use bevy::prelude::*;
 
-use crate::data::BoardState;
-
 pub mod audio;
+pub mod board;
 pub mod camera;
 pub mod captures;
 pub mod mouse;
@@ -11,6 +10,7 @@ pub mod selection;
 
 use self::{
     audio::GameAudioHandles,
+    board::BoardState,
     captures::CaptureState,
     mouse::MouseLogicPlugin,
     moves::{move_piece, DoMove},

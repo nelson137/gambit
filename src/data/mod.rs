@@ -1,6 +1,3 @@
-mod board;
-pub use board::*;
-
 mod game;
 pub use game::*;
 

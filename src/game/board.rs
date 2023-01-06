@@ -6,20 +6,12 @@ use std::{
 use bevy::{ecs::system::Command, prelude::*};
 use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
 
-#[derive(Component)]
-pub struct Ui;
-
-#[derive(Component)]
-pub struct UiBoard;
-
-/// The color used to highlight tiles.
-pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+// ======================================================================
+// Tile
+// ======================================================================
 
 #[derive(Component)]
 pub struct Tile;
-
-#[derive(Component)]
-pub struct HighlightTile;
 
 /// The "black" bord color.
 ///
@@ -39,7 +31,41 @@ pub const COLOR_WHITE: Color = Color::rgb(
     0xd2 as f32 / u8::MAX as f32,
 );
 
-pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
+// ======================================================================
+// Hightlight Tile
+// ======================================================================
+
+#[derive(Component)]
+pub struct HighlightTile;
+
+/// The color used to highlight tiles.
+pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+
+#[derive(Deref, DerefMut)]
+pub struct ShowHighlight(pub Entity);
+
+impl Command for ShowHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = true;
+        }
+    }
+}
+
+#[derive(Deref, DerefMut)]
+pub struct HideHighlight(pub Entity);
+
+impl Command for HideHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = false;
+        }
+    }
+}
+
+// ======================================================================
+// Move Hint & Capture Hint
+// ======================================================================
 
 #[derive(Default)]
 pub struct ShowHints(Vec<Entity>);
@@ -66,6 +92,10 @@ impl Command for HideHints {
         }
     }
 }
+
+// ======================================================================
+// Piece
+// ======================================================================
 
 #[derive(Component)]
 pub struct UiPiece {
@@ -120,6 +150,10 @@ impl PieceType {
     pub const QUEEN: Self = Self(chess::Piece::Queen);
 }
 
+// ======================================================================
+// Board State
+// ======================================================================
+
 #[derive(Clone, Copy)]
 pub struct BoardPiece {
     pub entity: Entity,
@@ -130,28 +164,6 @@ pub struct BoardPiece {
 impl BoardPiece {
     pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
         Self { entity, color, typ }
-    }
-}
-
-#[derive(Deref, DerefMut)]
-pub struct ShowHighlight(pub Entity);
-
-impl Command for ShowHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = true;
-        }
-    }
-}
-
-#[derive(Deref, DerefMut)]
-pub struct HideHighlight(pub Entity);
-
-impl Command for HideHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = false;
-        }
     }
 }
 

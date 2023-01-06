@@ -5,11 +5,16 @@ use chess::{File, Rank};
 
 use crate::{
     assets::SquareStartingPieceInfo,
-    data::{
-        BoardPiece, BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, Ui, UiBoard,
-        UiPiece, UiSquare, BOARD_TEXT_FONT_SIZE, COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
+    data::UiSquare,
+    game::{
+        board::{
+            BoardPiece, BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiPiece,
+            COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
+        },
+        camera::MainCamera,
+        captures::CaptureState,
+        mouse::handler::DragContainer,
     },
-    game::{camera::MainCamera, captures::CaptureState, mouse::handler::DragContainer},
     utils::AppPushOrderedStartupStages,
 };
 
@@ -55,6 +60,9 @@ enum SpawnStage {
     Phase3,
 }
 
+#[derive(Component)]
+pub struct Ui;
+
 fn spawn_ui(mut commands: Commands) {
     commands.spawn((
         Ui,
@@ -70,6 +78,9 @@ fn spawn_ui(mut commands: Commands) {
         },
     ));
 }
+
+#[derive(Component)]
+struct UiBoard;
 
 fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     // let min_size = PANEL_HEIGHT * 2.0;
@@ -133,6 +144,8 @@ fn spawn_tiles_hints_pieces(
                 },
             ))
             .with_children(|cmds| {
+                pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
+
                 // File markers
                 if square.get_rank() == Rank::First {
                     let text_style = TextStyle {

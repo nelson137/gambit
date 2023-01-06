@@ -2,8 +2,8 @@ use bevy::prelude::*;
 use chess::Square;
 
 use crate::{
-    data::{Tile, UiSquare},
-    game::camera::MainCamera,
+    data::UiSquare,
+    game::{board::Tile, camera::MainCamera},
 };
 
 #[derive(Default, Deref, DerefMut, Resource)]

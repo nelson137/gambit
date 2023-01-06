@@ -5,7 +5,7 @@ use std::{
 
 use bevy::{ecs::system::Command, prelude::*};
 
-use crate::data::{BoardPiece, PieceColor, PieceType};
+use crate::game::board::{BoardPiece, PieceColor, PieceType};
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct CaptureState(Arc<PlayerCaptures<CapState>>);
