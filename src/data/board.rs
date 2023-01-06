@@ -79,7 +79,7 @@ impl UiPiece {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Debug, Deref, DerefMut)]
+#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceColor(pub chess::Color);
 
 impl Not for PieceColor {
@@ -90,13 +90,27 @@ impl Not for PieceColor {
     }
 }
 
+#[cfg(debug_assertions)]
+impl std::fmt::Display for PieceColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
 impl PieceColor {
     pub const BLACK: Self = Self(chess::Color::Black);
     pub const WHITE: Self = Self(chess::Color::White);
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Deref, DerefMut)]
+#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
 pub struct PieceType(pub Piece);
+
+#[cfg(debug_assertions)]
+impl std::fmt::Display for PieceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
 
 impl PieceType {
     pub const PAWN: Self = Self(chess::Piece::Pawn);
@@ -106,7 +120,7 @@ impl PieceType {
     pub const QUEEN: Self = Self(chess::Piece::Queen);
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy)]
 pub struct BoardPiece {
     pub entity: Entity,
     pub color: PieceColor,
