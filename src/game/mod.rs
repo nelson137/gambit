@@ -1,7 +1,10 @@
 use bevy::prelude::*;
 use chess::{File, Square};
 
-use crate::data::{BoardState, DoMove, DragContainer, HideHighlight, MoveUiPiece, ShowHighlight};
+use crate::{
+    data::{BoardState, DoMove, DragContainer, HideHighlight, MoveUiPiece, ShowHighlight},
+    game::audio::PlayGameAudio,
+};
 
 pub mod audio;
 pub mod captures;
@@ -176,8 +179,6 @@ fn on_enter(
 
 fn move_piece(
     mut commands: Commands,
-    audio: Res<Audio>,
-    audio_handles: Res<GameAudioHandles>,
     mut board_state: ResMut<BoardState>,
     mut do_move_reader: EventReader<DoMove>,
 ) {
@@ -208,13 +209,13 @@ fn move_piece(
         commands.add(MoveUiPiece { piece, to_sq });
         if let Some(piece) = board_state.move_piece(from_sq, to_sq) {
             commands.add(Captured(piece));
-            audio.play(audio_handles.capture.clone_weak());
+            commands.add(PlayGameAudio::Capture);
         } else if was_castle {
-            audio.play(audio_handles.castle.clone_weak());
+            commands.add(PlayGameAudio::Castle);
         } else {
-            audio.play(match *piece.color {
-                chess::Color::Black => audio_handles.move_opponent.clone_weak(),
-                chess::Color::White => audio_handles.move_self.clone_weak(),
+            commands.add(match *piece.color {
+                chess::Color::Black => PlayGameAudio::MoveOpponent,
+                chess::Color::White => PlayGameAudio::MoveSelf,
             });
         }
     }
