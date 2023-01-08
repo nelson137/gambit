@@ -7,6 +7,7 @@ pub mod captures;
 pub mod mouse;
 pub mod moves;
 pub mod selection;
+pub mod utils;
 
 use self::{
     audio::GameAudioHandles,

@@ -4,7 +4,14 @@ use std::{
 };
 
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{BitBoard, Board, ChessMove, MoveGen, Piece, Square, EMPTY};
+use chess::{BitBoard, Board, ChessMove, File, MoveGen, Piece, Square, EMPTY};
+
+use super::{
+    audio::PlayGameAudio,
+    captures::Captured,
+    moves::{DoMove, MoveUiPiece},
+    utils::GameCommandList,
+};
 
 // ======================================================================
 // Tile
@@ -338,25 +345,71 @@ impl BoardState {
         move_gen.any(|m| m.get_source() == source)
     }
 
-    pub fn move_piece(&mut self, from: Square, to: Square) -> Option<BoardPiece> {
-        self.board = self.board.make_move_new(ChessMove::new(from, to, None));
+    #[must_use]
+    pub fn move_piece(&mut self, DoMove { piece, from_sq, to_sq }: DoMove) -> GameCommandList {
+        let mut cmd_list = GameCommandList::default();
+
+        let mut was_castle = false;
+
+        if *piece.typ == chess::Piece::King {
+            let castle_rights = self.board.my_castle_rights();
+            let back_rank = piece.color.to_my_backrank();
+            let kingside_sq = Square::make_square(back_rank, File::G);
+            let queenside_sq = Square::make_square(back_rank, File::C);
+
+            // Move UI rook
+            if castle_rights.has_kingside() && to_sq == kingside_sq {
+                let piece = self.piece(Square::make_square(back_rank, File::H));
+                let to_sq = Square::make_square(back_rank, File::F);
+                cmd_list.add(MoveUiPiece { piece, to_sq });
+                was_castle = true;
+            } else if castle_rights.has_queenside() && to_sq == queenside_sq {
+                let piece = self.piece(Square::make_square(back_rank, File::A));
+                let to_sq = Square::make_square(back_rank, File::D);
+                cmd_list.add(MoveUiPiece { piece, to_sq });
+                was_castle = true;
+            }
+        }
+
+        // Move UI piece
+        cmd_list.add(MoveUiPiece { piece, to_sq });
+
+        // Make move on board
+        self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));
+
+        // Update pieces map
         let (_old_square, piece) = self
             .pieces
-            .remove_entry(&from)
+            .remove_entry(&from_sq)
             .expect("Failed to move board state piece: no piece found at source square");
-        match self.pieces.entry(to) {
-            // Capture
+        let captured_piece = match self.pieces.entry(to_sq) {
+            // Move is a capture
             Entry::Occupied(mut entry) => {
                 let value = entry.get_mut();
                 let old_piece = *value;
                 *value = piece;
                 Some(old_piece)
             }
-            // Move
+            // Move is just a move
             Entry::Vacant(entry) => {
                 entry.insert(piece);
                 None
             }
+        };
+
+        // Play audio
+        if let Some(piece) = captured_piece {
+            cmd_list.add(Captured(piece));
+            cmd_list.add(PlayGameAudio::Capture);
+        } else if was_castle {
+            cmd_list.add(PlayGameAudio::Castle);
+        } else {
+            cmd_list.add(match *piece.color {
+                chess::Color::Black => PlayGameAudio::MoveOpponent,
+                chess::Color::White => PlayGameAudio::MoveSelf,
+            });
         }
+
+        cmd_list
     }
 }
