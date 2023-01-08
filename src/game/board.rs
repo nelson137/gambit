@@ -359,12 +359,12 @@ impl BoardState {
 
             // Move UI rook
             if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::H));
+                let piece = self.piece(Square::make_square(back_rank, File::H)).entity;
                 let to_sq = Square::make_square(back_rank, File::F);
                 cmd_list.add(MoveUiPiece { piece, to_sq });
                 was_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::A));
+                let piece = self.piece(Square::make_square(back_rank, File::A)).entity;
                 let to_sq = Square::make_square(back_rank, File::D);
                 cmd_list.add(MoveUiPiece { piece, to_sq });
                 was_castle = true;
@@ -372,7 +372,7 @@ impl BoardState {
         }
 
         // Move UI piece
-        cmd_list.add(MoveUiPiece { piece, to_sq });
+        cmd_list.add(MoveUiPiece { piece: piece.entity, to_sq });
 
         // Make move on board
         self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));
