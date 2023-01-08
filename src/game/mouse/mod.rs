@@ -1,5 +1,9 @@
 use bevy::prelude::*;
 
+mod handler;
+mod position;
+mod selection;
+
 use self::{
     handler::{mouse_handler, update_drag_container},
     position::{
@@ -10,10 +14,6 @@ use self::{
         handle_selection_events, on_enter_selection_state, SelectionEvent, SelectionState,
     },
 };
-
-pub mod handler;
-pub mod position;
-pub mod selection;
 
 pub struct MouseLogicPlugin;
 
