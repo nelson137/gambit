@@ -119,8 +119,7 @@ fn spawn_tiles_hints_pieces(
     let rank_label_margins =
         UiRect { top: Val::Percent(1.0), left: Val::Percent(4.5), ..default() };
 
-    // Iterates through all squares, row-wise, from a1 to h8
-    for square in !chess::EMPTY {
+    for square in chess::ALL_SQUARES {
         let file = square.get_file();
         let rank = square.get_rank();
         let location = BoardLocation::new(square);
