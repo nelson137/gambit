@@ -349,11 +349,16 @@ impl BoardState {
     pub fn move_piece(&mut self, DoMove { piece, from_sq, to_sq }: DoMove) -> GameCommandList {
         let mut cmd_list = GameCommandList::default();
 
+        let (color, typ) = match (self.board.color_on(from_sq), self.board.piece_on(from_sq)) {
+            (Some(c), Some(t)) => (c, t),
+            _ => return cmd_list,
+        };
+
         let mut was_castle = false;
 
-        if *piece.typ == chess::Piece::King {
+        if typ == chess::Piece::King {
             let castle_rights = self.board.my_castle_rights();
-            let back_rank = piece.color.to_my_backrank();
+            let back_rank = color.to_my_backrank();
             let kingside_sq = Square::make_square(back_rank, File::G);
             let queenside_sq = Square::make_square(back_rank, File::C);
 
@@ -372,7 +377,7 @@ impl BoardState {
         }
 
         // Move UI piece
-        cmd_list.add(MoveUiPiece { piece: piece.entity, to_sq });
+        cmd_list.add(MoveUiPiece { piece, to_sq });
 
         // Make move on board
         self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));

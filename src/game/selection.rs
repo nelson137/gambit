@@ -175,7 +175,7 @@ pub(super) fn on_enter_selection_state(
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece = board_state.piece(from_sq);
+            let piece = board_state.piece(from_sq).entity;
             do_move_writer.send(DoMove { piece, from_sq, to_sq });
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
