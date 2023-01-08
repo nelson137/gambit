@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 
-use crate::game::{board::Tile, selection::SelectionEvent};
+use crate::game::board::Tile;
 
-use super::position::{MouseBoardLocation, MouseWorldPosition};
+use super::{
+    position::{MouseBoardLocation, MouseWorldPosition},
+    selection::SelectionEvent,
+};
 
 pub(super) fn mouse_handler(
     mouse_buttons: Res<Input<MouseButton>>,

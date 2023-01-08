@@ -6,7 +6,7 @@ use std::{
 use bevy::prelude::*;
 use chess::Square;
 
-use super::{
+use crate::game::{
     board::{BoardState, HideHighlight, ShowHighlight},
     mouse::handler::DragContainer,
     moves::DoMove,
