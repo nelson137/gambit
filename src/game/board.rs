@@ -161,19 +161,6 @@ impl PieceType {
 // Board State
 // ======================================================================
 
-#[derive(Clone, Copy)]
-pub struct BoardPiece {
-    pub entity: Entity,
-    pub color: PieceColor,
-    pub typ: PieceType,
-}
-
-impl BoardPiece {
-    pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
-        Self { entity, color, typ }
-    }
-}
-
 #[derive(Debug)]
 pub struct MoveHints {
     pub move_entity: Entity,
@@ -215,7 +202,7 @@ const MAX_POSSIBLE_MOVES: usize = 27;
 #[derive(Resource)]
 pub struct BoardState {
     tiles: HashMap<Square, Entity>,
-    pieces: HashMap<Square, BoardPiece>,
+    pieces: HashMap<Square, Entity>,
     highlights: HashMap<Square, Entity>,
     move_hints: HashMap<Square, MoveHints>,
     board: Board,
@@ -236,8 +223,12 @@ impl Default for BoardState {
 }
 
 impl BoardState {
+    fn color_on(&self, square: Square) -> chess::Color {
+        self.board.color_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
+    }
+
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
-        self.board.side_to_move() == *self.piece(square).color
+        self.color_on(square) == self.board.side_to_move()
     }
 
     pub fn tile(&self, square: Square) -> Entity {
@@ -255,15 +246,15 @@ impl BoardState {
         self.pieces.contains_key(&square)
     }
 
-    pub fn piece(&self, square: Square) -> BoardPiece {
+    pub fn piece(&self, square: Square) -> Entity {
         self.get_piece(square).unwrap_or_else(|| panic!("no piece at {square}"))
     }
 
-    pub fn get_piece(&self, square: Square) -> Option<BoardPiece> {
+    pub fn get_piece(&self, square: Square) -> Option<Entity> {
         self.pieces.get(&square).copied()
     }
 
-    pub fn set_piece(&mut self, square: Square, piece: BoardPiece) {
+    pub fn set_piece(&mut self, square: Square, piece: Entity) {
         match self.pieces.entry(square) {
             Entry::Occupied(_) => panic!("piece already in the state at {square}"),
             Entry::Vacant(e) => e.insert(piece),
@@ -364,12 +355,12 @@ impl BoardState {
 
             // Move UI rook
             if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::H)).entity;
+                let piece = self.piece(Square::make_square(back_rank, File::H));
                 let to_sq = Square::make_square(back_rank, File::F);
                 cmd_list.add(MoveUiPiece { piece, to_sq });
                 was_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::A)).entity;
+                let piece = self.piece(Square::make_square(back_rank, File::A));
                 let to_sq = Square::make_square(back_rank, File::D);
                 cmd_list.add(MoveUiPiece { piece, to_sq });
                 was_castle = true;
@@ -404,12 +395,12 @@ impl BoardState {
 
         // Play audio
         if let Some(piece) = captured_piece {
-            cmd_list.add(Captured(piece));
+            cmd_list.add(Captured::new(piece, color, typ));
             cmd_list.add(PlayGameAudio::Capture);
         } else if was_castle {
             cmd_list.add(PlayGameAudio::Castle);
         } else {
-            cmd_list.add(match *piece.color {
+            cmd_list.add(match color {
                 chess::Color::Black => PlayGameAudio::MoveOpponent,
                 chess::Color::White => PlayGameAudio::MoveSelf,
             });

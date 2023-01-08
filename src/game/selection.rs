@@ -145,7 +145,7 @@ pub(super) fn on_enter_selection_state(
         SelectionState::Unselected => (),
         SelectionState::SelectingDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.piece(square).entity;
+            let piece = board_state.piece(square);
             commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
             let hl_tile = board_state.highlight(square);
@@ -155,13 +155,13 @@ pub(super) fn on_enter_selection_state(
         }
         SelectionState::Selected(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.piece(square).entity;
+            let piece = board_state.piece(square);
             let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
         }
         SelectionState::SelectedDragging(square) => {
             // Re-parent piece to drag container
-            let piece = board_state.piece(square).entity;
+            let piece = board_state.piece(square);
             commands.entity(piece).set_parent(q_drag_container.single());
         }
         SelectionState::DoChangeSelection(from_sq, to_sq) => {
@@ -175,7 +175,7 @@ pub(super) fn on_enter_selection_state(
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece = board_state.piece(from_sq).entity;
+            let piece = board_state.piece(from_sq);
             do_move_writer.send(DoMove { piece, from_sq, to_sq });
             // Hide highlight tile
             let hl_tile = board_state.highlight(from_sq);
@@ -187,7 +187,7 @@ pub(super) fn on_enter_selection_state(
         }
         SelectionState::DoUnselect(square) => {
             // Re-parent piece back to its tile
-            let piece = board_state.piece(square).entity;
+            let piece = board_state.piece(square);
             let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
             // Hide highlight tile

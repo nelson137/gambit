@@ -5,7 +5,7 @@ use std::{
 
 use bevy::{ecs::system::Command, prelude::*};
 
-use crate::game::board::{BoardPiece, PieceColor, PieceType};
+use crate::game::board::{PieceColor, PieceType};
 
 #[derive(Deref, DerefMut, Resource)]
 pub struct CaptureState(Arc<PlayerCaptures<CapState>>);
@@ -152,18 +152,28 @@ impl<C> IndexMut<PieceType> for PieceCaptures<C> {
     }
 }
 
-#[derive(Clone, Copy, Deref, DerefMut)]
-pub struct Captured(pub BoardPiece);
+#[derive(Clone, Copy)]
+pub struct Captured {
+    entity: Entity,
+    color: chess::Color,
+    typ: chess::Piece,
+}
+
+impl Captured {
+    pub fn new(entity: Entity, color: chess::Color, typ: chess::Piece) -> Self {
+        Self { entity, color, typ }
+    }
+}
 
 impl Command for Captured {
     fn write(self, world: &mut World) {
-        let BoardPiece { entity, mut color, typ } = *self;
         // The count and capture image need to be updated for the player who performed the capture,
         // i.e. the one whose color is the opposite of that of the captured piece.
-        color = !color;
+        let color = PieceColor(!self.color);
+        let typ = PieceType(self.typ);
 
         // Hide piece
-        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+        if let Some(mut vis) = world.entity_mut(self.entity).get_mut::<Visibility>() {
             vis.is_visible = false;
         }
 

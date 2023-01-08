@@ -8,7 +8,7 @@ use crate::{
     data::BoardLocation,
     game::{
         board::{
-            BoardPiece, BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiPiece,
+            BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiPiece,
             COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
         },
         camera::MainCamera,
@@ -297,8 +297,7 @@ fn spawn_tiles_hints_pieces(
                             },
                         ))
                         .id();
-                    board_state
-                        .set_piece(square, BoardPiece::new(piece_entity, piece_color, piece_type));
+                    board_state.set_piece(square, piece_entity);
                 }
             })
             .id();
