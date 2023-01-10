@@ -8,7 +8,7 @@ use crate::{
     data::BoardLocation,
     game::{
         board::{
-            BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiPiece,
+            BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiBoard, UiPiece,
             COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
         },
         camera::MainCamera,
@@ -78,9 +78,6 @@ fn spawn_ui(mut commands: Commands) {
         },
     ));
 }
-
-#[derive(Component)]
-struct UiBoard;
 
 fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     // let min_size = PANEL_HEIGHT * 2.0;
