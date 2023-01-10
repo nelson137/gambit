@@ -227,6 +227,10 @@ impl BoardState {
         self.board.color_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
     }
 
+    fn piece_on(&self, square: Square) -> chess::Piece {
+        self.board.piece_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
+    }
+
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
         self.color_on(square) == self.board.side_to_move()
     }
@@ -382,7 +386,9 @@ impl BoardState {
             // player, hence the `!color`).
             Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
                 self.pieces.insert(to_sq, piece);
-                self.pieces.remove(&ep_sq)
+                self.pieces
+                    .remove(&ep_sq)
+                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
             }
             _ => match self.pieces.entry(to_sq) {
                 // Capture
@@ -390,7 +396,7 @@ impl BoardState {
                     let value = entry.get_mut();
                     let old_piece = *value;
                     *value = piece;
-                    Some(old_piece)
+                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
                 }
                 // Move
                 Entry::Vacant(entry) => {
@@ -404,8 +410,8 @@ impl BoardState {
         self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));
 
         // Play audio
-        if let Some(piece) = captured_piece {
-            cmd_list.add(Captured::new(piece, color, typ));
+        if let Some((cap_entity, cap_color, cap_typ)) = captured_piece {
+            cmd_list.add(Captured::new(cap_entity, cap_color, cap_typ));
             cmd_list.add(PlayGameAudio::Capture);
         } else if is_castle {
             cmd_list.add(PlayGameAudio::Castle);
