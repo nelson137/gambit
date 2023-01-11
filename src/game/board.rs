@@ -14,100 +14,6 @@ use super::{
 };
 
 // ======================================================================
-// Board
-// ======================================================================
-
-#[derive(Component)]
-pub struct UiBoard;
-
-// ======================================================================
-// Tile
-// ======================================================================
-
-#[derive(Component)]
-pub struct Tile;
-
-/// The "black" bord color.
-///
-/// `#769656`
-pub const COLOR_BLACK: Color = Color::rgb(
-    0x76 as f32 / u8::MAX as f32,
-    0x96 as f32 / u8::MAX as f32,
-    0x56 as f32 / u8::MAX as f32,
-);
-
-/// The "white" bord color.
-///
-/// `#eeeed2`
-pub const COLOR_WHITE: Color = Color::rgb(
-    0xee as f32 / u8::MAX as f32,
-    0xee as f32 / u8::MAX as f32,
-    0xd2 as f32 / u8::MAX as f32,
-);
-
-// ======================================================================
-// Hightlight Tile
-// ======================================================================
-
-#[derive(Component)]
-pub struct HighlightTile;
-
-/// The color used to highlight tiles.
-pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
-
-#[derive(Deref, DerefMut)]
-pub struct ShowHighlight(pub Entity);
-
-impl Command for ShowHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = true;
-        }
-    }
-}
-
-#[derive(Deref, DerefMut)]
-pub struct HideHighlight(pub Entity);
-
-impl Command for HideHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = false;
-        }
-    }
-}
-
-// ======================================================================
-// Move Hint & Capture Hint
-// ======================================================================
-
-#[derive(Default)]
-pub struct ShowHints(Vec<Entity>);
-
-impl Command for ShowHints {
-    fn write(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = true;
-            }
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct HideHints(Vec<Entity>);
-
-impl Command for HideHints {
-    fn write(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = false;
-            }
-        }
-    }
-}
-
-// ======================================================================
 // Piece
 // ======================================================================
 
@@ -165,8 +71,98 @@ impl PieceType {
 }
 
 // ======================================================================
-// Board State
+// Move Hint & Capture Hint
 // ======================================================================
+
+#[derive(Default)]
+pub struct ShowHints(Vec<Entity>);
+
+impl Command for ShowHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = true;
+            }
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct HideHints(Vec<Entity>);
+
+impl Command for HideHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = false;
+            }
+        }
+    }
+}
+
+// ======================================================================
+// Hightlight Tile
+// ======================================================================
+
+#[derive(Component)]
+pub struct HighlightTile;
+
+/// The color used to highlight tiles.
+pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+
+#[derive(Deref, DerefMut)]
+pub struct ShowHighlight(pub Entity);
+
+impl Command for ShowHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = true;
+        }
+    }
+}
+
+#[derive(Deref, DerefMut)]
+pub struct HideHighlight(pub Entity);
+
+impl Command for HideHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = false;
+        }
+    }
+}
+
+// ======================================================================
+// Tile
+// ======================================================================
+
+#[derive(Component)]
+pub struct Tile;
+
+/// The "black" bord color.
+///
+/// `#769656`
+pub const COLOR_BLACK: Color = Color::rgb(
+    0x76 as f32 / u8::MAX as f32,
+    0x96 as f32 / u8::MAX as f32,
+    0x56 as f32 / u8::MAX as f32,
+);
+
+/// The "white" bord color.
+///
+/// `#eeeed2`
+pub const COLOR_WHITE: Color = Color::rgb(
+    0xee as f32 / u8::MAX as f32,
+    0xee as f32 / u8::MAX as f32,
+    0xd2 as f32 / u8::MAX as f32,
+);
+
+// ======================================================================
+// Board
+// ======================================================================
+
+#[derive(Component)]
+pub struct UiBoard;
 
 #[derive(Debug)]
 pub struct MoveHints {
