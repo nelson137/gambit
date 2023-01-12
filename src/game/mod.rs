@@ -14,7 +14,7 @@ use crate::utils::AppPushOrderedStartupStages;
 
 use self::{
     audio::GameAudioHandles,
-    board::{spawn_board, spawn_tiles_hints_pieces, BoardState},
+    board::{spawn_board, spawn_board_elements, BoardState},
     camera::setup_camera,
     captures::CaptureState,
     mouse::{spawn_drag_container, MouseLogicPlugin},
@@ -51,7 +51,7 @@ impl Plugin for GameLogicPlugin {
                 (
                     SpawnStage::Phase3,
                     SystemStage::parallel()
-                        .with_system(spawn_tiles_hints_pieces)
+                        .with_system(spawn_board_elements)
                         .with_system(spawn_panels),
                 ),
             ])

@@ -164,7 +164,7 @@ pub const COLOR_WHITE: Color = Color::rgb(
 // Spawn
 // ======================================================================
 
-pub fn spawn_tiles_hints_pieces(
+pub fn spawn_board_elements(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
