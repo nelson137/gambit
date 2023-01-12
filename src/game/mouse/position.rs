@@ -1,13 +1,10 @@
-use bevy::prelude::*;
-use chess::Square;
+use bevy::{prelude::*, sprite::collide_aabb::collide};
+use chess::{File, Rank, Square};
 
-use crate::{
-    data::BoardLocation,
-    game::{board::Tile, camera::MainCamera},
-};
+use crate::game::{board::UiBoard, camera::MainCamera};
 
 #[derive(Default, Deref, DerefMut, Resource)]
-pub(super) struct MouseWorldPosition(pub Vec2);
+pub struct MouseWorldPosition(pub Vec2);
 
 // Source: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
 pub(super) fn mouse_screen_position_to_world(
@@ -39,24 +36,29 @@ pub(super) fn mouse_screen_position_to_world(
 pub(super) struct MouseBoardLocation(pub Option<Square>);
 
 pub(super) fn mouse_world_position_to_square(
+    q_board: Query<(&GlobalTransform, &Node), With<UiBoard>>,
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_loc: ResMut<MouseBoardLocation>,
-    q_tiles: Query<(&BoardLocation, &GlobalTransform, &Node), With<Tile>>,
 ) {
-    let mouse_pos = mouse_world_pos.extend(0.0);
+    let mouse_pos = **mouse_world_pos;
 
-    for (loc, global_transf, node) in &q_tiles {
-        let collision = bevy::sprite::collide_aabb::collide(
-            mouse_pos,
-            Vec2::ZERO,
-            global_transf.translation(), // The z component doesn't matter, it is truncated away
-            node.size(),
-        );
-        if collision.is_some() {
-            **mouse_loc = Some(**loc);
-            return;
-        }
-    }
+    let (board_global_transf, board_node) = q_board.single();
+    let board_pos = board_global_transf.translation();
+    let board_size = board_node.size();
+    let tile_size = board_size / 8.0;
 
-    **mouse_loc = None;
+    let mouse_in_board =
+        collide(mouse_pos.extend(0.0), Vec2::ZERO, board_pos, board_size).is_some();
+
+    **mouse_loc = if mouse_in_board {
+        let board_top_left = board_pos.truncate() - (board_size / 2.0);
+        let mouse_board_pos = mouse_pos - board_top_left;
+        let mouse_board_pos_a1 = Vec2::new(mouse_board_pos.x, board_size.y - mouse_board_pos.y);
+        let mouse_square_index = mouse_board_pos_a1 / tile_size;
+        let file = File::from_index(mouse_square_index.x as usize);
+        let rank = Rank::from_index(mouse_square_index.y as usize);
+        Some(Square::make_square(rank, file))
+    } else {
+        None
+    };
 }
