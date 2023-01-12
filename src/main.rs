@@ -5,14 +5,12 @@ use bevy::prelude::*;
 mod assets;
 mod data;
 mod game;
-mod startup;
 mod utils;
 mod window;
 
 use self::{
     data::COLOR_BG,
     game::GameLogicPlugin,
-    startup::StartupLogicPlugin,
     window::{WIN_HEIGHT, WIN_WIDTH},
 };
 
@@ -29,7 +27,6 @@ fn main() {
             },
             ..default()
         }))
-        .add_plugin(StartupLogicPlugin)
         .add_plugin(GameLogicPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))

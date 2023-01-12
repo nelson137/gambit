@@ -1,165 +1,17 @@
-use std::{
-    collections::{hash_map::Entry, HashMap},
-    ops::Not,
-};
+use std::collections::{hash_map::Entry, HashMap};
 
-use bevy::{ecs::system::Command, prelude::*};
-use chess::{BitBoard, Board, ChessMove, File, MoveGen, Piece, Square, EMPTY};
+use bevy::prelude::*;
+use chess::{BitBoard, Board, ChessMove, File, MoveGen, Square, EMPTY};
 
-use super::{
+use crate::game::{
     audio::PlayGameAudio,
     captures::Captured,
     moves::{DoMove, MoveUiPiece},
+    ui::Ui,
     utils::GameCommandList,
 };
 
-// ======================================================================
-// Piece
-// ======================================================================
-
-#[derive(Component)]
-pub struct UiPiece {
-    pub color: PieceColor,
-    pub typ: PieceType,
-}
-
-impl UiPiece {
-    pub fn new(color: PieceColor, typ: PieceType) -> Self {
-        Self { color, typ }
-    }
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
-pub struct PieceColor(pub chess::Color);
-
-impl Not for PieceColor {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        Self(self.0.not())
-    }
-}
-
-#[cfg(debug_assertions)]
-impl std::fmt::Display for PieceColor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&self.0, f)
-    }
-}
-
-impl PieceColor {
-    pub const BLACK: Self = Self(chess::Color::Black);
-    pub const WHITE: Self = Self(chess::Color::White);
-}
-
-#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
-pub struct PieceType(pub Piece);
-
-#[cfg(debug_assertions)]
-impl std::fmt::Display for PieceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&self.0, f)
-    }
-}
-
-impl PieceType {
-    pub const PAWN: Self = Self(chess::Piece::Pawn);
-    pub const BISHOP: Self = Self(chess::Piece::Bishop);
-    pub const KNIGHT: Self = Self(chess::Piece::Knight);
-    pub const ROOK: Self = Self(chess::Piece::Rook);
-    pub const QUEEN: Self = Self(chess::Piece::Queen);
-}
-
-// ======================================================================
-// Move Hint & Capture Hint
-// ======================================================================
-
-#[derive(Default)]
-pub struct ShowHints(Vec<Entity>);
-
-impl Command for ShowHints {
-    fn write(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = true;
-            }
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct HideHints(Vec<Entity>);
-
-impl Command for HideHints {
-    fn write(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = false;
-            }
-        }
-    }
-}
-
-// ======================================================================
-// Hightlight Tile
-// ======================================================================
-
-#[derive(Component)]
-pub struct HighlightTile;
-
-/// The color used to highlight tiles.
-pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
-
-#[derive(Deref, DerefMut)]
-pub struct ShowHighlight(pub Entity);
-
-impl Command for ShowHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = true;
-        }
-    }
-}
-
-#[derive(Deref, DerefMut)]
-pub struct HideHighlight(pub Entity);
-
-impl Command for HideHighlight {
-    fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = false;
-        }
-    }
-}
-
-// ======================================================================
-// Tile
-// ======================================================================
-
-#[derive(Component)]
-pub struct Tile;
-
-/// The "black" bord color.
-///
-/// `#769656`
-pub const COLOR_BLACK: Color = Color::rgb(
-    0x76 as f32 / u8::MAX as f32,
-    0x96 as f32 / u8::MAX as f32,
-    0x56 as f32 / u8::MAX as f32,
-);
-
-/// The "white" bord color.
-///
-/// `#eeeed2`
-pub const COLOR_WHITE: Color = Color::rgb(
-    0xee as f32 / u8::MAX as f32,
-    0xee as f32 / u8::MAX as f32,
-    0xd2 as f32 / u8::MAX as f32,
-);
-
-// ======================================================================
-// Board
-// ======================================================================
+use super::{HideHints, ShowHints};
 
 #[derive(Component)]
 pub struct UiBoard;
@@ -168,6 +20,27 @@ pub struct UiBoard;
 pub struct MoveHints {
     pub move_entity: Entity,
     pub capture_entity: Entity,
+}
+
+pub fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
+    // let min_size = PANEL_HEIGHT * 2.0;
+    let entity = commands
+        .spawn((
+            UiBoard,
+            NodeBundle {
+                style: Style {
+                    size: Size::new(Val::Auto, Val::Percent(100.0)),
+                    // min_size: Size::new(min_size, min_size),
+                    aspect_ratio: Some(1.0),
+                    flex_direction: FlexDirection::Row,
+                    flex_wrap: FlexWrap::WrapReverse,
+                    ..default()
+                },
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(q_ui.single()).add_child(entity);
 }
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.

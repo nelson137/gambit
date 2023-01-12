@@ -1,106 +1,170 @@
-use std::sync::Arc;
+use std::ops::Not;
 
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{File, Rank};
+use chess::{File, Piece, Rank};
 
 use crate::{
     assets::SquareStartingPieceInfo,
     data::BoardLocation,
     game::{
-        board::{
-            BoardState, HighlightTile, MoveHints, PieceColor, PieceType, Tile, UiBoard, UiPiece,
-            COLOR_BLACK, COLOR_HIGHLIGHT, COLOR_WHITE,
-        },
-        camera::MainCamera,
-        captures::CaptureState,
-        mouse::handler::DragContainer,
+        board::MoveHints,
+        consts::{Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
     },
-    utils::AppPushOrderedStartupStages,
 };
 
-pub const Z_PIECE_SELECTED: i32 = 11;
+use crate::game::consts::Z_TILE;
 
-pub const Z_PIECE: i32 = 10;
+use super::{BoardState, UiBoard};
 
-pub const Z_HIGHLIGHT_TILE: i32 = 4;
+// ======================================================================
+// Piece
+// ======================================================================
 
-pub const Z_MOVE_HINT: i32 = 3;
+#[derive(Component)]
+pub struct UiPiece {
+    pub color: PieceColor,
+    pub typ: PieceType,
+}
 
-pub const Z_NOTATION_TEXT: i32 = 2;
-
-pub const Z_TILE: i32 = 1;
-
-pub struct StartupLogicPlugin;
-
-impl Plugin for StartupLogicPlugin {
-    fn build(&self, app: &mut App) {
-        app.add_startup_system(setup_camera)
-            .add_startup_system(spawn_drag_container)
-            .push_ordered_startup_stages([
-                (SpawnStage::Phase1, SystemStage::single(spawn_ui)),
-                (SpawnStage::Phase2, SystemStage::single(spawn_board)),
-                (
-                    SpawnStage::Phase3,
-                    SystemStage::parallel()
-                        .with_system(spawn_tiles_hints_pieces)
-                        .with_system(spawn_panels),
-                ),
-            ]);
+impl UiPiece {
+    pub fn new(color: PieceColor, typ: PieceType) -> Self {
+        Self { color, typ }
     }
 }
 
-fn setup_camera(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default()).insert(MainCamera); // ::new_with_far(1000.0)
+#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+pub struct PieceColor(pub chess::Color);
+
+impl Not for PieceColor {
+    type Output = Self;
+
+    fn not(self) -> Self::Output {
+        Self(self.0.not())
+    }
 }
 
-#[derive(Clone, StageLabel)]
-enum SpawnStage {
-    Phase1,
-    Phase2,
-    Phase3,
+#[cfg(debug_assertions)]
+impl std::fmt::Display for PieceColor {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
 }
+
+impl PieceColor {
+    pub const BLACK: Self = Self(chess::Color::Black);
+    pub const WHITE: Self = Self(chess::Color::White);
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+pub struct PieceType(pub Piece);
+
+#[cfg(debug_assertions)]
+impl std::fmt::Display for PieceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        std::fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl PieceType {
+    pub const PAWN: Self = Self(chess::Piece::Pawn);
+    pub const BISHOP: Self = Self(chess::Piece::Bishop);
+    pub const KNIGHT: Self = Self(chess::Piece::Knight);
+    pub const ROOK: Self = Self(chess::Piece::Rook);
+    pub const QUEEN: Self = Self(chess::Piece::Queen);
+}
+
+// ======================================================================
+// Move Hint & Capture Hint
+// ======================================================================
+
+#[derive(Default)]
+pub struct ShowHints(pub Vec<Entity>);
+
+impl Command for ShowHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = true;
+            }
+        }
+    }
+}
+
+#[derive(Default)]
+pub struct HideHints(pub Vec<Entity>);
+
+impl Command for HideHints {
+    fn write(self, world: &mut World) {
+        for entity in self.0 {
+            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+                vis.is_visible = false;
+            }
+        }
+    }
+}
+
+// ======================================================================
+// Hightlight Tile
+// ======================================================================
 
 #[derive(Component)]
-pub struct Ui;
+pub struct HighlightTile;
 
-fn spawn_ui(mut commands: Commands) {
-    commands.spawn((
-        Ui,
-        NodeBundle {
-            style: Style {
-                size: Size { width: Val::Percent(100.0), height: Val::Percent(100.0) },
-                position_type: PositionType::Absolute,
-                position: UiRect { left: Val::Percent(0.0), top: Val::Percent(0.0), ..default() },
-                flex_direction: FlexDirection::Row,
-                ..default()
-            },
-            ..default()
-        },
-    ));
+/// The color used to highlight tiles.
+pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+
+#[derive(Deref, DerefMut)]
+pub struct ShowHighlight(pub Entity);
+
+impl Command for ShowHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = true;
+        }
+    }
 }
 
-fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
-    // let min_size = PANEL_HEIGHT * 2.0;
-    let entity = commands
-        .spawn((
-            UiBoard,
-            NodeBundle {
-                style: Style {
-                    size: Size::new(Val::Auto, Val::Percent(100.0)),
-                    // min_size: Size::new(min_size, min_size),
-                    aspect_ratio: Some(1.0),
-                    flex_direction: FlexDirection::Row,
-                    flex_wrap: FlexWrap::WrapReverse,
-                    ..default()
-                },
-                ..default()
-            },
-        ))
-        .id();
-    commands.entity(q_ui.single()).add_child(entity);
+#[derive(Deref, DerefMut)]
+pub struct HideHighlight(pub Entity);
+
+impl Command for HideHighlight {
+    fn write(self, world: &mut World) {
+        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+            vis.is_visible = false;
+        }
+    }
 }
 
-fn spawn_tiles_hints_pieces(
+// ======================================================================
+// Tile
+// ======================================================================
+
+#[derive(Component)]
+pub struct Tile;
+
+/// The "black" bord color.
+///
+/// `#769656`
+pub const COLOR_BLACK: Color = Color::rgb(
+    0x76 as f32 / u8::MAX as f32,
+    0x96 as f32 / u8::MAX as f32,
+    0x56 as f32 / u8::MAX as f32,
+);
+
+/// The "white" bord color.
+///
+/// `#eeeed2`
+pub const COLOR_WHITE: Color = Color::rgb(
+    0xee as f32 / u8::MAX as f32,
+    0xee as f32 / u8::MAX as f32,
+    0xd2 as f32 / u8::MAX as f32,
+);
+
+// ======================================================================
+// Spawn
+// ======================================================================
+
+pub fn spawn_tiles_hints_pieces(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
@@ -300,91 +364,4 @@ fn spawn_tiles_hints_pieces(
         commands.entity(board).add_child(tile_entity);
         board_state.set_tile(square, tile_entity);
     }
-}
-
-fn spawn_panels(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
-    let container = commands
-        .spawn(NodeBundle {
-            style: Style {
-                flex_grow: 1.0,
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::SpaceBetween,
-                ..default()
-            },
-            ..default()
-        })
-        .id();
-    commands.entity(q_ui.single()).add_child(container);
-
-    commands.add(PanelData { container, color: PieceColor(chess::Color::Black) });
-
-    commands.add(PanelData { container, color: PieceColor(chess::Color::White) });
-}
-
-struct PanelData {
-    container: Entity,
-    color: PieceColor,
-}
-
-const CAPTURES_IMAGE_MARGIN: Val = Val::Px(8.0);
-
-impl PanelData {
-    fn into_bundle(self) -> impl Bundle {
-        NodeBundle {
-            style: Style {
-                size: Size::new(Val::Percent(100.0), Val::Px(32.0)),
-                margin: UiRect {
-                    top: CAPTURES_IMAGE_MARGIN,
-                    bottom: CAPTURES_IMAGE_MARGIN,
-                    ..default()
-                },
-                ..default()
-            },
-            ..default()
-        }
-    }
-}
-
-impl Command for PanelData {
-    fn write(self, world: &mut World) {
-        let color = self.color;
-
-        let mut image_entities = Vec::with_capacity(5);
-
-        let capture_state = Arc::clone(world.resource::<CaptureState>());
-        world.entity_mut(self.container).with_children(|cmds| {
-            cmds.spawn(self.into_bundle()).with_children(|cmds| {
-                for cap_state in capture_state[color].iter() {
-                    let handles = &cap_state.image_handles;
-                    let entity = cmds
-                        .spawn(ImageBundle {
-                            image: UiImage(handles[handles.len() - 1].clone()),
-                            style: Style {
-                                display: Display::None,
-                                margin: UiRect { left: CAPTURES_IMAGE_MARGIN, ..default() },
-                                flex_shrink: 0.0,
-                                ..default()
-                            },
-                            ..default()
-                        })
-                        .id();
-                    image_entities.push(entity);
-                }
-            });
-        });
-        drop(capture_state);
-
-        let mut capture_state = world.resource_mut::<CaptureState>();
-        let state_entities = Arc::get_mut(&mut capture_state).unwrap();
-        for (cap_state, entity) in state_entities[color].iter_mut().zip(image_entities) {
-            cap_state.image_entity = entity;
-        }
-    }
-}
-
-fn spawn_drag_container(mut commands: Commands) {
-    commands.spawn((
-        DragContainer,
-        NodeBundle { z_index: ZIndex::Global(Z_PIECE_SELECTED), ..default() },
-    ));
 }
