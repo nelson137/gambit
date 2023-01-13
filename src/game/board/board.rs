@@ -52,7 +52,7 @@ pub fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
 /// Below is a diagram showing one of such configurations. When a queen is on, e.g., d4, she can
 /// move to any of the squares that contain an `x`.
 ///
-/// ```
+/// ```text
 ///   ┌───┬───┬───┬───┬───┬───┬───┬───┐
 /// 8 │   │   │   │ x │   │   │   │ x │
 ///   ├───┼───┼───┼───┼───┼───┼───┼───┤
