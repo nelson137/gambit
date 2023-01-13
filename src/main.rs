@@ -9,8 +9,7 @@ mod utils;
 mod window;
 
 use self::{
-    data::COLOR_BG,
-    game::GameLogicPlugin,
+    game::{consts::COLOR_BG, GameLogicPlugin},
     window::{WIN_HEIGHT, WIN_WIDTH},
 };
 
