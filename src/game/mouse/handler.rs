@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::game::{board::Tile, consts::Z_PIECE_SELECTED};
+use crate::{
+    debug_name,
+    game::{board::Tile, consts::Z_PIECE_SELECTED},
+};
 
 use super::{
     position::{MouseBoardLocation, MouseWorldPosition},
@@ -31,6 +34,7 @@ pub struct DragContainer;
 pub fn spawn_drag_container(mut commands: Commands) {
     commands.spawn((
         DragContainer,
+        debug_name!("Drag Container"),
         NodeBundle { z_index: ZIndex::Global(Z_PIECE_SELECTED), ..default() },
     ));
 }

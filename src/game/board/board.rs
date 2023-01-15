@@ -3,12 +3,15 @@ use std::collections::{hash_map::Entry, HashMap};
 use bevy::prelude::*;
 use chess::{BitBoard, Board, ChessMove, File, MoveGen, Square, EMPTY};
 
-use crate::game::{
-    audio::PlayGameAudio,
-    captures::Captured,
-    moves::{DoMove, MoveUiPiece},
-    ui::Ui,
-    utils::GameCommandList,
+use crate::{
+    debug_name,
+    game::{
+        audio::PlayGameAudio,
+        captures::Captured,
+        moves::{DoMove, MoveUiPiece},
+        ui::Ui,
+        utils::GameCommandList,
+    },
 };
 
 use super::{HideHints, ShowHints};
@@ -27,6 +30,7 @@ pub fn spawn_board(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     let entity = commands
         .spawn((
             UiBoard,
+            debug_name!("Board"),
             NodeBundle {
                 style: Style {
                     size: Size::new(Val::Auto, Val::Percent(100.0)),

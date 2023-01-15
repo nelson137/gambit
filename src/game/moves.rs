@@ -1,7 +1,7 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::Square;
 
-use crate::{data::BoardLocation, game::board::BoardState};
+use crate::game::board::{BoardLocation, BoardState};
 
 #[derive(Clone, Copy)]
 pub struct DoMove {

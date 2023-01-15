@@ -5,9 +5,9 @@ use chess::{File, Piece, Rank};
 
 use crate::{
     assets::SquareStartingPieceInfo,
-    data::BoardLocation,
+    debug_name,
     game::{
-        board::MoveHints,
+        board::{BoardLocation, MoveHints},
         consts::{Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
     },
 };
@@ -191,6 +191,7 @@ pub fn spawn_board_elements(
         let tile_entity = commands
             .spawn((
                 Tile,
+                debug_name!("Tile ({square})"),
                 location,
                 NodeBundle {
                     background_color: color.into(),
@@ -266,6 +267,7 @@ pub fn spawn_board_elements(
                 let hl_tile_entity = cmds
                     .spawn((
                         HighlightTile,
+                        debug_name!("Highlight Tile ({square})"),
                         location,
                         NodeBundle {
                             background_color: COLOR_HIGHLIGHT.into(),
@@ -286,6 +288,7 @@ pub fn spawn_board_elements(
                 // Move hint
                 let move_entity = cmds
                     .spawn((
+                        debug_name!("Move Hint ({square})"),
                         location,
                         NodeBundle {
                             style: Style {
@@ -319,6 +322,7 @@ pub fn spawn_board_elements(
                 // Capture hint
                 let capture_entity = cmds
                     .spawn((
+                        debug_name!("Capture Hint ({square})"),
                         location,
                         ImageBundle {
                             image: UiImage(capture_hint_texture.clone()),
@@ -343,6 +347,7 @@ pub fn spawn_board_elements(
                     let piece_entity = cmds
                         .spawn((
                             UiPiece::new(piece_color, piece_type),
+                            debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
                             location,
                             ImageBundle {
                                 image: UiImage(asset_server.load(image_path)),

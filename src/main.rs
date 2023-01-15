@@ -3,13 +3,13 @@
 use bevy::prelude::*;
 
 mod assets;
-mod data;
 mod game;
 mod utils;
 mod window;
 
 use self::{
     game::{consts::COLOR_BG, GameLogicPlugin},
+    utils::DebugBevyInspectorPlugin,
     window::{WIN_HEIGHT, WIN_WIDTH},
 };
 
@@ -27,6 +27,7 @@ fn main() {
             ..default()
         }))
         .add_plugin(GameLogicPlugin)
+        .add_plugin(DebugBevyInspectorPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         // Run

@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use bevy::{ecs::system::Command, prelude::*};
 
+use crate::debug_name;
+
 use super::{board::PieceColor, captures::CaptureState};
 
 #[derive(Component)]
@@ -10,6 +12,7 @@ pub struct Ui;
 pub fn spawn_ui(mut commands: Commands) {
     commands.spawn((
         Ui,
+        debug_name!("Ui"),
         NodeBundle {
             style: Style {
                 size: Size { width: Val::Percent(100.0), height: Val::Percent(100.0) },
@@ -25,15 +28,18 @@ pub fn spawn_ui(mut commands: Commands) {
 
 pub fn spawn_panels(mut commands: Commands, q_ui: Query<Entity, With<Ui>>) {
     let container = commands
-        .spawn(NodeBundle {
-            style: Style {
-                flex_grow: 1.0,
-                flex_direction: FlexDirection::Column,
-                justify_content: JustifyContent::SpaceBetween,
+        .spawn((
+            debug_name!("Panels Container"),
+            NodeBundle {
+                style: Style {
+                    flex_grow: 1.0,
+                    flex_direction: FlexDirection::Column,
+                    justify_content: JustifyContent::SpaceBetween,
+                    ..default()
+                },
                 ..default()
             },
-            ..default()
-        })
+        ))
         .id();
     commands.entity(q_ui.single()).add_child(container);
 

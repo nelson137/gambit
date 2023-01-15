@@ -24,3 +24,31 @@ impl AppPushOrderedStartupStages for App {
         self
     }
 }
+
+pub struct DebugBevyInspectorPlugin;
+
+impl Plugin for DebugBevyInspectorPlugin {
+    #[cfg(feature = "bevy-inspector-egui")]
+    fn build(&self, app: &mut App) {
+        app.add_plugin(bevy_inspector_egui::quick::WorldInspectorPlugin);
+    }
+
+    #[cfg(not(feature = "bevy-inspector-egui"))]
+    fn build(&self, _app: &mut App) {}
+}
+
+#[cfg(feature = "bevy-inspector-egui")]
+#[macro_export]
+macro_rules! debug_name {
+    ($($name_args:expr),+) => {
+        Name::new(format!($($name_args),+))
+    };
+}
+
+#[cfg(not(feature = "bevy-inspector-egui"))]
+#[macro_export]
+macro_rules! debug_name {
+    ($name_args:tt) => {
+        ()
+    };
+}
