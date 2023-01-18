@@ -1,4 +1,5 @@
 use std::{
+    fmt,
     hash::{Hash, Hasher},
     mem,
 };
@@ -6,10 +7,13 @@ use std::{
 use bevy::prelude::*;
 use chess::Square;
 
-use crate::game::{
-    board::{BoardState, HideHighlight, ShowHighlight},
-    mouse::handler::DragContainer,
-    moves::DoMove,
+use crate::{
+    game::{
+        board::{BoardState, HideHighlight, ShowHighlight},
+        mouse::handler::DragContainer,
+        moves::DoMove,
+    },
+    utils::StateExts,
 };
 
 #[derive(Clone, Copy, Debug, Eq)]
@@ -23,9 +27,9 @@ pub enum SelectionState {
     DoUnselect(Square),
 }
 
-#[cfg(debug_assertions)]
-impl std::fmt::Display for SelectionState {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+impl fmt::Display for SelectionState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "SelectionState::")?;
         match self {
             SelectionState::Unselected => write!(f, "Unselected"),
             SelectionState::SelectingDragging(sq) => write!(f, "SelectingDragging({sq})"),
@@ -78,7 +82,7 @@ pub(super) fn handle_selection_events(
             SelectionState::Unselected => match event {
                 SelectionEvent::MouseDown(square) => {
                     if board_state.has_piece_at(square) {
-                        selection_state.set(SelectionState::SelectingDragging(square)).unwrap();
+                        selection_state.transition(SelectionState::SelectingDragging(square));
                     }
                 }
                 SelectionEvent::MouseUp(_) => (),
@@ -87,24 +91,23 @@ pub(super) fn handle_selection_events(
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if board_state.move_is_valid(selecting_sq, square) {
-                        selection_state.set(SelectionState::DoMove(selecting_sq, square)).unwrap();
+                        selection_state.transition(SelectionState::DoMove(selecting_sq, square));
                     } else {
-                        selection_state.set(SelectionState::Selected(selecting_sq)).unwrap();
+                        selection_state.transition(SelectionState::Selected(selecting_sq));
                     }
                 }
             },
             SelectionState::Selected(selected_sq) => match event {
                 SelectionEvent::MouseDown(square) => {
                     if square == selected_sq {
-                        selection_state.set(SelectionState::SelectedDragging(selected_sq)).unwrap();
+                        selection_state.transition(SelectionState::SelectedDragging(selected_sq));
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        selection_state.set(SelectionState::DoMove(selected_sq, square)).unwrap();
+                        selection_state.transition(SelectionState::DoMove(selected_sq, square));
                     } else if board_state.has_piece_at(square) {
                         selection_state
-                            .set(SelectionState::DoChangeSelection(selected_sq, square))
-                            .unwrap();
+                            .transition(SelectionState::DoChangeSelection(selected_sq, square));
                     } else {
-                        selection_state.set(SelectionState::DoUnselect(selected_sq)).unwrap();
+                        selection_state.transition(SelectionState::DoUnselect(selected_sq));
                     }
                 }
                 SelectionEvent::MouseUp(_) => (),
@@ -113,11 +116,11 @@ pub(super) fn handle_selection_events(
                 SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 SelectionEvent::MouseUp(square) => {
                     if square == selected_sq {
-                        selection_state.set(SelectionState::DoUnselect(selected_sq)).unwrap();
+                        selection_state.transition(SelectionState::DoUnselect(selected_sq));
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        selection_state.set(SelectionState::DoMove(selected_sq, square)).unwrap();
+                        selection_state.transition(SelectionState::DoMove(selected_sq, square));
                     } else {
-                        selection_state.set(SelectionState::Selected(selected_sq)).unwrap();
+                        selection_state.transition(SelectionState::Selected(selected_sq));
                     }
                 }
             },
@@ -165,7 +168,7 @@ pub(super) fn on_enter_selection_state(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to SelectingDragging
-            selection_state.overwrite_set(SelectionState::SelectingDragging(to_sq)).unwrap();
+            selection_state.transition_overwrite(SelectionState::SelectingDragging(to_sq));
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
@@ -177,7 +180,7 @@ pub(super) fn on_enter_selection_state(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
-            selection_state.overwrite_set(SelectionState::Unselected).unwrap();
+            selection_state.transition_overwrite(SelectionState::Unselected);
         }
         SelectionState::DoUnselect(square) => {
             // Re-parent piece back to its tile
@@ -190,7 +193,7 @@ pub(super) fn on_enter_selection_state(
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
-            selection_state.overwrite_set(SelectionState::Unselected).unwrap();
+            selection_state.transition_overwrite(SelectionState::Unselected);
         }
     }
 }

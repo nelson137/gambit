@@ -1,4 +1,21 @@
-use bevy::prelude::*;
+use std::fmt;
+
+use bevy::{ecs::schedule::StateData, prelude::*};
+
+pub trait StateExts<S> {
+    fn transition_overwrite(&mut self, state: S);
+    fn transition(&mut self, state: S);
+}
+
+impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
+    fn transition_overwrite(&mut self, state: S) {
+        self.overwrite_set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
+    }
+
+    fn transition(&mut self, state: S) {
+        self.set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
+    }
+}
 
 pub trait AppPushOrderedStartupStages {
     fn push_ordered_startup_stages<I: IntoIterator<Item = (impl StageLabel + Clone, SystemStage)>>(
