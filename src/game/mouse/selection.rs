@@ -27,21 +27,15 @@ pub enum SelectionState {
 impl std::fmt::Display for SelectionState {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self {
-            SelectionState::Unselected => f.write_str("Unselected"),
-            SelectionState::SelectingDragging(sq) => {
-                f.write_fmt(format_args!("SelectingDragging({sq})"))
-            }
-            SelectionState::Selected(sq) => f.write_fmt(format_args!("Selected({sq})")),
-            SelectionState::SelectedDragging(sq) => {
-                f.write_fmt(format_args!("SelectedDragging({sq})"))
-            }
+            SelectionState::Unselected => write!(f, "Unselected"),
+            SelectionState::SelectingDragging(sq) => write!(f, "SelectingDragging({sq})"),
+            SelectionState::Selected(sq) => write!(f, "Selected({sq})"),
+            SelectionState::SelectedDragging(sq) => write!(f, "SelectedDragging({sq})"),
             SelectionState::DoChangeSelection(from_sq, to_sq) => {
-                f.write_fmt(format_args!("DoChangeSelected({from_sq} -> {to_sq})"))
+                write!(f, "DoChangeSelected({from_sq} -> {to_sq})")
             }
-            SelectionState::DoMove(from_sq, to_sq) => {
-                f.write_fmt(format_args!("DoMove({from_sq} -> {to_sq})"))
-            }
-            SelectionState::DoUnselect(sq) => f.write_fmt(format_args!("DoUnselect({sq})")),
+            SelectionState::DoMove(from_sq, to_sq) => write!(f, "DoMove({from_sq} -> {to_sq})"),
+            SelectionState::DoUnselect(sq) => write!(f, "DoUnselect({sq})"),
         }
     }
 }
