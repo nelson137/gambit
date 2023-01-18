@@ -9,6 +9,10 @@ pub const COLOR_BG: Color = Color::rgb(
     0x2b as f32 / u8::MAX as f32,
 );
 
+pub const Z_GAME_MENU: i32 = 21;
+
+pub const Z_GAME_MENU_DIM_LAYER: i32 = 20;
+
 pub const Z_PIECE_SELECTED: i32 = 11;
 
 pub const Z_PIECE: i32 = 10;

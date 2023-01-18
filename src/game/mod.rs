@@ -5,6 +5,7 @@ pub mod board;
 pub mod camera;
 pub mod captures;
 pub mod consts;
+pub mod menu;
 pub mod mouse;
 pub mod moves;
 pub mod ui;
@@ -17,6 +18,7 @@ use self::{
     board::{spawn_board, spawn_board_elements, BoardState},
     camera::setup_camera,
     captures::CaptureState,
+    menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
     moves::{move_piece, DoMove},
     ui::{spawn_panels, spawn_ui},
@@ -36,6 +38,7 @@ impl Plugin for GameLogicPlugin {
         app
             // Plugins
             .add_plugin(MouseLogicPlugin)
+            .add_plugin(GameMenuPlugin)
             // Resources
             .init_resource::<GameAudioHandles>()
             .init_resource::<BoardState>()
