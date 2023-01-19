@@ -2,17 +2,20 @@ use bevy::prelude::*;
 
 use crate::utils::AppPushOrderedStartupStages;
 
+mod fen_popup;
 mod game_menu;
 mod state;
 
 #[allow(unused_imports)]
-pub use self::{game_menu::*, state::*};
+pub use self::{fen_popup::*, game_menu::*, state::*};
 
 pub struct GameMenuPlugin;
 
 impl Plugin for GameMenuPlugin {
     fn build(&self, app: &mut App) {
         app
+            // Resources
+            .init_resource::<FenPopupData>()
             // States
             .add_state(MenuState::default())
             // Startup
@@ -24,11 +27,16 @@ impl Plugin for GameMenuPlugin {
                         .with_system(spawn_menu),
                 ),
                 (SpawnStage::Phase2, SystemStage::single(spawn_menu_elements)),
+                (SpawnStage::Phase3, SystemStage::single(spawn_menu_buttons)),
             ])
             // Systems
+            .add_system_set(
+                SystemSet::on_enter(MenuState::FenInput).with_system(on_enter_menu_state),
+            )
             .add_system_set(SystemSet::on_enter(MenuState::Menu).with_system(on_enter_menu_state))
             .add_system_set(SystemSet::on_enter(MenuState::Game).with_system(on_enter_menu_state))
-            .add_system(start_game_button);
+            .add_system_set(SystemSet::on_update(MenuState::FenInput).with_system(fen_menu))
+            .add_system_set(SystemSet::on_update(MenuState::Menu).with_system(game_menu_buttons));
     }
 }
 
@@ -36,4 +44,5 @@ impl Plugin for GameMenuPlugin {
 enum SpawnStage {
     Phase1,
     Phase2,
+    Phase3,
 }

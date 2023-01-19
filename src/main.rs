@@ -1,6 +1,7 @@
 #![allow(clippy::type_complexity)]
 
 use bevy::prelude::*;
+use bevy_egui::EguiPlugin;
 
 mod assets;
 mod game;
@@ -26,6 +27,7 @@ fn main() {
             },
             ..default()
         }))
+        .add_plugin(EguiPlugin)
         .add_plugin(GameLogicPlugin)
         .add_plugin(DebugBevyInspectorPlugin)
         // Resources

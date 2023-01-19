@@ -66,18 +66,26 @@ pub(super) fn spawn_menu(mut commands: Commands) {
     ));
 }
 
+const MENU_FONT_PATH: &str = "fonts/montserrat-800.otf";
+
 #[derive(Component)]
-pub(super) struct StartGameButton;
+pub(super) struct GameButtonsContainer;
+
+#[derive(Component)]
+pub(super) enum GameMenuButton {
+    Start,
+    LoadFen,
+}
 
 /// `#7fa650`
-const START_BUTTON_COLOR_DEFAULT: Color = Color::rgb(
+const BUTTON_COLOR_DEFAULT: Color = Color::rgb(
     0x7f as f32 / u8::MAX as f32,
     0xa6 as f32 / u8::MAX as f32,
     0x50 as f32 / u8::MAX as f32,
 );
 
 /// `#8cb15e`
-const START_BUTTON_COLOR_HOVER: Color = Color::rgb(
+const BUTTON_COLOR_HOVER: Color = Color::rgb(
     0x8c as f32 / u8::MAX as f32,
     0xb1 as f32 / u8::MAX as f32,
     0x5e as f32 / u8::MAX as f32,
@@ -88,40 +96,52 @@ pub(super) fn spawn_menu_elements(
     asset_server: Res<AssetServer>,
     q_menu: Query<Entity, With<GameMenu>>,
 ) {
-    let font = asset_server.load("fonts/montserrat-800.otf");
-    const FONT_COLOR: Color = Color::WHITE;
-
+    let font = asset_server.load(MENU_FONT_PATH);
+    let title_style = TextStyle { font, font_size: 128.0, color: Color::WHITE };
     let title_entity = commands
         .spawn((
             debug_name!("Game Menu Title"),
-            TextBundle {
-                text: Text::from_section(
-                    "Gambit",
-                    TextStyle { font: font.clone(), font_size: 128.0, color: FONT_COLOR },
-                ),
+            TextBundle { text: Text::from_section("Gambit", title_style), ..default() },
+        ))
+        .id();
+
+    let buttons_container_entity = commands
+        .spawn((
+            GameButtonsContainer,
+            debug_name!("Game Menu Buttons Container"),
+            NodeBundle {
+                style: Style {
+                    flex_direction: FlexDirection::Row,
+                    size: Size::new(Val::Percent(100.0), Val::Auto),
+                    justify_content: JustifyContent::SpaceEvenly,
+                    ..default()
+                },
                 ..default()
             },
         ))
         .id();
 
+    commands.entity(q_menu.single()).push_children(&[title_entity, buttons_container_entity]);
+}
+
+pub(super) fn spawn_menu_buttons(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    q_menu_buttons_container: Query<Entity, With<GameButtonsContainer>>,
+) {
+    let font = asset_server.load(MENU_FONT_PATH);
+    const FONT_COLOR: Color = Color::WHITE;
     const PAD_T_B: Val = Val::Px(8.0);
     const PAD_L_R: Val = Val::Px(16.0);
+    let padding = UiRect { top: PAD_T_B, bottom: PAD_T_B, left: PAD_L_R, right: PAD_L_R };
+
     let start_button_entity = commands
         .spawn((
-            StartGameButton,
+            GameMenuButton::Start,
             debug_name!("Start Game Button"),
             ButtonBundle {
-                background_color: START_BUTTON_COLOR_DEFAULT.into(),
-                style: Style {
-                    padding: UiRect {
-                        top: PAD_T_B,
-                        bottom: PAD_T_B,
-                        left: PAD_L_R,
-                        right: PAD_L_R,
-                    },
-                    border: UiRect::all(Val::Px(4.0)),
-                    ..default()
-                },
+                background_color: BUTTON_COLOR_DEFAULT.into(),
+                style: Style { padding, border: UiRect::all(Val::Px(4.0)), ..default() },
                 ..default()
             },
         ))
@@ -136,21 +156,47 @@ pub(super) fn spawn_menu_elements(
         })
         .id();
 
-    commands.entity(q_menu.single()).push_children(&[title_entity, start_button_entity]);
+    let fen_button_entity = commands
+        .spawn((
+            GameMenuButton::LoadFen,
+            debug_name!("Load FEN Button"),
+            ButtonBundle {
+                background_color: BUTTON_COLOR_DEFAULT.into(),
+                style: Style { padding, border: UiRect::all(Val::Px(4.0)), ..default() },
+                ..default()
+            },
+        ))
+        .with_children(|cmds| {
+            cmds.spawn(TextBundle {
+                text: Text::from_section(
+                    "Load FEN",
+                    TextStyle { font: font.clone(), font_size: 48.0, color: FONT_COLOR },
+                ),
+                ..default()
+            });
+        })
+        .id();
+
+    commands
+        .entity(q_menu_buttons_container.single())
+        .push_children(&[start_button_entity, fen_button_entity]);
 }
 
-pub(super) fn start_game_button(
+pub(super) fn game_menu_buttons(
     mut q_button: Query<
-        (&Interaction, &mut BackgroundColor),
-        (With<StartGameButton>, Changed<Interaction>),
+        (&GameMenuButton, &Interaction, &mut BackgroundColor),
+        Changed<Interaction>,
     >,
     mut menu_state: ResMut<State<MenuState>>,
 ) {
-    if let Ok((interaction, mut bg_color)) = q_button.get_single_mut() {
+    if let Ok((button, interaction, mut bg_color)) = q_button.get_single_mut() {
         match interaction {
-            Interaction::Hovered => bg_color.0 = START_BUTTON_COLOR_HOVER,
-            Interaction::Clicked => menu_state.transition(MenuState::Game),
-            Interaction::None => bg_color.0 = START_BUTTON_COLOR_DEFAULT,
+            Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
+            Interaction::Clicked => match *button {
+                GameMenuButton::Start => menu_state.transition(MenuState::Game),
+                GameMenuButton::LoadFen => menu_state.transition_push(MenuState::FenInput),
+            },
+            Interaction::None => bg_color.0 = BUTTON_COLOR_DEFAULT,
         }
     }
 }

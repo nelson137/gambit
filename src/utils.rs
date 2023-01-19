@@ -5,6 +5,8 @@ use bevy::{ecs::schedule::StateData, prelude::*};
 pub trait StateExts<S> {
     fn transition_overwrite(&mut self, state: S);
     fn transition(&mut self, state: S);
+    fn transition_push(&mut self, state: S);
+    fn transition_pop(&mut self);
 }
 
 impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
@@ -14,6 +16,14 @@ impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
 
     fn transition(&mut self, state: S) {
         self.set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
+    }
+
+    fn transition_push(&mut self, state: S) {
+        self.push(state).unwrap_or_else(|e| panic!("Failed to push state {state}: {e}"));
+    }
+
+    fn transition_pop(&mut self) {
+        self.pop().unwrap_or_else(|e| panic!("Failed to pop state: {e}"));
     }
 }
 
@@ -47,11 +57,32 @@ pub struct DebugBevyInspectorPlugin;
 impl Plugin for DebugBevyInspectorPlugin {
     #[cfg(feature = "bevy-inspector-egui")]
     fn build(&self, app: &mut App) {
-        app.add_plugin(bevy_inspector_egui::quick::WorldInspectorPlugin);
+        app.add_plugin(bevy_inspector_egui::DefaultInspectorConfigPlugin)
+            .add_system(Self::world_inspector_ui);
     }
 
     #[cfg(not(feature = "bevy-inspector-egui"))]
     fn build(&self, _app: &mut App) {}
+}
+
+impl DebugBevyInspectorPlugin {
+    #[cfg(feature = "bevy-inspector-egui")]
+    fn world_inspector_ui(world: &mut World) {
+        use bevy_inspector_egui::{
+            bevy_egui::{egui, EguiContext},
+            bevy_inspector::ui_for_world,
+        };
+
+        const DEFAULT_SIZE: (f32, f32) = (300.0, 200.0);
+
+        let ctx = world.resource_mut::<EguiContext>().ctx_mut().clone();
+        egui::Window::new("World Inspector").default_size(DEFAULT_SIZE).show(&ctx, |ui| {
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui_for_world(world, ui);
+                ui.allocate_space(ui.available_size());
+            });
+        });
+    }
 }
 
 #[cfg(feature = "bevy-inspector-egui")]

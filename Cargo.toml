@@ -14,6 +14,7 @@ opt-level = 3
 [dependencies]
 bevy = { version = "0.9", features = ["filesystem_watcher", "flac"] }
 # bevy = { version = "0.8", features = ["dynamic"] }
+bevy_egui = "0.19"
 bevy-inspector-egui = { version = "0.17", optional = true }
 chess = "3.2"
 grid = "0.9"
