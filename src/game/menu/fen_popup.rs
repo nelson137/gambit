@@ -67,6 +67,11 @@ mod egui {
             .title_bar(false)
             .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
             .show(ctx, |ui| {
+                if ui.input().key_pressed(Key::Escape) {
+                    interaction = FenPopupInteraction::Cancel;
+                    return;
+                }
+
                 ui.vertical_centered_justified(|mut ui| {
                     ui.set_text_style_size(&TextStyle::Body, 24.0);
                     ui.set_text_style_size(&TextStyle::Button, 24.0);
