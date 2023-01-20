@@ -4,7 +4,7 @@ use bevy::{ecs::system::Command, prelude::*};
 use chess::{File, Piece, Rank};
 
 use crate::{
-    assets::SquareStartingPieceInfo,
+    assets::PieceColorAndTypeAssetPath,
     debug_name,
     game::{
         board::{BoardLocation, MoveHints},
@@ -357,8 +357,11 @@ pub fn spawn_board_pieces(
     for square in chess::ALL_SQUARES {
         let location = BoardLocation::new(square);
 
-        if let Some((image_path, color, typ)) = square.starting_piece_info() {
-            let (piece_color, piece_type) = (PieceColor(color), PieceType(typ));
+        if let Some(info) = board_state.get_piece_info_on(square) {
+            let image_path = info.asset_path();
+            let piece_color = PieceColor(info.0);
+            let piece_type = PieceType(info.1);
+
             let piece_entity = commands
                 .spawn((
                     UiPiece::new(piece_color, piece_type),

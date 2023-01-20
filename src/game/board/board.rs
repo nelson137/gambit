@@ -103,6 +103,12 @@ impl Default for BoardState {
 }
 
 impl BoardState {
+    pub fn get_piece_info_on(&self, square: Square) -> Option<(chess::Color, chess::Piece)> {
+        self.board
+            .color_on(square)
+            .map(|c| (c, self.board.piece_on(square).expect("invalid board")))
+    }
+
     fn color_on(&self, square: Square) -> chess::Color {
         self.board.color_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
     }
