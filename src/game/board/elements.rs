@@ -340,33 +340,45 @@ pub fn spawn_board_elements(
                     .id();
 
                 board_state.set_move_hints(square, MoveHints { capture_entity, move_entity });
-
-                // Piece
-                if let Some((image_path, color, typ)) = square.starting_piece_info() {
-                    let (piece_color, piece_type) = (PieceColor(color), PieceType(typ));
-                    let piece_entity = cmds
-                        .spawn((
-                            UiPiece::new(piece_color, piece_type),
-                            debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
-                            location,
-                            ImageBundle {
-                                image: UiImage(asset_server.load(image_path)),
-                                style: Style {
-                                    position_type: PositionType::Absolute,
-                                    position: pos_top_left,
-                                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                                    ..default()
-                                },
-                                z_index: ZIndex::Local(Z_PIECE),
-                                ..default()
-                            },
-                        ))
-                        .id();
-                    board_state.set_piece(square, piece_entity);
-                }
             })
             .id();
         commands.entity(board).add_child(tile_entity);
         board_state.set_tile(square, tile_entity);
+    }
+}
+
+pub fn spawn_board_pieces(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut board_state: ResMut<BoardState>,
+) {
+    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
+
+    for square in chess::ALL_SQUARES {
+        let location = BoardLocation::new(square);
+
+        if let Some((image_path, color, typ)) = square.starting_piece_info() {
+            let (piece_color, piece_type) = (PieceColor(color), PieceType(typ));
+            let piece_entity = commands
+                .spawn((
+                    UiPiece::new(piece_color, piece_type),
+                    debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
+                    location,
+                    ImageBundle {
+                        image: UiImage(asset_server.load(image_path)),
+                        style: Style {
+                            position_type: PositionType::Absolute,
+                            position: pos_top_left,
+                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                            ..default()
+                        },
+                        z_index: ZIndex::Local(Z_PIECE),
+                        ..default()
+                    },
+                ))
+                .id();
+            commands.entity(board_state.tile(square)).add_child(piece_entity);
+            board_state.set_piece(square, piece_entity);
+        }
     }
 }

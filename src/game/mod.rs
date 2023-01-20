@@ -15,7 +15,7 @@ use crate::utils::AppPushOrderedStartupStages;
 
 use self::{
     audio::GameAudioHandles,
-    board::{spawn_board, spawn_board_elements, BoardState},
+    board::{spawn_board, spawn_board_elements, spawn_board_pieces, BoardState},
     camera::setup_camera,
     captures::CaptureState,
     menu::GameMenuPlugin,
@@ -29,6 +29,7 @@ enum SpawnStage {
     Phase1,
     Phase2,
     Phase3,
+    Phase4,
 }
 
 pub struct GameLogicPlugin;
@@ -57,6 +58,7 @@ impl Plugin for GameLogicPlugin {
                         .with_system(spawn_board_elements)
                         .with_system(spawn_panels),
                 ),
+                (SpawnStage::Phase4, SystemStage::single(spawn_board_pieces)),
             ])
             // Systems
             .add_system(move_piece);
