@@ -1,6 +1,7 @@
 use std::fmt;
 
 use bevy::{ecs::schedule::StateData, prelude::*};
+use bevy_egui::egui::{TextStyle, Ui};
 
 pub trait StateExts<S> {
     fn transition_overwrite(&mut self, state: S);
@@ -99,4 +100,16 @@ macro_rules! debug_name {
     ($name_args:tt) => {
         ()
     };
+}
+
+pub trait UiSetTextStyleSize {
+    fn set_text_style_size(&mut self, style: &TextStyle, size: f32);
+}
+
+impl UiSetTextStyleSize for &mut Ui {
+    fn set_text_style_size(&mut self, style: &TextStyle, size: f32) {
+        if let Some(text_id) = self.style_mut().text_styles.get_mut(style) {
+            text_id.size = size;
+        }
+    }
 }

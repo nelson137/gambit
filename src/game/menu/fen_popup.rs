@@ -40,27 +40,50 @@ pub(super) fn fen_menu(
 }
 
 mod egui {
-    use bevy_egui::egui::{pos2, Context, Key, Rect, Response, Sense, Ui, Vec2, Window};
+    use bevy_egui::egui::{
+        pos2, Align2, Context, Key, Rect, Response, Sense, TextEdit, TextStyle, Ui, Vec2, Window,
+    };
+
+    use crate::utils::UiSetTextStyleSize;
 
     use super::{FenPopupData, FenPopupInteraction};
 
     pub(super) fn fen_window(ctx: &Context, data: &mut FenPopupData) -> FenPopupInteraction {
         let mut interaction = FenPopupInteraction::None;
 
-        Window::new("FEN Popup").resizable(false).title_bar(false).show(ctx, |ui| {
-            ui.vertical_centered_justified(|ui| {
-                if cancel_button(ui).clicked() {
-                    interaction = FenPopupInteraction::Cancel;
-                }
+        Window::new("FEN Popup")
+            .resizable(false)
+            .title_bar(false)
+            .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
+            .show(ctx, |ui| {
+                ui.vertical_centered_justified(|mut ui| {
+                    if cancel_button(ui).clicked() {
+                        interaction = FenPopupInteraction::Cancel;
+                    }
 
-                ui.heading("Input FEN");
+                    ui.set_text_style_size(&TextStyle::Body, 24.0);
+                    ui.set_text_style_size(&TextStyle::Heading, 32.0);
 
-                let response = ui.text_edit_singleline(&mut data.fen);
-                if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
-                    interaction = FenPopupInteraction::Submit;
-                }
+                    ui.heading("Load Game");
+
+                    ui.separator();
+
+                    const MARGIN: f32 = 12.0;
+                    let contents_rect = ui.available_rect_before_wrap().shrink(MARGIN);
+                    ui.allocate_ui_at_rect(contents_rect, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label("FEN:");
+
+                            let text_edit = TextEdit::singleline(&mut data.fen);
+                            let response = ui.add_sized(ui.available_size(), text_edit);
+                            if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
+                                interaction = FenPopupInteraction::Submit;
+                            }
+                        });
+                    });
+                    ui.add_space(MARGIN);
+                });
             });
-        });
 
         interaction
     }
