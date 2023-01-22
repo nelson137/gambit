@@ -1,7 +1,6 @@
-#![allow(clippy::module_inception)]
-
-mod board;
 mod elements;
 mod location;
+mod state;
+mod ui;
 
-pub use self::{board::*, elements::*, location::*};
+pub use self::{elements::*, location::*, state::*, ui::*};
