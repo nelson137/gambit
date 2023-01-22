@@ -41,7 +41,7 @@ pub(super) fn fen_menu(
 
 mod egui {
     use bevy_egui::egui::{
-        Align, Align2, Button, Color32, Context, Key, Layout, Response, RichText, TextBuffer,
+        vec2, Align, Align2, Button, Color32, Context, Key, Layout, Response, RichText, TextBuffer,
         TextEdit, TextStyle, Ui, Vec2, Window,
     };
 
@@ -118,7 +118,7 @@ mod egui {
     }
 
     fn fen_text_edit(ui: &mut Ui, model: &mut dyn TextBuffer) -> Response {
-        ui.add_sized(ui.available_size(), TextEdit::singleline(model))
+        ui.add_sized(vec2(691.0, ui.available_size().y), TextEdit::singleline(model))
     }
 
     fn cancel_button(ui: &mut Ui) -> Response {
