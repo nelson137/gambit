@@ -68,6 +68,10 @@ impl Default for BoardState {
 }
 
 impl BoardState {
+    pub fn clear_pieces(&mut self) {
+        self.pieces.clear();
+    }
+
     pub fn get_piece_info_on(&self, square: Square) -> Option<(chess::Color, chess::Piece)> {
         self.board
             .color_on(square)
@@ -140,6 +144,10 @@ impl BoardState {
 
     pub fn board(&self) -> Board {
         self.board
+    }
+
+    pub fn set_board(&mut self, board: &Board) {
+        self.board = *board;
     }
 
     #[must_use]

@@ -8,6 +8,7 @@ pub trait StateExts<S> {
     fn transition(&mut self, state: S);
     fn transition_push(&mut self, state: S);
     fn transition_pop(&mut self);
+    fn transition_replace(&mut self, state: S);
 }
 
 impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
@@ -25,6 +26,10 @@ impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
 
     fn transition_pop(&mut self) {
         self.pop().unwrap_or_else(|e| panic!("Failed to pop state: {e}"));
+    }
+
+    fn transition_replace(&mut self, state: S) {
+        self.replace(state).unwrap_or_else(|e| panic!("Failed to replace state {state}: {e}"));
     }
 }
 

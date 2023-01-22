@@ -5,6 +5,7 @@ pub mod board;
 pub mod camera;
 pub mod captures;
 pub mod consts;
+pub mod load;
 pub mod menu;
 pub mod mouse;
 pub mod moves;

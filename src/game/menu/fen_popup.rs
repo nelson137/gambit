@@ -1,7 +1,9 @@
+use std::str::FromStr;
+
 use bevy::prelude::*;
 use bevy_egui::EguiContext;
 
-use crate::utils::StateExts;
+use crate::{game::load::LoadGame, utils::StateExts};
 
 use super::MenuState;
 
@@ -23,6 +25,7 @@ enum FenPopupInteraction {
 }
 
 pub(super) fn fen_menu(
+    mut commands: Commands,
     mut egui_context: ResMut<EguiContext>,
     mut menu_state: ResMut<State<MenuState>>,
     mut data: ResMut<FenPopupData>,
@@ -31,10 +34,10 @@ pub(super) fn fen_menu(
         FenPopupInteraction::Cancel => {
             menu_state.transition_pop();
         }
-        FenPopupInteraction::Submit => {
-            info!(fen = ?data.fen);
-            menu_state.transition_pop();
-        }
+        FenPopupInteraction::Submit => match chess::Board::from_str(&data.fen) {
+            Ok(board) => commands.add(LoadGame(board)),
+            Err(err) => error!("{err}"),
+        },
         FenPopupInteraction::None => (),
     }
 }
