@@ -277,7 +277,7 @@ pub fn spawn_board_elements(
                                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                                 ..default()
                             },
-                            visibility: Visibility { is_visible: false },
+                            visibility: Visibility::INVISIBLE,
                             z_index: ZIndex::Local(Z_HIGHLIGHT_TILE),
                             ..default()
                         },
@@ -299,7 +299,7 @@ pub fn spawn_board_elements(
                                 align_items: AlignItems::Center,
                                 ..default()
                             },
-                            visibility: Visibility { is_visible: false },
+                            visibility: Visibility::INVISIBLE,
                             z_index: ZIndex::Local(Z_MOVE_HINT),
                             ..default()
                         },
@@ -332,7 +332,7 @@ pub fn spawn_board_elements(
                                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                                 ..default()
                             },
-                            visibility: Visibility { is_visible: false },
+                            visibility: Visibility::INVISIBLE,
                             z_index: ZIndex::Local(Z_MOVE_HINT),
                             ..default()
                         },
