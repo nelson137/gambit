@@ -60,7 +60,7 @@ impl PieceType {
     pub const QUEEN: Self = Self(chess::Piece::Queen);
 }
 
-pub fn spawn_board_pieces(
+pub fn spawn_pieces(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
@@ -93,6 +93,7 @@ pub fn spawn_board_pieces(
                     },
                 ))
                 .id();
+
             commands.entity(board_state.tile(square)).add_child(piece_entity);
             board_state.set_piece(square, piece_entity);
         }

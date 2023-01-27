@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{game::menu::MenuState, utils::StateExts};
 
-use super::{board::UiPiece, spawn_board_pieces, BoardState};
+use super::{board::UiPiece, spawn_pieces, BoardState};
 
 struct DespawnPieces;
 
@@ -30,7 +30,7 @@ impl Command for LoadGame {
 
         let mut system_state =
             SystemState::<(Commands, Res<AssetServer>, ResMut<BoardState>)>::new(world);
-        spawn_board_pieces.run((), system_state.get_mut(world));
+        spawn_pieces.run((), system_state.get_mut(world));
         system_state.apply(world);
 
         world.resource_mut::<State<MenuState>>().transition_replace(MenuState::Game);
