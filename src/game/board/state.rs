@@ -10,7 +10,7 @@ use crate::game::{
     utils::GameCommandList,
 };
 
-use super::{HideHints, MoveHints, ShowCheckmateIcons, ShowHints};
+use super::{HideHighlight, HideHints, MoveHints, ShowCheckmateIcons, ShowHighlight, ShowHints};
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
 ///
@@ -51,6 +51,7 @@ pub struct BoardState {
     highlights: HashMap<Square, Entity>,
     move_hints: HashMap<Square, MoveHints>,
     board: Board,
+    current_highlight: Option<Entity>,
     showing_hints: Vec<Entity>,
 }
 
@@ -62,6 +63,7 @@ impl Default for BoardState {
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             board: Board::default(),
+            current_highlight: None,
             showing_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
     }
@@ -148,6 +150,22 @@ impl BoardState {
 
     pub fn set_board(&mut self, board: &Board) {
         self.board = *board;
+    }
+
+    #[must_use]
+    pub fn show_highlight_tile(&mut self, square: Square) -> ShowHighlight {
+        let entity = self.highlight(square);
+        self.current_highlight = Some(entity);
+        ShowHighlight(entity)
+    }
+
+    #[must_use]
+    pub fn hide_highlight_tile(&mut self) -> HideHighlight {
+        HideHighlight(
+            self.current_highlight
+                .take()
+                .unwrap_or_else(|| panic!("Failed to hide highlight tile, none are shown")),
+        )
     }
 
     #[must_use]

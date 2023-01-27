@@ -8,11 +8,7 @@ use bevy::prelude::*;
 use chess::Square;
 
 use crate::{
-    game::{
-        board::{BoardState, HideHighlight, ShowHighlight},
-        mouse::DragContainer,
-        moves::DoMove,
-    },
+    game::{board::BoardState, mouse::DragContainer, moves::DoMove},
     utils::StateExts,
 };
 
@@ -58,7 +54,7 @@ pub enum SelectionState {
     SelectingDragging(Square),
     Selected(Square),
     SelectedDragging(Square),
-    DoChangeSelection(Square, Square),
+    DoChangeSelection(Square),
     DoMove(Square, Square),
     DoUnselect(Square),
 }
@@ -71,9 +67,7 @@ impl fmt::Display for SelectionState {
             SelectionState::SelectingDragging(sq) => write!(f, "SelectingDragging({sq})"),
             SelectionState::Selected(sq) => write!(f, "Selected({sq})"),
             SelectionState::SelectedDragging(sq) => write!(f, "SelectedDragging({sq})"),
-            SelectionState::DoChangeSelection(from_sq, to_sq) => {
-                write!(f, "DoChangeSelected({from_sq} -> {to_sq})")
-            }
+            SelectionState::DoChangeSelection(to_sq) => write!(f, "DoChangeSelected({to_sq})"),
             SelectionState::DoMove(from_sq, to_sq) => write!(f, "DoMove({from_sq} -> {to_sq})"),
             SelectionState::DoUnselect(sq) => write!(f, "DoUnselect({sq})"),
         }
@@ -96,8 +90,7 @@ impl SelectionState {
     const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
     const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
     const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
-    const DO_CHANGE_SELECTION: SelectionState =
-        SelectionState::DoChangeSelection(Square::A1, Square::A1);
+    const DO_CHANGE_SELECTION: SelectionState = SelectionState::DoChangeSelection(Square::A1);
     const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
     const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
 }
@@ -140,8 +133,7 @@ fn handle_selection_events(
                     } else if board_state.move_is_valid(selected_sq, square) {
                         selection_state.transition(SelectionState::DoMove(selected_sq, square));
                     } else if board_state.has_piece_at(square) {
-                        selection_state
-                            .transition(SelectionState::DoChangeSelection(selected_sq, square));
+                        selection_state.transition(SelectionState::DoChangeSelection(square));
                     } else {
                         selection_state.transition(SelectionState::DoUnselect(selected_sq));
                     }
@@ -160,7 +152,7 @@ fn handle_selection_events(
                     }
                 }
             },
-            SelectionState::DoChangeSelection(_, _) => (),
+            SelectionState::DoChangeSelection(_) => (),
             SelectionState::DoMove(_, _) => (),
             SelectionState::DoUnselect(_) => (),
         }
@@ -181,8 +173,7 @@ fn on_enter_selection_state(
             let piece = board_state.piece(square);
             commands.entity(piece).set_parent(q_drag_container.single());
             // Show highlight tile
-            let hl_tile = board_state.highlight(square);
-            commands.add(ShowHighlight(hl_tile));
+            commands.add(board_state.show_highlight_tile(square));
             // Show move hints
             commands.add(board_state.show_move_hints_for(square));
         }
@@ -197,10 +188,9 @@ fn on_enter_selection_state(
             let piece = board_state.piece(square);
             commands.entity(piece).set_parent(q_drag_container.single());
         }
-        SelectionState::DoChangeSelection(from_sq, to_sq) => {
+        SelectionState::DoChangeSelection(to_sq) => {
             // Hide highlight tile
-            let hl_tile = board_state.highlight(from_sq);
-            commands.add(HideHighlight(hl_tile));
+            commands.add(board_state.hide_highlight_tile());
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to SelectingDragging
@@ -211,8 +201,7 @@ fn on_enter_selection_state(
             let piece = board_state.piece(from_sq);
             do_move_writer.send(DoMove { piece, from_sq, to_sq });
             // Hide highlight tile
-            let hl_tile = board_state.highlight(from_sq);
-            commands.add(HideHighlight(hl_tile));
+            commands.add(board_state.hide_highlight_tile());
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
@@ -224,8 +213,7 @@ fn on_enter_selection_state(
             let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
             // Hide highlight tile
-            let hl_tile = board_state.highlight(square);
-            commands.add(HideHighlight(hl_tile));
+            commands.add(board_state.hide_highlight_tile());
             // Hide move hints
             commands.add(board_state.hide_move_hints());
             // Transition to Unselected
