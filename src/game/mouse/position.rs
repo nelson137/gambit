@@ -12,24 +12,23 @@ pub(super) fn mouse_screen_position_to_world(
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
 ) {
-    let win = if let Some(w) = windows.get_primary() { w } else { return };
+    let Some(win) = windows.get_primary() else { return };
+    let Some(screen_pos) = win.cursor_position() else { return };
 
-    if let Some(screen_pos) = win.cursor_position() {
-        let (camera, camera_transf) = q_camera.single();
+    let (camera, camera_transf) = q_camera.single();
 
-        let window_size = Vec2::new(win.width(), win.height());
+    let window_size = Vec2::new(win.width(), win.height());
 
-        // Convert mouse position on screen [0..resolution] to ndc [0..2] (gpu coordinates)
-        let ndc = 2.0 * (Vec2::new(0.0, 1.0) - (screen_pos / window_size)).abs();
+    // Convert mouse position on screen [0..resolution] to ndc [0..2] (gpu coordinates)
+    let ndc = 2.0 * (Vec2::new(0.0, 1.0) - (screen_pos / window_size)).abs();
 
-        // Matrix for undoing the projection and camera transform
-        let ndc_to_world = camera_transf.compute_matrix() * camera.projection_matrix().inverse();
+    // Matrix for undoing the projection and camera transform
+    let ndc_to_world = camera_transf.compute_matrix() * camera.projection_matrix().inverse();
 
-        // Convert ndc to world-space coordinates
-        let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
+    // Convert ndc to world-space coordinates
+    let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
 
-        **mouse_world_pos = world_pos.truncate();
-    }
+    **mouse_world_pos = world_pos.truncate();
 }
 
 #[derive(Default, Deref, DerefMut, Resource)]

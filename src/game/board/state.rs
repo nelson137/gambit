@@ -243,10 +243,8 @@ impl BoardState {
     pub fn move_piece(&mut self, DoMove { piece, from_sq, to_sq }: DoMove) -> GameCommandList {
         let mut cmd_list = GameCommandList::default();
 
-        let (color, typ) = match (self.board.color_on(from_sq), self.board.piece_on(from_sq)) {
-            (Some(c), Some(t)) => (c, t),
-            _ => return cmd_list,
-        };
+        let Some(color) = self.board.color_on(from_sq) else { return cmd_list };
+        let Some(typ) = self.board.piece_on(from_sq) else { return cmd_list };
 
         // Move UI piece
         cmd_list.add(MoveUiPiece { piece, to_sq });

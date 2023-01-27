@@ -68,34 +68,33 @@ pub fn spawn_pieces(
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
     for square in chess::ALL_SQUARES {
+        let Some(info) = board_state.get_piece_info_on(square) else { continue };
         let location = BoardLocation::new(square);
 
-        if let Some(info) = board_state.get_piece_info_on(square) {
-            let image_path = info.asset_path();
-            let piece_color = PieceColor(info.0);
-            let piece_type = PieceType(info.1);
+        let image_path = info.asset_path();
+        let piece_color = PieceColor(info.0);
+        let piece_type = PieceType(info.1);
 
-            let piece_entity = commands
-                .spawn((
-                    UiPiece::new(piece_color, piece_type),
-                    debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
-                    location,
-                    ImageBundle {
-                        image: UiImage(asset_server.load(image_path)),
-                        style: Style {
-                            position_type: PositionType::Absolute,
-                            position: pos_top_left,
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            ..default()
-                        },
-                        z_index: ZIndex::Local(Z_PIECE),
+        let piece_entity = commands
+            .spawn((
+                UiPiece::new(piece_color, piece_type),
+                debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
+                location,
+                ImageBundle {
+                    image: UiImage(asset_server.load(image_path)),
+                    style: Style {
+                        position_type: PositionType::Absolute,
+                        position: pos_top_left,
+                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                         ..default()
                     },
-                ))
-                .id();
+                    z_index: ZIndex::Local(Z_PIECE),
+                    ..default()
+                },
+            ))
+            .id();
 
-            commands.entity(board_state.tile(square)).add_child(piece_entity);
-            board_state.set_piece(square, piece_entity);
-        }
+        commands.entity(board_state.tile(square)).add_child(piece_entity);
+        board_state.set_piece(square, piece_entity);
     }
 }
