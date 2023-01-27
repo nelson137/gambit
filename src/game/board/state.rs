@@ -182,23 +182,35 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn show_highlight_tile(&mut self, square: Square) -> ShowHighlight {
+    pub fn select_square(&mut self, square: Square) -> GameCommandList {
+        let mut cmd_list = GameCommandList::default();
+        cmd_list.add(self.show_highlight_tile(square));
+        cmd_list.add(self.show_move_hints_for(square));
+        cmd_list
+    }
+
+    #[must_use]
+    pub fn unselect_square(&mut self) -> GameCommandList {
+        let mut cmd_list = GameCommandList::default();
+        cmd_list.add(self.hide_highlight_tile());
+        cmd_list.add(self.hide_move_hints());
+        cmd_list
+    }
+
+    #[must_use]
+    fn show_highlight_tile(&mut self, square: Square) -> ShowHighlight {
         let entity = self.highlight(square);
         self.current_highlight = Some(entity);
         ShowHighlight(entity)
     }
 
     #[must_use]
-    pub fn hide_highlight_tile(&mut self) -> HideHighlight {
-        HideHighlight(
-            self.current_highlight
-                .take()
-                .unwrap_or_else(|| panic!("Failed to hide highlight tile, none are shown")),
-        )
+    fn hide_highlight_tile(&mut self) -> HideHighlight {
+        HideHighlight(self.current_highlight.take())
     }
 
     #[must_use]
-    pub fn show_move_hints_for(&mut self, source: Square) -> ShowHints {
+    fn show_move_hints_for(&mut self, source: Square) -> ShowHints {
         if !self.is_colors_turn_at(source) {
             return Default::default();
         }
@@ -230,7 +242,7 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn hide_move_hints(&mut self) -> HideHints {
+    fn hide_move_hints(&mut self) -> HideHints {
         HideHints(if self.showing_hints.is_empty() {
             Vec::new()
         } else {

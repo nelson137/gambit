@@ -174,10 +174,8 @@ fn on_enter_selection_state(
             // Re-parent piece to drag container
             let piece = board_state.piece(square);
             commands.entity(piece).set_parent(q_drag_container.single());
-            // Show highlight tile
-            commands.add(board_state.show_highlight_tile(square));
-            // Show move hints
-            commands.add(board_state.show_move_hints_for(square));
+            // Select square
+            commands.add(board_state.select_square(square));
         }
         SelectionState::Selected(square) => {
             // Re-parent piece back to its tile
@@ -191,10 +189,8 @@ fn on_enter_selection_state(
             commands.entity(piece).set_parent(q_drag_container.single());
         }
         SelectionState::DoChangeSelection(to_sq) => {
-            // Hide highlight tile
-            commands.add(board_state.hide_highlight_tile());
-            // Hide move hints
-            commands.add(board_state.hide_move_hints());
+            // Unselect square
+            commands.add(board_state.unselect_square());
             // Transition to SelectingDragging
             selection_state.transition_overwrite(SelectionState::SelectingDragging(to_sq));
         }
@@ -202,10 +198,8 @@ fn on_enter_selection_state(
             // Re-parent piece to destination tile & start move
             let piece = board_state.piece(from_sq);
             do_move_writer.send(DoMove { piece, from_sq, to_sq });
-            // Hide highlight tile
-            commands.add(board_state.hide_highlight_tile());
-            // Hide move hints
-            commands.add(board_state.hide_move_hints());
+            // Unselect square
+            commands.add(board_state.unselect_square());
             // Transition to Unselected
             selection_state.transition_overwrite(SelectionState::Unselected);
         }
@@ -214,10 +208,8 @@ fn on_enter_selection_state(
             let piece = board_state.piece(square);
             let tile = board_state.tile(square);
             commands.entity(piece).set_parent(tile);
-            // Hide highlight tile
-            commands.add(board_state.hide_highlight_tile());
-            // Hide move hints
-            commands.add(board_state.hide_move_hints());
+            // Unselect square
+            commands.add(board_state.unselect_square());
             // Transition to Unselected
             selection_state.transition_overwrite(SelectionState::Unselected);
         }

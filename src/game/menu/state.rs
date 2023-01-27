@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     cli::CliArgs,
     game::{
-        board::{spawn_pieces, BoardState, EndGameIcon, SelectionState},
+        board::{spawn_pieces, BoardState, EndGameIcon},
         captures::ResetCapturesUi,
         load::DespawnPieces,
     },
@@ -69,22 +69,13 @@ pub(super) fn game_over(
     mut game_over_timer: ResMut<GameOverTimer>,
     mut menu_state: ResMut<State<MenuState>>,
     mut board_state: ResMut<BoardState>,
-    selection_state: Res<State<SelectionState>>,
     mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
 ) {
     game_over_timer.0.tick(time.delta());
     if game_over_timer.0.just_finished() {
         q_end_game_icons.for_each_mut(|mut vis| vis.is_visible = false);
 
-        match selection_state.current() {
-            SelectionState::SelectingDragging(_)
-            | SelectionState::Selected(_)
-            | SelectionState::SelectedDragging(_) => {
-                commands.add(board_state.hide_highlight_tile())
-            }
-            _ => (),
-        }
-        commands.add(board_state.hide_move_hints());
+        commands.add(board_state.unselect_square());
         board_state.reset();
 
         commands.add(ResetCapturesUi);

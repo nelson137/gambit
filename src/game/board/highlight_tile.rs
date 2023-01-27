@@ -22,11 +22,12 @@ impl Command for ShowHighlight {
 }
 
 #[derive(Deref, DerefMut)]
-pub struct HideHighlight(pub Entity);
+pub struct HideHighlight(pub Option<Entity>);
 
 impl Command for HideHighlight {
     fn write(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
+        let Some(entity) = *self else { return };
+        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
             vis.is_visible = false;
         }
     }
