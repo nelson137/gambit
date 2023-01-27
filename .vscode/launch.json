@@ -13,7 +13,9 @@
             "args": [],
             "stopOnEntry": false,
             "sourceLanguages": ["rust"],
-            "cwd": "${workspaceFolder}"
+            "env": {
+                "CARGO_MANIFEST_DIR": "${workspaceFolder}"
+            }
         },
         {
             "type": "lldb",
@@ -32,7 +34,9 @@
                 }
             },
             "args": [],
-            "cwd": "${workspaceFolder}"
+            "env": {
+                "CARGO_MANIFEST_DIR": "${workspaceFolder}"
+            }
         }
     ]
 }
