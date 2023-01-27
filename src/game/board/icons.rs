@@ -152,8 +152,11 @@ fn set_end_game_icon<IconMarker: Component>(
     tile_entity: Entity,
     square: Square,
 ) {
-    let icon_entity = world.query_filtered::<Entity, With<IconMarker>>().single(world);
-    world.entity_mut(tile_entity).push_children(&[icon_entity]);
+    let (icon_entity, icon_parent) =
+        world.query_filtered::<(Entity, &Parent), With<IconMarker>>().single(world);
+    if icon_parent.get() != tile_entity {
+        world.entity_mut(tile_entity).push_children(&[icon_entity]);
+    }
     let mut icon = world.entity_mut(icon_entity);
     icon.get_mut::<Visibility>().unwrap().is_visible = true;
     let mut style = icon.get_mut::<Style>().unwrap();
