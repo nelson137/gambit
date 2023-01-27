@@ -25,7 +25,6 @@ use self::{
     captures::CaptureState,
     menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
-    moves::{move_piece, DoMove},
     ui::{spawn_panels, spawn_ui},
 };
 
@@ -50,8 +49,6 @@ impl Plugin for GameLogicPlugin {
             .init_resource::<GameAudioHandles>()
             .init_resource::<BoardState>()
             .init_resource::<CaptureState>()
-            // Events
-            .add_event::<DoMove>()
             // Startup
             .add_startup_system(setup_camera)
             .add_startup_system(spawn_drag_container)
@@ -72,7 +69,6 @@ impl Plugin for GameLogicPlugin {
                 ),
             ])
             // Systems
-            .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex))
-            .add_system(move_piece);
+            .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex));
     }
 }

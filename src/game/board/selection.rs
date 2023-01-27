@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use chess::Square;
 
 use crate::{
-    game::{board::BoardState, menu::MenuState, mouse::DragContainer, moves::DoMove},
+    game::{board::BoardState, menu::MenuState, mouse::DragContainer},
     utils::StateExts,
 };
 
@@ -166,7 +166,6 @@ fn on_enter_selection_state(
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,
     q_drag_container: Query<Entity, With<DragContainer>>,
-    mut do_move_writer: EventWriter<DoMove>,
 ) {
     match *selection_state.current() {
         SelectionState::Unselected => (),
@@ -196,8 +195,7 @@ fn on_enter_selection_state(
         }
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
-            let piece = board_state.piece(from_sq);
-            do_move_writer.send(DoMove { piece, from_sq, to_sq });
+            commands.add(board_state.move_piece(from_sq, to_sq));
             // Unselect square
             commands.add(board_state.unselect_square());
             // Transition to Unselected

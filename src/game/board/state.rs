@@ -9,10 +9,7 @@ use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPT
 use crate::{
     cli::CliArgs,
     game::{
-        audio::PlayGameAudio,
-        captures::Captured,
-        game_over::GameOver,
-        moves::{DoMove, MoveUiPiece},
+        audio::PlayGameAudio, captures::Captured, game_over::GameOver, moves::MoveUiPiece,
         utils::GameCommandList,
     },
 };
@@ -259,11 +256,12 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn move_piece(&mut self, DoMove { piece, from_sq, to_sq }: DoMove) -> GameCommandList {
+    pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> GameCommandList {
         let mut cmd_list = GameCommandList::default();
 
-        let Some(color) = self.board.color_on(from_sq) else { return cmd_list };
-        let Some(typ) = self.board.piece_on(from_sq) else { return cmd_list };
+        let piece = self.piece(from_sq);
+        let color = self.color_on(from_sq);
+        let typ = self.piece_on(from_sq);
 
         // Move UI piece
         cmd_list.add(MoveUiPiece { piece, to_sq });
