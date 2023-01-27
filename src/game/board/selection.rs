@@ -10,11 +10,47 @@ use chess::Square;
 use crate::{
     game::{
         board::{BoardState, HideHighlight, ShowHighlight},
-        mouse::handler::DragContainer,
+        mouse::DragContainer,
         moves::DoMove,
     },
     utils::StateExts,
 };
+
+pub struct SelectionPlugin;
+
+impl Plugin for SelectionPlugin {
+    fn build(&self, app: &mut App) {
+        app
+            // States
+            .add_state(SelectionState::Unselected)
+            // Events
+            .add_event::<SelectionEvent>()
+            // Systems
+            .add_system(handle_selection_events.at_end())
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::SELECTING_DRAGGING)
+                    .with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::SELECTED).with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::SELECTED_DRAGGING)
+                    .with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::DO_CHANGE_SELECTION)
+                    .with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::DO_MOVE).with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::DO_UNSELECT)
+                    .with_system(on_enter_selection_state),
+            );
+    }
+}
 
 #[derive(Clone, Copy, Debug, Eq)]
 pub enum SelectionState {
@@ -57,13 +93,13 @@ impl PartialEq for SelectionState {
 }
 
 impl SelectionState {
-    pub const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
-    pub const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
-    pub const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
-    pub const DO_CHANGE_SELECTION: SelectionState =
+    const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
+    const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
+    const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
+    const DO_CHANGE_SELECTION: SelectionState =
         SelectionState::DoChangeSelection(Square::A1, Square::A1);
-    pub const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
-    pub const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
+    const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
+    const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
 }
 
 #[derive(Clone, Copy)]
@@ -72,7 +108,7 @@ pub enum SelectionEvent {
     MouseUp(Square),
 }
 
-pub(super) fn handle_selection_events(
+fn handle_selection_events(
     mut selection_state: ResMut<State<SelectionState>>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<SelectionEvent>,
@@ -131,7 +167,7 @@ pub(super) fn handle_selection_events(
     }
 }
 
-pub(super) fn on_enter_selection_state(
+fn on_enter_selection_state(
     mut commands: Commands,
     mut selection_state: ResMut<State<SelectionState>>,
     mut board_state: ResMut<BoardState>,

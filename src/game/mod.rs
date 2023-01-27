@@ -18,7 +18,7 @@ use self::{
     audio::GameAudioHandles,
     board::{
         checkmate_icon_size, spawn_board, spawn_board_elements, spawn_board_pieces,
-        spawn_checkmate_icons, BoardState,
+        spawn_checkmate_icons, BoardState, SelectionPlugin,
     },
     camera::setup_camera,
     captures::CaptureState,
@@ -44,6 +44,7 @@ impl Plugin for GameLogicPlugin {
             // Plugins
             .add_plugin(MouseLogicPlugin)
             .add_plugin(GameMenuPlugin)
+            .add_plugin(SelectionPlugin)
             // Resources
             .init_resource::<GameAudioHandles>()
             .init_resource::<BoardState>()
