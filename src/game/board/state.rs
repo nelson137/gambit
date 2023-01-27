@@ -55,6 +55,7 @@ pub struct BoardState {
     highlights: HashMap<Square, Entity>,
     move_hints: HashMap<Square, MoveHints>,
     board: Board,
+    last_move_highlights: Option<(Entity, Entity)>,
     current_highlight: Option<Entity>,
     showing_hints: Vec<Entity>,
 }
@@ -79,6 +80,7 @@ impl FromWorld for BoardState {
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             board,
+            last_move_highlights: None,
             current_highlight: None,
             showing_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
@@ -263,6 +265,10 @@ impl BoardState {
         let color = self.color_on(from_sq);
         let typ = self.piece_on(from_sq);
 
+        // `Self::unselect_square()` without hiding the highlight tile
+        self.current_highlight.take();
+        cmd_list.add(self.hide_move_hints());
+
         // Move UI piece
         cmd_list.add(MoveUiPiece { piece, to_sq });
 
@@ -334,6 +340,15 @@ impl BoardState {
                 chess::Color::Black => PlayGameAudio::MoveOpponent,
                 chess::Color::White => PlayGameAudio::MoveSelf,
             });
+        }
+
+        let hl_1 = self.highlight(from_sq);
+        let hl_2 = self.highlight(to_sq);
+        cmd_list.add(ShowHighlight(hl_1));
+        cmd_list.add(ShowHighlight(hl_2));
+        if let Some((prev_hl_1, prev_hl_2)) = self.last_move_highlights.replace((hl_1, hl_2)) {
+            cmd_list.add(HideHighlight(Some(prev_hl_1)));
+            cmd_list.add(HideHighlight(Some(prev_hl_2)));
         }
 
         if let BoardStatus::Checkmate | BoardStatus::Stalemate = self.board.status() {

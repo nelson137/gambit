@@ -196,8 +196,6 @@ fn on_enter_selection_state(
         SelectionState::DoMove(from_sq, to_sq) => {
             // Re-parent piece to destination tile & start move
             commands.add(board_state.move_piece(from_sq, to_sq));
-            // Unselect square
-            commands.add(board_state.unselect_square());
             // Transition to Unselected
             selection_state.transition_overwrite(SelectionState::Unselected);
         }
