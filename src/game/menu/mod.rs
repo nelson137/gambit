@@ -13,12 +13,14 @@ pub struct GameMenuPlugin;
 
 impl Plugin for GameMenuPlugin {
     fn build(&self, app: &mut App) {
+        let menu_state = MenuState::from_world(&mut app.world);
+
         app
             // Resources
             .init_resource::<FenPopupData>()
             .init_resource::<GameOverTimer>()
             // States
-            .add_state(MenuState::default())
+            .add_state(menu_state)
             // Startup
             .push_ordered_startup_stages([
                 (

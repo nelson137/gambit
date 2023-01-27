@@ -2,13 +2,16 @@
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
+use clap::Parser;
 
 mod assets;
+mod cli;
 mod game;
 mod utils;
 mod window;
 
 use self::{
+    cli::CliArgs,
     game::{consts::COLOR_BG, GameLogicPlugin},
     utils::DebugBevyInspectorPlugin,
     window::{WIN_HEIGHT, WIN_WIDTH},
@@ -16,6 +19,8 @@ use self::{
 
 fn main() {
     App::new()
+        // Cli
+        .insert_resource(CliArgs::parse())
         // Plugins
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {

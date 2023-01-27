@@ -3,6 +3,7 @@ use std::fmt;
 use bevy::prelude::*;
 
 use crate::{
+    cli::CliArgs,
     game::{
         board::{spawn_pieces, BoardState, EndGameIcon, SelectionState},
         captures::ResetCapturesUi,
@@ -13,13 +14,21 @@ use crate::{
 
 use super::{FenPopupData, GameMenu, GameMenuDimLayer};
 
-#[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
 pub enum MenuState {
     FenInput,
-    #[default]
     Menu,
     Game,
     DoGameOver,
+}
+
+impl FromWorld for MenuState {
+    fn from_world(world: &mut World) -> Self {
+        match world.resource::<CliArgs>().fen {
+            Some(_) => Self::Game,
+            _ => Self::Menu,
+        }
+    }
 }
 
 impl fmt::Display for MenuState {

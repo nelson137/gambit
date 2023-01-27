@@ -1,14 +1,20 @@
-use std::collections::{hash_map::Entry, HashMap};
+use std::{
+    collections::{hash_map::Entry, HashMap},
+    str::FromStr,
+};
 
 use bevy::prelude::*;
 use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPTY};
 
-use crate::game::{
-    audio::PlayGameAudio,
-    captures::Captured,
-    game_over::GameOver,
-    moves::{DoMove, MoveUiPiece},
-    utils::GameCommandList,
+use crate::{
+    cli::CliArgs,
+    game::{
+        audio::PlayGameAudio,
+        captures::Captured,
+        game_over::GameOver,
+        moves::{DoMove, MoveUiPiece},
+        utils::GameCommandList,
+    },
 };
 
 use super::{HideHighlight, HideHints, MoveHints, ShowHighlight, ShowHints};
@@ -56,14 +62,19 @@ pub struct BoardState {
     showing_hints: Vec<Entity>,
 }
 
-impl Default for BoardState {
-    fn default() -> Self {
+impl FromWorld for BoardState {
+    fn from_world(world: &mut World) -> Self {
+        let board = match &world.resource::<CliArgs>().fen {
+            Some(fen) => Board::from_str(fen).unwrap(),
+            _ => Board::default(),
+        };
+
         Self {
             tiles: HashMap::with_capacity(64),
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
-            board: Board::default(),
+            board,
             current_highlight: None,
             showing_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
