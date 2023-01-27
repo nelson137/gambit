@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::UiSystem};
 
 pub mod audio;
 pub mod board;
@@ -16,7 +16,10 @@ use crate::utils::AppPushOrderedStartupStages;
 
 use self::{
     audio::GameAudioHandles,
-    board::{spawn_board, spawn_board_elements, spawn_board_pieces, BoardState},
+    board::{
+        checkmate_icon_size, spawn_board, spawn_board_elements, spawn_board_pieces,
+        spawn_checkmate_icons, BoardState,
+    },
     camera::setup_camera,
     captures::CaptureState,
     menu::GameMenuPlugin,
@@ -59,9 +62,15 @@ impl Plugin for GameLogicPlugin {
                         .with_system(spawn_board_elements)
                         .with_system(spawn_panels),
                 ),
-                (SpawnStage::Phase4, SystemStage::single(spawn_board_pieces)),
+                (
+                    SpawnStage::Phase4,
+                    SystemStage::parallel()
+                        .with_system(spawn_board_pieces)
+                        .with_system(spawn_checkmate_icons),
+                ),
             ])
             // Systems
+            .add_system_to_stage(CoreStage::PostUpdate, checkmate_icon_size.before(UiSystem::Flex))
             .add_system(move_piece);
     }
 }

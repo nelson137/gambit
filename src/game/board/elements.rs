@@ -1,20 +1,146 @@
 use std::ops::Not;
 
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{File, Piece, Rank};
+use chess::{File, Piece, Rank, Square};
 
 use crate::{
     assets::PieceColorAndTypeAssetPath,
     debug_name,
     game::{
         board::{BoardLocation, MoveHints},
-        consts::{Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
+        consts::{Z_CHECKMATE_ICONS, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
     },
 };
 
 use crate::game::consts::Z_TILE;
 
 use super::{BoardState, UiBoard};
+
+// ======================================================================
+// Icons
+// ======================================================================
+
+#[derive(Component)]
+pub struct WinnerIcon;
+
+#[derive(Component)]
+pub struct LoserIconBlack;
+
+#[derive(Component)]
+pub struct LoserIconWhite;
+
+pub fn spawn_checkmate_icons(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    board_state: Res<BoardState>,
+) {
+    let winner_icon_entity = commands
+        .spawn((
+            WinnerIcon,
+            debug_name!("Winner Icon"),
+            ImageBundle {
+                image: asset_server.load("images/checkmate/winner.png").into(),
+                visibility: Visibility::INVISIBLE,
+                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(board_state.tile(Square::A1)).add_child(winner_icon_entity);
+
+    let black_loser_icon_entity = commands
+        .spawn((
+            LoserIconBlack,
+            debug_name!("Black Loser Icon"),
+            ImageBundle {
+                image: asset_server.load("images/checkmate/loser-black.png").into(),
+                visibility: Visibility::INVISIBLE,
+                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(board_state.tile(Square::A2)).add_child(black_loser_icon_entity);
+
+    let white_loser_icon_entity = commands
+        .spawn((
+            LoserIconWhite,
+            debug_name!("White Loser Icon"),
+            ImageBundle {
+                image: asset_server.load("images/checkmate/loser-white.png").into(),
+                visibility: Visibility::INVISIBLE,
+                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(board_state.tile(Square::A3)).add_child(white_loser_icon_entity);
+}
+
+#[derive(Debug)]
+pub struct ShowCheckmateIcons;
+
+impl Command for ShowCheckmateIcons {
+    fn write(self, world: &mut World) {
+        let board_state = world.resource::<BoardState>();
+        let board = board_state.board();
+
+        let loser_color = board.side_to_move();
+        let loser_square = board.king_square(loser_color);
+        let loser_tile_entity = board_state.tile(loser_square);
+
+        let winner_color = !loser_color;
+        let winner_square = board.king_square(winner_color);
+        let winner_tile_entity = board_state.tile(winner_square);
+
+        #[rustfmt::skip]
+        match loser_color {
+            chess::Color::Black => set_checkmate_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
+            chess::Color::White => set_checkmate_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
+        };
+
+        set_checkmate_icon::<LoserIconWhite>(world, winner_tile_entity, winner_square);
+    }
+}
+
+fn set_checkmate_icon<IconMarker: Component>(
+    world: &mut World,
+    tile_entity: Entity,
+    square: Square,
+) {
+    let icon_entity = world.query_filtered::<Entity, With<IconMarker>>().single(world);
+    world.entity_mut(tile_entity).push_children(&[icon_entity]);
+    let mut icon = world.entity_mut(icon_entity);
+    icon.get_mut::<Visibility>().unwrap().is_visible = true;
+    let mut style = icon.get_mut::<Style>().unwrap();
+    if square.get_rank() == Rank::Eighth {
+        style.position.top = Val::Percent(3.0);
+    } else {
+        style.position.top = Val::Percent(-14.0);
+    }
+    if square.get_file() == File::H {
+        style.position.left = Val::Percent(57.0);
+    } else {
+        style.position.left = Val::Percent(74.0);
+    }
+}
+
+pub fn checkmate_icon_size(
+    q_tiles: Query<&Node, With<Tile>>,
+    mut q_checkmate_icons: Query<
+        &mut Style,
+        Or<(With<WinnerIcon>, With<LoserIconBlack>, With<LoserIconWhite>)>,
+    >,
+) {
+    let icon_size = {
+        let tile_size = q_tiles.iter().next().unwrap().size().x;
+        let size = Val::Px(tile_size * 0.4);
+        Size::new(size, size)
+    };
+    for mut style in &mut q_checkmate_icons {
+        style.size = icon_size;
+    }
+}
 
 // ======================================================================
 // Piece

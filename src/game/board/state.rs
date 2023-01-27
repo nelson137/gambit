@@ -1,7 +1,7 @@
 use std::collections::{hash_map::Entry, HashMap};
 
 use bevy::prelude::*;
-use chess::{BitBoard, Board, ChessMove, File, MoveGen, Square, EMPTY};
+use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPTY};
 
 use crate::game::{
     audio::PlayGameAudio,
@@ -10,7 +10,7 @@ use crate::game::{
     utils::GameCommandList,
 };
 
-use super::{HideHints, MoveHints, ShowHints};
+use super::{HideHints, MoveHints, ShowCheckmateIcons, ShowHints};
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
 ///
@@ -279,6 +279,10 @@ impl BoardState {
                 chess::Color::Black => PlayGameAudio::MoveOpponent,
                 chess::Color::White => PlayGameAudio::MoveSelf,
             });
+        }
+
+        if let BoardStatus::Checkmate = self.board.status() {
+            cmd_list.add(ShowCheckmateIcons);
         }
 
         cmd_list
