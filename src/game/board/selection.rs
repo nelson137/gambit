@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use chess::Square;
 
 use crate::{
-    game::{board::BoardState, mouse::DragContainer, moves::DoMove},
+    game::{board::BoardState, menu::MenuState, mouse::DragContainer, moves::DoMove},
     utils::StateExts,
 };
 
@@ -22,7 +22,9 @@ impl Plugin for SelectionPlugin {
             // Events
             .add_event::<SelectionEvent>()
             // Systems
-            .add_system(handle_selection_events.at_end())
+            .add_system_set(
+                SystemSet::on_update(MenuState::Game).with_system(handle_selection_events.at_end()),
+            )
             .add_system_set(
                 SystemSet::on_enter(SelectionState::SELECTING_DRAGGING)
                     .with_system(on_enter_selection_state),
