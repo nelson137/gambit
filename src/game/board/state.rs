@@ -65,7 +65,14 @@ pub struct BoardState {
 impl FromWorld for BoardState {
     fn from_world(world: &mut World) -> Self {
         let board = match &world.resource::<CliArgs>().fen {
-            Some(fen) => Board::from_str(fen).unwrap(),
+            Some(fen) => match Board::from_str(fen) {
+                Ok(board) => board,
+                Err(err) => {
+                    warn!("{err}");
+                    warn!("Using default board");
+                    Board::default()
+                }
+            },
             _ => Board::default(),
         };
 
