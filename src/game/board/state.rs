@@ -10,7 +10,10 @@ use crate::game::{
     utils::GameCommandList,
 };
 
-use super::{HideHighlight, HideHints, MoveHints, ShowCheckmateIcons, ShowHighlight, ShowHints};
+use super::{
+    HideHighlight, HideHints, MoveHints, ShowCheckmateIcons, ShowHighlight, ShowHints,
+    ShowStalemateIcons,
+};
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
 ///
@@ -299,8 +302,10 @@ impl BoardState {
             });
         }
 
-        if let BoardStatus::Checkmate = self.board.status() {
-            cmd_list.add(ShowCheckmateIcons);
+        match self.board.status() {
+            BoardStatus::Checkmate => cmd_list.add(ShowCheckmateIcons),
+            BoardStatus::Stalemate => cmd_list.add(ShowStalemateIcons),
+            BoardStatus::Ongoing => (),
         }
 
         cmd_list

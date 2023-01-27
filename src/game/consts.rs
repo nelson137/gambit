@@ -13,7 +13,7 @@ pub const Z_GAME_MENU: i32 = 21;
 
 pub const Z_GAME_MENU_DIM_LAYER: i32 = 20;
 
-pub const Z_CHECKMATE_ICONS: i32 = 15;
+pub const Z_END_GAME_ICONS: i32 = 15;
 
 pub const Z_PIECE_SELECTED: i32 = 11;
 

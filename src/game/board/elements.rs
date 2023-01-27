@@ -8,7 +8,7 @@ use crate::{
     debug_name,
     game::{
         board::{BoardLocation, MoveHints},
-        consts::{Z_CHECKMATE_ICONS, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
+        consts::{Z_END_GAME_ICONS, Z_HIGHLIGHT_TILE, Z_MOVE_HINT, Z_NOTATION_TEXT, Z_PIECE},
     },
 };
 
@@ -21,6 +21,9 @@ use super::{BoardState, UiBoard};
 // ======================================================================
 
 #[derive(Component)]
+pub struct EndGameIcon;
+
+#[derive(Component)]
 pub struct WinnerIcon;
 
 #[derive(Component)]
@@ -29,19 +32,26 @@ pub struct LoserIconBlack;
 #[derive(Component)]
 pub struct LoserIconWhite;
 
-pub fn spawn_checkmate_icons(
+#[derive(Component)]
+pub struct DrawIconBlack;
+
+#[derive(Component)]
+pub struct DrawIconWhite;
+
+pub fn spawn_end_game_icons(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     board_state: Res<BoardState>,
 ) {
     let winner_icon_entity = commands
         .spawn((
+            EndGameIcon,
             WinnerIcon,
             debug_name!("Winner Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/winner.png").into(),
                 visibility: Visibility::INVISIBLE,
-                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
         ))
@@ -50,12 +60,13 @@ pub fn spawn_checkmate_icons(
 
     let black_loser_icon_entity = commands
         .spawn((
+            EndGameIcon,
             LoserIconBlack,
             debug_name!("Black Loser Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/loser-black.png").into(),
                 visibility: Visibility::INVISIBLE,
-                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
         ))
@@ -64,17 +75,46 @@ pub fn spawn_checkmate_icons(
 
     let white_loser_icon_entity = commands
         .spawn((
+            EndGameIcon,
             LoserIconWhite,
             debug_name!("White Loser Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/loser-white.png").into(),
                 visibility: Visibility::INVISIBLE,
-                z_index: ZIndex::Global(Z_CHECKMATE_ICONS),
+                z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
         ))
         .id();
     commands.entity(board_state.tile(Square::A3)).add_child(white_loser_icon_entity);
+
+    let black_draw_entity = commands
+        .spawn((
+            EndGameIcon,
+            DrawIconBlack,
+            ImageBundle {
+                image: asset_server.load("images/draw/draw-black.png").into(),
+                visibility: Visibility::INVISIBLE,
+                z_index: ZIndex::Global(Z_END_GAME_ICONS),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(board_state.tile(Square::A4)).add_child(black_draw_entity);
+
+    let white_draw_entity = commands
+        .spawn((
+            EndGameIcon,
+            DrawIconWhite,
+            ImageBundle {
+                image: asset_server.load("images/draw/draw-white.png").into(),
+                visibility: Visibility::INVISIBLE,
+                z_index: ZIndex::Global(Z_END_GAME_ICONS),
+                ..default()
+            },
+        ))
+        .id();
+    commands.entity(board_state.tile(Square::A4)).add_child(white_draw_entity);
 }
 
 #[derive(Debug)]
@@ -95,15 +135,34 @@ impl Command for ShowCheckmateIcons {
 
         #[rustfmt::skip]
         match loser_color {
-            chess::Color::Black => set_checkmate_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
-            chess::Color::White => set_checkmate_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
+            chess::Color::Black => set_end_game_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
+            chess::Color::White => set_end_game_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
         };
 
-        set_checkmate_icon::<LoserIconWhite>(world, winner_tile_entity, winner_square);
+        set_end_game_icon::<LoserIconWhite>(world, winner_tile_entity, winner_square);
     }
 }
 
-fn set_checkmate_icon<IconMarker: Component>(
+pub struct ShowStalemateIcons;
+
+impl Command for ShowStalemateIcons {
+    fn write(self, world: &mut World) {
+        let board_state = world.resource::<BoardState>();
+        let board = board_state.board();
+
+        let black_square = board.king_square(chess::Color::Black);
+        let black_tile_entity = board_state.tile(black_square);
+
+        let white_square = board.king_square(chess::Color::White);
+        let white_tile_entity = board_state.tile(white_square);
+
+        set_end_game_icon::<DrawIconBlack>(world, black_tile_entity, black_square);
+
+        set_end_game_icon::<DrawIconWhite>(world, white_tile_entity, white_square);
+    }
+}
+
+fn set_end_game_icon<IconMarker: Component>(
     world: &mut World,
     tile_entity: Entity,
     square: Square,
@@ -125,19 +184,16 @@ fn set_checkmate_icon<IconMarker: Component>(
     }
 }
 
-pub fn checkmate_icon_size(
+pub fn end_game_icon_size(
     q_tiles: Query<&Node, With<Tile>>,
-    mut q_checkmate_icons: Query<
-        &mut Style,
-        Or<(With<WinnerIcon>, With<LoserIconBlack>, With<LoserIconWhite>)>,
-    >,
+    mut q_end_game_icons: Query<&mut Style, With<EndGameIcon>>,
 ) {
     let icon_size = {
         let tile_size = q_tiles.iter().next().unwrap().size().x;
         let size = Val::Px(tile_size * 0.4);
         Size::new(size, size)
     };
-    for mut style in &mut q_checkmate_icons {
+    for mut style in &mut q_end_game_icons {
         style.size = icon_size;
     }
 }

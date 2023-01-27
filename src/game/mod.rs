@@ -17,8 +17,8 @@ use crate::utils::AppPushOrderedStartupStages;
 use self::{
     audio::GameAudioHandles,
     board::{
-        checkmate_icon_size, spawn_board, spawn_board_elements, spawn_board_pieces,
-        spawn_checkmate_icons, BoardState, SelectionPlugin,
+        end_game_icon_size, spawn_board, spawn_board_elements, spawn_board_pieces,
+        spawn_end_game_icons, BoardState, SelectionPlugin,
     },
     camera::setup_camera,
     captures::CaptureState,
@@ -67,11 +67,11 @@ impl Plugin for GameLogicPlugin {
                     SpawnStage::Phase4,
                     SystemStage::parallel()
                         .with_system(spawn_board_pieces)
-                        .with_system(spawn_checkmate_icons),
+                        .with_system(spawn_end_game_icons),
                 ),
             ])
             // Systems
-            .add_system_to_stage(CoreStage::PostUpdate, checkmate_icon_size.before(UiSystem::Flex))
+            .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex))
             .add_system(move_piece);
     }
 }
