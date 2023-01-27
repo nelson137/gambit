@@ -7,7 +7,7 @@ use crate::{game::menu::MenuState, utils::StateExts};
 
 use super::{board::UiPiece, spawn_pieces, BoardState};
 
-struct DespawnPieces;
+pub struct DespawnPieces;
 
 impl Command for DespawnPieces {
     fn write(self, world: &mut World) {

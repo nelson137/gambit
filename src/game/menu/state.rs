@@ -2,6 +2,15 @@ use std::fmt;
 
 use bevy::prelude::*;
 
+use crate::{
+    game::{
+        board::{spawn_pieces, BoardState, EndGameIcon, SelectionState},
+        captures::ResetCapturesUi,
+        load::DespawnPieces,
+    },
+    utils::StateExts,
+};
+
 use super::{FenPopupData, GameMenu, GameMenuDimLayer};
 
 #[derive(Clone, Copy, Debug, Default, Hash, PartialEq, Eq)]
@@ -10,6 +19,7 @@ pub enum MenuState {
     #[default]
     Menu,
     Game,
+    DoGameOver,
 }
 
 impl fmt::Display for MenuState {
@@ -21,6 +31,7 @@ impl fmt::Display for MenuState {
 pub(super) fn on_enter_menu_state(
     menu_state: ResMut<State<MenuState>>,
     mut fen_popup_data: ResMut<FenPopupData>,
+    mut game_over_timer: ResMut<GameOverTimer>,
     mut q_menu_components: Query<&mut Style, Or<(With<GameMenuDimLayer>, With<GameMenu>)>>,
 ) {
     let mut set_menu_display =
@@ -29,5 +40,49 @@ pub(super) fn on_enter_menu_state(
         MenuState::FenInput => fen_popup_data.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),
+        MenuState::DoGameOver => *game_over_timer = default(),
+    }
+}
+
+#[derive(Resource)]
+pub(super) struct GameOverTimer(Timer);
+
+impl Default for GameOverTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(2.0, TimerMode::Once))
+    }
+}
+
+pub(super) fn game_over(
+    mut commands: Commands,
+    time: Res<Time>,
+    asset_server: Res<AssetServer>,
+    mut game_over_timer: ResMut<GameOverTimer>,
+    mut menu_state: ResMut<State<MenuState>>,
+    mut board_state: ResMut<BoardState>,
+    selection_state: Res<State<SelectionState>>,
+    mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
+) {
+    game_over_timer.0.tick(time.delta());
+    if game_over_timer.0.just_finished() {
+        q_end_game_icons.for_each_mut(|mut vis| vis.is_visible = false);
+
+        match selection_state.current() {
+            SelectionState::SelectingDragging(_)
+            | SelectionState::Selected(_)
+            | SelectionState::SelectedDragging(_) => {
+                commands.add(board_state.hide_highlight_tile())
+            }
+            _ => (),
+        }
+        commands.add(board_state.hide_move_hints());
+        board_state.reset();
+
+        commands.add(ResetCapturesUi);
+
+        commands.add(DespawnPieces);
+        spawn_pieces(commands, asset_server, board_state);
+
+        menu_state.transition(MenuState::Menu);
     }
 }

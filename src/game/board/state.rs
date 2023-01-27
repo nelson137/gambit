@@ -6,14 +6,12 @@ use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPT
 use crate::game::{
     audio::PlayGameAudio,
     captures::Captured,
+    game_over::GameOver,
     moves::{DoMove, MoveUiPiece},
     utils::GameCommandList,
 };
 
-use super::{
-    HideHighlight, HideHints, MoveHints, ShowCheckmateIcons, ShowHighlight, ShowHints,
-    ShowStalemateIcons,
-};
+use super::{HideHighlight, HideHints, MoveHints, ShowHighlight, ShowHints};
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
 ///
@@ -73,6 +71,16 @@ impl Default for BoardState {
 }
 
 impl BoardState {
+    pub fn reset(&mut self) {
+        self.clear_pieces();
+        self.clear_showing_hints();
+        self.board = Board::default();
+    }
+
+    pub fn clear_showing_hints(&mut self) {
+        self.showing_hints.clear();
+    }
+
     pub fn clear_pieces(&mut self) {
         self.pieces.clear();
     }
@@ -302,10 +310,8 @@ impl BoardState {
             });
         }
 
-        match self.board.status() {
-            BoardStatus::Checkmate => cmd_list.add(ShowCheckmateIcons),
-            BoardStatus::Stalemate => cmd_list.add(ShowStalemateIcons),
-            BoardStatus::Ongoing => (),
+        if let BoardStatus::Checkmate | BoardStatus::Stalemate = self.board.status() {
+            cmd_list.add(GameOver);
         }
 
         cmd_list

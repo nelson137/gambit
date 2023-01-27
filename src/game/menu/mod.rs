@@ -16,6 +16,7 @@ impl Plugin for GameMenuPlugin {
         app
             // Resources
             .init_resource::<FenPopupData>()
+            .init_resource::<GameOverTimer>()
             // States
             .add_state(MenuState::default())
             // Startup
@@ -35,8 +36,12 @@ impl Plugin for GameMenuPlugin {
             )
             .add_system_set(SystemSet::on_enter(MenuState::Menu).with_system(on_enter_menu_state))
             .add_system_set(SystemSet::on_enter(MenuState::Game).with_system(on_enter_menu_state))
+            .add_system_set(
+                SystemSet::on_enter(MenuState::DoGameOver).with_system(on_enter_menu_state),
+            )
             .add_system_set(SystemSet::on_update(MenuState::FenInput).with_system(fen_menu))
-            .add_system_set(SystemSet::on_update(MenuState::Menu).with_system(game_menu_buttons));
+            .add_system_set(SystemSet::on_update(MenuState::Menu).with_system(game_menu_buttons))
+            .add_system_set(SystemSet::on_update(MenuState::DoGameOver).with_system(game_over));
     }
 }
 

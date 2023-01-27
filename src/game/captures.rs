@@ -206,3 +206,27 @@ impl Command for Captured {
         }
     }
 }
+
+pub struct ResetCapturesUi;
+
+impl Command for ResetCapturesUi {
+    fn write(self, world: &mut World) {
+        let mut capture_state = world.resource_mut::<CaptureState>();
+        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+
+        let image_entities: Vec<Entity> = capture_state
+            .iter_mut()
+            .flat_map(|player_caps| player_caps.iter_mut())
+            .map(|player_caps| {
+                player_caps.count = 0;
+                player_caps.image_entity
+            })
+            .collect();
+
+        for img_entity in image_entities {
+            if let Some(mut style) = world.entity_mut(img_entity).get_mut::<Style>() {
+                style.display = Display::None;
+            }
+        }
+    }
+}
