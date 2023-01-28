@@ -7,6 +7,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use build_core::StockfishBuilder;
+use build_utils::LogWriter;
 use tracing::error;
 use tracing_subscriber::fmt::{time::LocalTime, SubscriberBuilder};
 
@@ -21,33 +22,42 @@ fn main() -> ExitCode {
     println!("cargo:rerun-if-changed=target/stockfish");
     println!();
 
+    // Open and prepare log file
+    let log_file_p = Path::new(LOG_FILE_PATH);
+    let mut log_file = match File::options().create(true).append(true).open(log_file_p) {
+        Ok(f) => f,
+        Err(err) => {
+            eprintln!("Failed to open log file: {LOG_FILE_PATH}");
+            eprintln!("\n    {err:#}");
+            return ExitCode::FAILURE;
+        }
+    };
+    writeln!(
+        log_file,
+        "\n--------------------------------[ BEGIN BUILD ]--------------------------------\n"
+    )
+    .unwrap();
+
+    // Setup log subscriber
+    let writer = LogWriter::new(log_file);
+    let timer = LocalTime::rfc_3339();
+    SubscriberBuilder::default().with_writer(writer).with_ansi(false).with_timer(timer).init();
+
     match main2() {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
             error!("{:?}", err);
-            eprintln!("{:?}", err);
             ExitCode::FAILURE
         }
     }
 }
 
 fn main2() -> Result<()> {
-    // Ensure that the stockfish working directory in target/ exists
+    // Ensure that the script working directory in target/ exists
     create_dir_all(WORKING_DIR).with_context(|| {
         format!("Failed to ensure that the Stockfish working directory exists: {WORKING_DIR}")
     })?;
 
-    // Open and prepare log file
-    let mut log_file = File::options().create(true).append(true).open(Path::new(LOG_FILE_PATH))?;
-    writeln!(
-        log_file,
-        "\n--------------------------------[ BEGIN BUILD ]--------------------------------\n"
-    )?;
-
-    // Setup log subscriber
-    let timer = LocalTime::rfc_3339();
-    SubscriberBuilder::default().with_ansi(false).with_timer(timer).with_writer(log_file).init();
-
-    // Run build logic
+    // Core logic
     StockfishBuilder::new().run()
 }

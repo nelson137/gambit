@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{anyhow, bail, Context, Result};
-use tracing::info;
+use tracing::{error, info};
 use zip::ZipArchive;
 
 use crate::{build_consts::*, build_utils::CommandExts};
@@ -104,13 +104,13 @@ impl StockfishBuilder {
                 }
 
                 match remove_dir_all(&self.repo_dir_p) {
-                    Ok(_) => eprint!(
-                        "CLEANUP: Removed partially-extracted Stockfish source code directory: {}\n\n",
-                        self.repo_dir_p.display()
+                    Ok(_) => info!(
+                        path = %self.repo_dir_p.display(),
+                        "Removed partially-extracted Stockfish source code directory",
                     ),
-                    Err(rm_err) => eprint!(
-                        "CLEANUP: Failed to remove partially-extracted Stockfish source code directory: {}\n    ({rm_err:#})\n\n",
-                        self.repo_dir_p.display()
+                    Err(err) => error!(
+                        path = %self.repo_dir_p.display(),
+                        "Failed to remove partially-extracted Stockfish source code directory ({err:#})",
                     )
                 }
 
