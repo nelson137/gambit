@@ -9,7 +9,13 @@ use std::{
 
 use anyhow::{anyhow, bail, Context, Result};
 use shell_escape::escape;
+use tracing::{error, info};
+use tracing_subscriber::fmt::{time::LocalTime, SubscriberBuilder};
 use zip::ZipArchive;
+
+/// The name of the log file. This value joined with `WORKING_DIR` is the full
+/// path.
+const LOG_FILE_PATH: &str = "target/stockfish.log";
 
 /// The working directory for this script.
 const WORKING_DIR: &str = "target/stockfish";
@@ -42,13 +48,35 @@ fn main() -> ExitCode {
     println!("cargo:rerun-if-changed=target/stockfish");
     println!();
 
-    match StockfishBuilder::new().run() {
+    match main2() {
         Ok(_) => ExitCode::SUCCESS,
         Err(err) => {
+            error!("{:?}", err);
             eprintln!("{:?}", err);
             ExitCode::FAILURE
         }
     }
+}
+
+fn main2() -> Result<()> {
+    // Ensure that the stockfish working directory in target/ exists
+    create_dir_all(WORKING_DIR).with_context(|| {
+        format!("Failed to ensure that the Stockfish working directory exists: {WORKING_DIR}")
+    })?;
+
+    // Open and prepare log file
+    let mut log_file = File::options().create(true).append(true).open(Path::new(LOG_FILE_PATH))?;
+    writeln!(
+        log_file,
+        "\n--------------------------------[ BEGIN BUILD ]--------------------------------\n"
+    )?;
+
+    // Setup log subscriber
+    let timer = LocalTime::rfc_3339();
+    SubscriberBuilder::default().with_ansi(false).with_timer(timer).with_writer(log_file).init();
+
+    // Run build logic
+    StockfishBuilder::new().run()
 }
 
 struct StockfishBuilder {
@@ -67,12 +95,9 @@ impl StockfishBuilder {
     }
 
     fn run(&self) -> Result<()> {
-        // Ensure that the stockfish working directory in target/ exists
-        create_dir_all(WORKING_DIR).with_context(|| {
-            format!("Failed to ensure that the Stockfish working directory exists: {WORKING_DIR}")
-        })?;
-
-        if !self.bin_p.exists() {
+        if self.bin_p.exists() {
+            info!(path = %self.bin_p.display(), "executable exists, nothing to do");
+        } else {
             // Ensure that the repository directory exists (i.e. is extracted from the zip archive)
             if !self.repo_dir_p.exists() {
                 if self.zip_p.exists() {
@@ -89,6 +114,7 @@ impl StockfishBuilder {
     }
 
     fn read_zip(&self) -> Result<impl Read + Seek> {
+        info!(path = %self.zip_p.display(), "zip archive exists, reading into memory");
         File::open(&self.zip_p).with_context(|| {
             format!("Failed to open Stockfish ZIP archive: {}", self.zip_p.display())
         })
@@ -96,6 +122,8 @@ impl StockfishBuilder {
 
     fn download_zip(&self) -> Result<impl Read + Seek> {
         let url = format!("{STOCKFISH_ZIP_URL}{STOCKFISH_ZIP_NAME}");
+        info!(url, "zip archive doesn't exist, downloading now");
+
         let mut response = reqwest::blocking::get(url.clone())
             .with_context(|| format!("Failed to get the Stockfish source code ZIP archive: {url}"))?
             .error_for_status()
@@ -106,6 +134,7 @@ impl StockfishBuilder {
             "Failed to write downloaded Stockfish source code ZIP archive to buffer"
         })?;
 
+        info!(path = %self.zip_p.display(), "writing zip archive to filesystem");
         File::options()
             .create(true)
             .write(true)
@@ -126,6 +155,8 @@ impl StockfishBuilder {
     }
 
     fn extract_zip(&self, reader: impl Read + Seek) -> Result<()> {
+        info!("extracting zip archive");
+
         let mut archive = ZipArchive::new(reader)
             .with_context(|| format!("Failed to load ZIP archive: {}", self.zip_p.display()))?;
 
@@ -157,6 +188,8 @@ impl StockfishBuilder {
     }
 
     fn build_src(&self) -> Result<()> {
+        info!(path = %self.repo_dir_p.display(), "executable doesn't exist, compiling now");
+
         let make_dir_p = self.repo_dir_p.join("src");
         let make_dir_s = make_dir_p
             .to_str()
@@ -181,6 +214,7 @@ impl StockfishBuilder {
         {
             let mut cmd = Command::new("make");
             cmd.args(["-C", make_dir_s, "strip"]);
+            info!(path = %self.bin_p.display(), "strip executable");
             if !cmd.status().with_context(|| cmd_err(&cmd))?.success() {
                 bail!(cmd_err(&cmd));
             }
