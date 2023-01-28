@@ -128,7 +128,7 @@ impl StockfishBuilder {
         // Compile
         {
             let mut cmd = BuildCommand::new("make");
-            cmd.args(["-C", make_dir_s, "net", "build", STOCKFISH_ARCH]);
+            cmd.args(["-C", make_dir_s, "build", STOCKFISH_ARCH]);
             if let Ok(parallelism) = available_parallelism() {
                 let parallelism = (usize::from(parallelism) / 2).max(1);
                 cmd.arg("-j");
