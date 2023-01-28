@@ -39,9 +39,12 @@ fn main() -> ExitCode {
     .unwrap();
 
     // Setup log subscriber
-    let writer = LogWriter::new(log_file);
-    let timer = LocalTime::rfc_3339();
-    SubscriberBuilder::default().with_writer(writer).with_ansi(false).with_timer(timer).init();
+    SubscriberBuilder::default()
+        .with_writer(LogWriter::new(log_file))
+        .with_ansi(false)
+        .with_timer(LocalTime::rfc_3339())
+        .with_target(false)
+        .init();
 
     match main2() {
         Ok(_) => ExitCode::SUCCESS,
