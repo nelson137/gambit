@@ -29,8 +29,10 @@ impl StockfishBuilder {
 
     pub fn run(&self) -> Result<()> {
         if self.bin_p.exists() {
-            info!(path = %self.bin_p.display(), "executable exists, nothing to do");
+            info!(path = %self.bin_p.display(), "Executable exists, nothing to do");
         } else {
+            info!(path = %self.bin_p.display(), "Executable doesn't exist");
+
             // Ensure that the repository directory exists (i.e. is extracted from the zip archive)
             if !self.repo_dir_p.exists() {
                 if self.zip_p.exists() {
@@ -47,56 +49,52 @@ impl StockfishBuilder {
     }
 
     fn read_zip(&self) -> Result<impl Read + Seek> {
-        info!(path = %self.zip_p.display(), "zip archive exists, reading into memory");
+        info!(path = %self.zip_p.display(), "Source code archive exists, reading from filesystem");
         File::open(&self.zip_p).with_context(|| {
-            format!("Failed to open Stockfish ZIP archive: {}", self.zip_p.display())
+            format!("Failed to open source code archive: {}", self.zip_p.display())
         })
     }
 
     fn download_zip(&self) -> Result<impl Read + Seek> {
         let url = format!("{STOCKFISH_ZIP_URL}{STOCKFISH_ZIP_NAME}");
-        info!(url, "zip archive doesn't exist, downloading now");
+        info!(%url, "Source code archive doesn't exist, downloading now");
 
         let mut response = reqwest::blocking::get(url.clone())
-            .with_context(|| format!("Failed to get the Stockfish source code ZIP archive: {url}"))?
+            .with_context(|| format!("Failed to get source code archive: {url}"))?
             .error_for_status()
-            .context("Server returned error for Stockfish source code ZIP archive")?;
+            .context("Server returned error")?;
 
         let mut buf = Vec::new();
-        response.copy_to(&mut buf).with_context(|| {
-            "Failed to write downloaded Stockfish source code ZIP archive to buffer"
-        })?;
+        response
+            .copy_to(&mut buf)
+            .with_context(|| "Failed to copy source code archive to buffer")?;
 
-        info!(path = %self.zip_p.display(), "writing zip archive to filesystem");
+        info!(path = %self.zip_p.display(), "Writing source code archive to filesystem");
         File::options()
             .create(true)
             .write(true)
             .truncate(true)
             .open(&self.zip_p)
-            .with_context(|| {
-                format!("Failed to open output file for downloaded Stockfish source code ZIP archive: {url}")
-            })?
+            .with_context(|| format!("Failed to open output file for source code archive: {url}"))?
             .write_all(&buf)
             .with_context(|| {
-                format!(
-                    "Failed to write downloaded Stockfish source code ZIP archive to file: {}",
-                    self.zip_p.display()
-                )
+                format!("Failed to write source code archive to file: {}", self.zip_p.display())
             })?;
 
         Ok(Cursor::new(buf))
     }
 
     fn extract_zip(&self, reader: impl Read + Seek) -> Result<()> {
-        info!("extracting zip archive");
+        info!("Extracting archive");
 
-        let mut archive = ZipArchive::new(reader)
-            .with_context(|| format!("Failed to load ZIP archive: {}", self.zip_p.display()))?;
+        let mut archive = ZipArchive::new(reader).with_context(|| {
+            format!("Failed to load soure code archive: {}", self.zip_p.display())
+        })?;
 
         archive
             .extract(WORKING_DIR)
             .with_context(|| {
-                format!("Failed to extract Stockfish source code ZIP archive into directory: {WORKING_DIR}")
+                format!("Failed to extract source code archive into directory: {WORKING_DIR}")
             })
             .map_err(|err| {
                 if !self.repo_dir_p.exists() {
@@ -106,12 +104,12 @@ impl StockfishBuilder {
                 match remove_dir_all(&self.repo_dir_p) {
                     Ok(_) => info!(
                         path = %self.repo_dir_p.display(),
-                        "Removed partially-extracted Stockfish source code directory",
+                        "Removed partially-extracted source code repository",
                     ),
                     Err(err) => error!(
                         path = %self.repo_dir_p.display(),
-                        "Failed to remove partially-extracted Stockfish source code directory ({err:#})",
-                    )
+                        "Failed to remove partially-extracted source code repository ({err:#})",
+                    ),
                 }
 
                 err
@@ -121,7 +119,7 @@ impl StockfishBuilder {
     }
 
     fn build_src(&self) -> Result<()> {
-        info!(path = %self.repo_dir_p.display(), "executable doesn't exist, compiling now");
+        info!(path = %self.repo_dir_p.display(), "Compiling executable");
 
         let make_dir_p = self.repo_dir_p.join("src");
         let make_dir_s = make_dir_p
@@ -147,7 +145,7 @@ impl StockfishBuilder {
         {
             let mut cmd = Command::new("make");
             cmd.args(["-C", make_dir_s, "strip"]);
-            info!(path = %self.bin_p.display(), "strip executable");
+            info!(path = %self.bin_p.display(), "Stripping executable");
             if !cmd.status().with_context(|| cmd_err(&cmd))?.success() {
                 bail!(cmd_err(&cmd));
             }
