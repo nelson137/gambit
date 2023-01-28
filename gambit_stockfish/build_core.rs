@@ -2,15 +2,14 @@ use std::{
     fs::{remove_dir_all, File},
     io::{Cursor, Read, Seek, Write},
     path::{Path, PathBuf},
-    process::Command,
     thread::available_parallelism,
 };
 
-use anyhow::{anyhow, bail, Context, Result};
+use anyhow::{anyhow, Context, Result};
 use tracing::{error, info};
 use zip::ZipArchive;
 
-use crate::{build_consts::*, build_utils::CommandExts};
+use crate::{build_consts::*, build_utils::BuildCommand};
 
 pub struct StockfishBuilder {
     zip_p: PathBuf,
@@ -126,29 +125,21 @@ impl StockfishBuilder {
             .to_str()
             .ok_or_else(|| anyhow!("Failed to convert path to string: {}", make_dir_p.display()))?;
 
-        let cmd_err = |cmd: &Command| format!("Failed to run command:\n\n    {}", cmd.display());
-
         // Compile
         {
-            let mut cmd = Command::new("make");
+            let mut cmd = BuildCommand::new("make");
             cmd.args(["-C", make_dir_s, "net", "build", STOCKFISH_ARCH]);
             if let Ok(parallelism) = available_parallelism() {
                 cmd.arg("-j");
                 cmd.arg(parallelism.to_string());
             }
-            if !cmd.status().with_context(|| cmd_err(&cmd))?.success() {
-                bail!(cmd_err(&cmd));
-            }
+            cmd.run()?;
         }
 
         // Strip binary
         {
-            let mut cmd = Command::new("make");
-            cmd.args(["-C", make_dir_s, "strip"]);
             info!(path = %self.bin_p.display(), "Stripping executable");
-            if !cmd.status().with_context(|| cmd_err(&cmd))?.success() {
-                bail!(cmd_err(&cmd));
-            }
+            BuildCommand::new("make").args(["-C", make_dir_s, "strip"]).run()?;
         }
 
         Ok(())
