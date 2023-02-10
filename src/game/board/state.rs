@@ -3,7 +3,7 @@ use std::{
     str::FromStr,
 };
 
-use bevy::prelude::*;
+use bevy::{ecs::system::Command, prelude::*};
 use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPTY};
 
 use crate::{
@@ -181,7 +181,7 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn select_square(&mut self, square: Square) -> GameCommandList {
+    pub fn select_square(&mut self, square: Square) -> impl Command {
         let mut cmd_list = GameCommandList::default();
         cmd_list.add(self.show_highlight_tile(square));
         cmd_list.add(self.show_move_hints_for(square));
@@ -189,7 +189,7 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn unselect_square(&mut self) -> GameCommandList {
+    pub fn unselect_square(&mut self) -> impl Command {
         let mut cmd_list = GameCommandList::default();
         cmd_list.add(self.hide_highlight_tile());
         cmd_list.add(self.hide_move_hints());
@@ -197,19 +197,19 @@ impl BoardState {
     }
 
     #[must_use]
-    fn show_highlight_tile(&mut self, square: Square) -> ShowHighlight {
+    fn show_highlight_tile(&mut self, square: Square) -> impl Command {
         let entity = self.highlight(square);
         self.current_highlight = Some(entity);
         ShowHighlight(entity)
     }
 
     #[must_use]
-    fn hide_highlight_tile(&mut self) -> HideHighlight {
+    fn hide_highlight_tile(&mut self) -> impl Command {
         HideHighlight(self.current_highlight.take())
     }
 
     #[must_use]
-    fn show_move_hints_for(&mut self, source: Square) -> ShowHints {
+    fn show_move_hints_for(&mut self, source: Square) -> impl Command {
         if !self.is_colors_turn_at(source) {
             return Default::default();
         }
@@ -241,7 +241,7 @@ impl BoardState {
     }
 
     #[must_use]
-    fn hide_move_hints(&mut self) -> HideHints {
+    fn hide_move_hints(&mut self) -> impl Command {
         HideHints(if self.showing_hints.is_empty() {
             Vec::new()
         } else {
@@ -258,7 +258,7 @@ impl BoardState {
     }
 
     #[must_use]
-    pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> GameCommandList {
+    pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
         let mut cmd_list = GameCommandList::default();
 
         let piece = self.piece(from_sq);
