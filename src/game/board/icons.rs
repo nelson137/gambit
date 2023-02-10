@@ -124,7 +124,7 @@ impl Command for ShowCheckmateIcons {
             chess::Color::White => set_end_game_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
         };
 
-        set_end_game_icon::<LoserIconWhite>(world, winner_tile_entity, winner_square);
+        set_end_game_icon::<WinnerIcon>(world, winner_tile_entity, winner_square);
     }
 }
 
