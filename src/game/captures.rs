@@ -8,12 +8,12 @@ use bevy::{ecs::system::Command, prelude::*};
 use crate::game::board::{PieceColor, PieceType};
 
 #[derive(Deref, DerefMut, Resource)]
-pub struct CaptureState(Arc<PlayerCaptures<CapState>>);
+pub struct CaptureState(Arc<GameCaptures<CapState>>);
 
 impl FromWorld for CaptureState {
     fn from_world(world: &mut World) -> Self {
         let asset_server = world.resource::<AssetServer>();
-        let mut captures = PlayerCaptures::<CapState>::default();
+        let mut captures = GameCaptures::<CapState>::default();
 
         captures[PieceColor::BLACK][PieceType::PAWN].image_handles.extend([
             asset_server.load("images/captures/white-pawns-8.png"),
@@ -75,7 +75,7 @@ impl CaptureState {
     #[cfg(debug_assertions)]
     #[allow(dead_code)]
     pub fn log_counts(&self) {
-        fn log(color: &str, caps: &PieceCaptures<CapState>) {
+        fn log(color: &str, caps: &ColorCaptures<CapState>) {
             info!(
                 pawns = caps[PieceType(chess::Piece::Pawn)].count,
                 bishops = caps[PieceType(chess::Piece::Bishop)].count,
@@ -92,6 +92,54 @@ impl CaptureState {
     }
 }
 
+#[derive(Clone, Copy, Default, Deref, DerefMut)]
+pub struct GameCaptures<C>(pub [ColorCaptures<C>; 2]);
+
+impl<C> Index<PieceColor> for GameCaptures<C> {
+    type Output = ColorCaptures<C>;
+
+    fn index(&self, index: PieceColor) -> &Self::Output {
+        self.0.index(*index as usize)
+    }
+}
+
+impl<C> IndexMut<PieceColor> for GameCaptures<C> {
+    fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
+        self.0.index_mut(*index as usize)
+    }
+}
+
+#[derive(Clone, Copy, Default, Deref, DerefMut)]
+pub struct ColorCaptures<C>(pub [C; 5]);
+
+impl<C> Index<usize> for ColorCaptures<C> {
+    type Output = C;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl<C> IndexMut<usize> for ColorCaptures<C> {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
+    }
+}
+
+impl<C> Index<PieceType> for ColorCaptures<C> {
+    type Output = C;
+
+    fn index(&self, index: PieceType) -> &Self::Output {
+        self.0.index(*index as usize)
+    }
+}
+
+impl<C> IndexMut<PieceType> for ColorCaptures<C> {
+    fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
+        self.0.index_mut(*index as usize)
+    }
+}
+
 pub struct CapState {
     pub image_handles: Vec<Handle<Image>>,
     pub image_entity: Entity,
@@ -101,54 +149,6 @@ pub struct CapState {
 impl Default for CapState {
     fn default() -> Self {
         Self { image_handles: Vec::new(), image_entity: Entity::from_raw(u32::MAX), count: 0 }
-    }
-}
-
-#[derive(Clone, Copy, Default, Deref, DerefMut)]
-pub struct PlayerCaptures<C>(pub [PieceCaptures<C>; 2]);
-
-impl<C> Index<PieceColor> for PlayerCaptures<C> {
-    type Output = PieceCaptures<C>;
-
-    fn index(&self, index: PieceColor) -> &Self::Output {
-        self.0.index(*index as usize)
-    }
-}
-
-impl<C> IndexMut<PieceColor> for PlayerCaptures<C> {
-    fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
-        self.0.index_mut(*index as usize)
-    }
-}
-
-#[derive(Clone, Copy, Default, Deref, DerefMut)]
-pub struct PieceCaptures<C>(pub [C; 5]);
-
-impl<C> Index<usize> for PieceCaptures<C> {
-    type Output = C;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.0.index(index)
-    }
-}
-
-impl<C> IndexMut<usize> for PieceCaptures<C> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.0.index_mut(index)
-    }
-}
-
-impl<C> Index<PieceType> for PieceCaptures<C> {
-    type Output = C;
-
-    fn index(&self, index: PieceType) -> &Self::Output {
-        self.0.index(*index as usize)
-    }
-}
-
-impl<C> IndexMut<PieceType> for PieceCaptures<C> {
-    fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        self.0.index_mut(*index as usize)
     }
 }
 
