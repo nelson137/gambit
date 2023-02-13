@@ -152,6 +152,65 @@ impl Default for CapState {
     }
 }
 
+pub struct CapStateUpdate {
+    color: PieceColor,
+    typ: PieceType,
+    diff: CapStateDiff,
+}
+
+impl CapStateUpdate {
+    pub fn new(color: PieceColor, typ: PieceType, diff: CapStateDiff) -> Self {
+        Self { color, typ, diff }
+    }
+}
+
+pub enum CapStateDiff {
+    Increment,
+    Set(u8),
+}
+
+impl Command for CapStateUpdate {
+    fn write(self, world: &mut World) {
+        let mut capture_state = world.resource_mut::<CaptureState>();
+        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+        let cap = &mut capture_state[self.color][self.typ];
+
+        // Update the capture count
+        match self.diff {
+            CapStateDiff::Increment => cap.count += 1,
+            CapStateDiff::Set(count) => cap.count = count,
+        }
+        let count = cap.count;
+
+        if count == 0 {
+            let image_entity = cap.image_entity;
+            let mut image_entity = world.entity_mut(image_entity);
+            if let Some(mut style) = image_entity.get_mut::<Style>() {
+                style.display = Display::None;
+            }
+        } else {
+            // Images handles are ordered from most pieces to least. So for a count of 2 the index
+            // of the image handle is `len - 2`.
+            let index = cap.image_handles.len() - count as usize;
+            let handle = cap.image_handles[index].clone();
+
+            // Get the image entity
+            let image_entity = cap.image_entity;
+            let mut image_entity = world.entity_mut(image_entity);
+
+            // Update image handle
+            if let Some(mut image) = image_entity.get_mut::<UiImage>() {
+                image.0 = handle;
+            }
+
+            // Set display to not-none if the count was previously 0
+            if let Some(mut style) = image_entity.get_mut::<Style>() {
+                style.display = Display::Flex;
+            }
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub struct Captured {
     entity: Entity,
@@ -177,33 +236,8 @@ impl Command for Captured {
             vis.is_visible = false;
         }
 
-        let mut capture_state = world.resource_mut::<CaptureState>();
-        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
-        let cap_state = &mut capture_state[color][typ];
-
-        // Update count
-        cap_state.count += 1;
-        let count = cap_state.count;
-
-        // Get the handle to the correct image for the updated count
-        let index = cap_state.image_handles.len() - count as usize;
-        let handle = cap_state.image_handles[index].clone();
-
-        // Get the image entity
-        let image_entity = cap_state.image_entity;
-        let mut image_entity = world.entity_mut(image_entity);
-
-        // Set display to not-none if the count was previously 0
-        if count == 1 {
-            if let Some(mut style) = image_entity.get_mut::<Style>() {
-                style.display = Display::Flex;
-            }
-        }
-
-        // Update image handle
-        if let Some(mut image) = image_entity.get_mut::<UiImage>() {
-            image.0 = handle;
-        }
+        // Update count state & ui images
+        CapStateUpdate::new(color, typ, CapStateDiff::Increment).write(world);
     }
 }
 

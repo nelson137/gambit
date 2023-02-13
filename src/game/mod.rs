@@ -23,6 +23,7 @@ use self::{
     },
     camera::setup_camera,
     captures::CaptureState,
+    load::load_capture_state,
     menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
     ui::{spawn_panels, spawn_ui},
@@ -62,6 +63,7 @@ impl Plugin for GameLogicPlugin {
                 (
                     SpawnStage::Phase4,
                     SystemStage::parallel()
+                        .with_system(load_capture_state)
                         .with_system(spawn_highlight_tiles)
                         .with_system(spawn_hints)
                         .with_system(spawn_pieces)
