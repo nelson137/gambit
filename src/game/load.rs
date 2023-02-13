@@ -46,7 +46,7 @@ pub(super) fn load_capture_state(world: &mut World) {
     let board_state = world.get_resource::<BoardState>().unwrap_or_else(|| panic!("TODO"));
     let board = board_state.board();
 
-    let capture_counts = update_capture_counts(&board);
+    let capture_counts = update_capture_counts(board);
 
     for color in ALL_COLORS {
         let color = PieceColor(color);

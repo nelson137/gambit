@@ -172,8 +172,8 @@ impl BoardState {
         };
     }
 
-    pub fn board(&self) -> Board {
-        self.board
+    pub fn board(&self) -> &Board {
+        &self.board
     }
 
     pub fn set_board(&mut self, board: &Board) {
