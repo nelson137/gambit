@@ -249,6 +249,14 @@ impl BoardState {
         })
     }
 
+    pub fn hide_last_move_highlights(&mut self) -> impl Command {
+        let mut cmd_list = GameCommandList::default();
+        let last_mv_hl = self.last_move_highlights.take();
+        cmd_list.add(HideHighlight(last_mv_hl.map(|(entity, _)| entity)));
+        cmd_list.add(HideHighlight(last_mv_hl.map(|(_, entity)| entity)));
+        cmd_list
+    }
+
     pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
         let mut move_gen = MoveGen::new_legal(&self.board);
         // Mask the generator to only gen moves (by any piece) to the destination.

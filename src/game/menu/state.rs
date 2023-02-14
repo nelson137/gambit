@@ -76,6 +76,7 @@ pub(super) fn game_over(
         q_end_game_icons.for_each_mut(|mut vis| vis.is_visible = false);
 
         commands.add(board_state.unselect_square());
+        commands.add(board_state.hide_last_move_highlights());
         board_state.reset();
 
         commands.add(ResetCapturesUi);
