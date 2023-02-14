@@ -1,6 +1,5 @@
 use bevy::prelude::*;
-
-use crate::utils::AppPushOrderedStartupStages;
+use bevy_startup_tree::{startup_tree, AddStartupTree};
 
 mod fen_popup;
 mod game_menu;
@@ -22,16 +21,12 @@ impl Plugin for GameMenuPlugin {
             // States
             .add_state(menu_state)
             // Startup
-            .push_ordered_startup_stages([
-                (
-                    SpawnStage::Phase1,
-                    SystemStage::parallel()
-                        .with_system(spawn_menu_dim_layer)
-                        .with_system(spawn_menu),
-                ),
-                (SpawnStage::Phase2, SystemStage::single(spawn_menu_elements)),
-                (SpawnStage::Phase3, SystemStage::single(spawn_menu_buttons)),
-            ])
+            .add_startup_tree(startup_tree! {
+                spawn_menu_dim_layer,
+                spawn_menu => {
+                    spawn_menu_elements => spawn_menu_buttons,
+                },
+            })
             // Systems
             .add_system_set(
                 SystemSet::on_enter(MenuState::FenInput).with_system(on_enter_menu_state),
@@ -45,11 +40,4 @@ impl Plugin for GameMenuPlugin {
             .add_system_set(SystemSet::on_update(MenuState::Menu).with_system(game_menu_buttons))
             .add_system_set(SystemSet::on_update(MenuState::DoGameOver).with_system(game_over));
     }
-}
-
-#[derive(Clone, StageLabel)]
-enum SpawnStage {
-    Phase1,
-    Phase2,
-    Phase3,
 }

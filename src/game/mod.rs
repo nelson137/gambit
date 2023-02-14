@@ -1,4 +1,5 @@
 use bevy::{prelude::*, ui::UiSystem};
+use bevy_startup_tree::{startup_tree, AddStartupTree};
 
 pub mod audio;
 pub mod board;
@@ -13,8 +14,6 @@ pub mod moves;
 pub mod ui;
 pub mod utils;
 
-use crate::utils::AppPushOrderedStartupStages;
-
 use self::{
     audio::GameAudioHandles,
     board::{
@@ -28,14 +27,6 @@ use self::{
     mouse::{spawn_drag_container, MouseLogicPlugin},
     ui::{spawn_panels, spawn_ui},
 };
-
-#[derive(Clone, StageLabel)]
-enum SpawnStage {
-    Phase1,
-    Phase2,
-    Phase3,
-    Phase4,
-}
 
 pub struct GameLogicPlugin;
 
@@ -53,23 +44,19 @@ impl Plugin for GameLogicPlugin {
             // Startup
             .add_startup_system(setup_camera)
             .add_startup_system(spawn_drag_container)
-            .push_ordered_startup_stages([
-                (SpawnStage::Phase1, SystemStage::single(spawn_ui)),
-                (SpawnStage::Phase2, SystemStage::single(spawn_board)),
-                (
-                    SpawnStage::Phase3,
-                    SystemStage::parallel().with_system(spawn_tiles).with_system(spawn_panels),
-                ),
-                (
-                    SpawnStage::Phase4,
-                    SystemStage::parallel()
-                        .with_system(load_capture_state)
-                        .with_system(spawn_highlight_tiles)
-                        .with_system(spawn_hints)
-                        .with_system(spawn_pieces)
-                        .with_system(spawn_end_game_icons),
-                ),
-            ])
+            .add_startup_tree(startup_tree! {
+                spawn_ui => {
+                    spawn_board => {
+                        spawn_tiles => {
+                            spawn_highlight_tiles,
+                            spawn_hints,
+                            spawn_pieces,
+                            spawn_end_game_icons,
+                        },
+                        spawn_panels => load_capture_state,
+                    }
+                }
+            })
             // Systems
             .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex));
     }
