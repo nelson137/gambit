@@ -6,7 +6,7 @@ use std::{
 };
 
 use bevy::prelude::*;
-use bevy_egui::EguiContext;
+use bevy_egui::{egui::Ui, EguiContext};
 use chess::{Board, BoardBuilder, CastleRights};
 
 use crate::{game::load::LoadGame, utils::StateExts};
@@ -44,7 +44,25 @@ impl Default for FenPopupData {
     }
 }
 
+const EN_PASSANT_LABELS: &[&str] = &[
+    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+];
+
+fn en_passant_label(black_to_move: bool, file: chess::File) -> &'static str {
+    let rank = if black_to_move { 0b0000 } else { 0b1000 };
+    EN_PASSANT_LABELS[file.to_index() | rank]
+}
+
 impl FenPopupData {
+    fn en_passant_label(&self) -> &'static str {
+        en_passant_label(self.black_to_move, self.en_passant_target_file)
+    }
+
+    fn en_passant_selectable(&mut self, ui: &mut Ui, file: chess::File) {
+        let label = en_passant_label(self.black_to_move, file);
+        ui.selectable_value(&mut self.en_passant_target_file, file, label);
+    }
+
     fn sync(&mut self) {
         let mut fen_hash = compute_hash(&self.fen);
         let mut controls_hash = compute_hash(&self.controls);
@@ -66,6 +84,14 @@ impl FenPopupData {
                 self.castle_rights_black_kingside = black_castle_rights.has_kingside();
                 self.castle_rights_black_queenside = black_castle_rights.has_queenside();
 
+                match board.en_passant() {
+                    Some(square) => {
+                        self.has_en_passant_target = true;
+                        self.en_passant_target_file = square.get_file();
+                    }
+                    None => self.has_en_passant_target = false,
+                }
+
                 controls_hash = compute_hash(&self.controls);
             }
         } else if controls_hash != self.controls_hash {
@@ -85,6 +111,9 @@ impl FenPopupData {
 
                 board.castle_rights(chess::Color::White, self.white_castle_rights());
                 board.castle_rights(chess::Color::Black, self.black_castle_rights());
+
+                let en_passant = self.has_en_passant_target.then_some(self.en_passant_target_file);
+                board.en_passant(en_passant);
 
                 self.fen = board.to_string();
                 fen_hash = compute_hash(&self.fen);
@@ -123,6 +152,8 @@ pub(super) struct FenPopupDataControls {
     castle_rights_white_queenside: bool,
     castle_rights_black_kingside: bool,
     castle_rights_black_queenside: bool,
+    has_en_passant_target: bool,
+    en_passant_target_file: chess::File,
 }
 
 impl Default for FenPopupDataControls {
@@ -133,6 +164,8 @@ impl Default for FenPopupDataControls {
             castle_rights_white_queenside: true,
             castle_rights_black_kingside: true,
             castle_rights_black_queenside: true,
+            has_en_passant_target: false,
+            en_passant_target_file: chess::File::A,
         }
     }
 }
@@ -182,9 +215,9 @@ pub(super) fn fen_menu(
 
 mod egui {
     use bevy_egui::egui::{
-        lerp, pos2, vec2, Align, Align2, Button, Color32, Context, Frame, Key, Layout, Response,
-        RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2, WidgetInfo, WidgetType,
-        Window,
+        lerp, pos2, vec2, Align, Align2, Button, Color32, ComboBox, Context, Frame, Key, Layout,
+        Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2, WidgetInfo,
+        WidgetType, Window,
     };
     use egui_extras::{Size, StripBuilder};
 
@@ -249,6 +282,13 @@ mod egui {
 
                         ui.horizontal(|ui| {
                             castle_rights_check_boxes(ui, data);
+                        });
+
+                        ui.add_space(SPACING);
+
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("En Passant Target:").underline());
+                            en_passant_target(ui, data);
                         });
 
                         ui.add_space(SPACING);
@@ -341,6 +381,24 @@ mod egui {
                     ui.checkbox(&mut data.castle_rights_black_queenside, "Queenside (O-O-O)");
                 });
             });
+        });
+    }
+
+    fn en_passant_target(ui: &mut Ui, data: &mut FenPopupData) {
+        ui.checkbox(&mut data.has_en_passant_target, "");
+        ui.add_enabled_ui(data.has_en_passant_target, |ui| {
+            let text = data.en_passant_label();
+            let output = ComboBox::from_label("").selected_text(text).show_ui(ui, |ui| {
+                data.en_passant_selectable(ui, chess::File::A);
+                data.en_passant_selectable(ui, chess::File::B);
+                data.en_passant_selectable(ui, chess::File::C);
+                data.en_passant_selectable(ui, chess::File::D);
+                data.en_passant_selectable(ui, chess::File::E);
+                data.en_passant_selectable(ui, chess::File::F);
+                data.en_passant_selectable(ui, chess::File::G);
+                data.en_passant_selectable(ui, chess::File::H);
+            });
+            output.response
         });
     }
 
