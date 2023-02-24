@@ -69,6 +69,12 @@ impl DebugBevyInspectorPlugin {
 #[cfg(feature = "bevy-inspector-egui")]
 #[macro_export]
 macro_rules! debug_name {
+    ($name:literal) => {
+        Name::new($name)
+    };
+    ($name:expr) => {
+        Name::new($name)
+    };
     ($($name_args:expr),+) => {
         Name::new(format!($($name_args),+))
     };

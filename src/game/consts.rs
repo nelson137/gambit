@@ -9,6 +9,8 @@ pub const COLOR_BG: Color = Color::rgb(
     0x2b as f32 / u8::MAX as f32,
 );
 
+pub const MIN_BOARD_SIZE: f32 = 256.0;
+
 pub const Z_GAME_MENU: i32 = 21;
 
 pub const Z_GAME_MENU_DIM_LAYER: i32 = 20;

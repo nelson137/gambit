@@ -17,15 +17,15 @@ pub mod utils;
 use self::{
     audio::GameAudioHandles,
     board::{
-        end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles, spawn_hints,
-        spawn_pieces, spawn_tiles, BoardState, SelectionPlugin,
+        board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
+        spawn_hints, spawn_pieces, spawn_tiles, BoardState, SelectionPlugin,
     },
     camera::setup_camera,
     captures::CaptureState,
     load::load_capture_state,
     menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
-    ui::{spawn_panels, spawn_ui},
+    ui::{captures_images_sizes, spawn_ui},
 };
 
 pub struct GameLogicPlugin;
@@ -53,11 +53,16 @@ impl Plugin for GameLogicPlugin {
                             spawn_pieces,
                             spawn_end_game_icons,
                         },
-                        spawn_panels => load_capture_state,
-                    }
+                    },
+                    load_capture_state
                 }
             })
             // Systems
+            .add_system_to_stage(CoreStage::PostUpdate, board_size.before(UiSystem::Flex))
+            .add_system_to_stage(
+                CoreStage::PostUpdate,
+                captures_images_sizes.before(UiSystem::Flex),
+            )
             .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex));
     }
 }
