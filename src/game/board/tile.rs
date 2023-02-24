@@ -3,7 +3,7 @@ use chess::{File, Rank};
 
 use crate::{
     debug_name,
-    game::consts::{Z_NOTATION_TEXT, Z_TILE},
+    game::consts::{FONT_PATH, Z_NOTATION_TEXT, Z_TILE},
 };
 
 use super::{BoardLocation, BoardState, UiBoard};
@@ -36,7 +36,7 @@ pub fn spawn_tiles(
     q_board: Query<Entity, With<UiBoard>>,
 ) {
     let board = q_board.single();
-    let font = asset_server.load("fonts/FiraMono-Medium.ttf");
+    let font = asset_server.load(FONT_PATH);
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
     let file_label_margins =
         UiRect { bottom: Val::Percent(3.5), right: Val::Percent(8.0), ..default() };

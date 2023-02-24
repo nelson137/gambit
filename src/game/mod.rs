@@ -25,7 +25,7 @@ use self::{
     load::load_capture_state,
     menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
-    ui::{captures_images_sizes, spawn_ui},
+    ui::{captures_images_sizes, panels_inner_containers_sizes, profile_images_sizes, spawn_ui},
 };
 
 pub struct GameLogicPlugin;
@@ -58,11 +58,15 @@ impl Plugin for GameLogicPlugin {
                 }
             })
             // Systems
-            .add_system_to_stage(CoreStage::PostUpdate, board_size.before(UiSystem::Flex))
-            .add_system_to_stage(
+            .add_system_set_to_stage(
                 CoreStage::PostUpdate,
-                captures_images_sizes.before(UiSystem::Flex),
-            )
-            .add_system_to_stage(CoreStage::PostUpdate, end_game_icon_size.before(UiSystem::Flex));
+                SystemSet::new()
+                    .before(UiSystem::Flex)
+                    .with_system(board_size)
+                    .with_system(profile_images_sizes)
+                    .with_system(panels_inner_containers_sizes)
+                    .with_system(captures_images_sizes)
+                    .with_system(end_game_icon_size),
+            );
     }
 }
