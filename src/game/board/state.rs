@@ -352,12 +352,12 @@ impl BoardState {
 
         let hl_1 = self.highlight(from_sq);
         let hl_2 = self.highlight(to_sq);
-        cmd_list.add(ShowHighlight(hl_1));
-        cmd_list.add(ShowHighlight(hl_2));
         if let Some((prev_hl_1, prev_hl_2)) = self.last_move_highlights.replace((hl_1, hl_2)) {
             cmd_list.add(HideHighlight(Some(prev_hl_1)));
             cmd_list.add(HideHighlight(Some(prev_hl_2)));
         }
+        cmd_list.add(ShowHighlight(hl_1));
+        cmd_list.add(ShowHighlight(hl_2));
 
         if let BoardStatus::Checkmate | BoardStatus::Stalemate = self.board.status() {
             cmd_list.add(GameOver);
