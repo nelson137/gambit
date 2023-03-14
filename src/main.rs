@@ -8,13 +8,14 @@ mod assets;
 mod cli;
 mod game;
 mod utils;
-mod window;
 
 use self::{
     cli::CliArgs,
-    game::{consts::COLOR_BG, GameLogicPlugin},
+    game::{
+        consts::{COLOR_BG, INIT_WIN_HEIGHT, INIT_WIN_WIDTH},
+        GameLogicPlugin,
+    },
     utils::DebugBevyInspectorPlugin,
-    window::{WIN_HEIGHT, WIN_WIDTH},
 };
 
 fn main() {
@@ -25,8 +26,8 @@ fn main() {
         .add_plugins(DefaultPlugins.set(WindowPlugin {
             window: WindowDescriptor {
                 title: "Gambit".into(),
-                width: WIN_WIDTH,
-                height: WIN_HEIGHT,
+                width: INIT_WIN_WIDTH,
+                height: INIT_WIN_HEIGHT,
                 resizable: true,
                 ..default()
             },

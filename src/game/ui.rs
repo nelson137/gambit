@@ -7,7 +7,7 @@ use crate::debug_name;
 use super::{
     board::PieceColor,
     captures::CaptureState,
-    consts::{FONT_PATH, MIN_BOARD_SIZE, UI_GAP_VAL},
+    consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, MIN_BOARD_SIZE, UI_GAP_VAL},
 };
 
 #[derive(Component)]
@@ -102,8 +102,6 @@ struct PanelBuilder {
     profile_label: &'static str,
     margin: UiRect,
 }
-
-const CAPTURES_PANEL_HEIGHT: f32 = 32.0;
 
 impl PanelBuilder {
     fn as_bundle(&self) -> impl Bundle {
