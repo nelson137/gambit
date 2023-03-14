@@ -169,6 +169,7 @@ impl Command for PanelBuilderCmd {
                         margin: UiRect::left(PANEL_GAP_VAL),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::FlexStart,
+                        flex_grow: 1.0,
                         ..default()
                     },
                     ..default()
@@ -228,21 +229,6 @@ pub fn profile_images_sizes(mut q_profile_images: Query<(&Node, &mut Style), Wit
     for (node, mut style) in &mut q_profile_images {
         let height = node.size().y;
         style.size.width = Val::Px(height);
-    }
-}
-
-pub fn panels_inner_containers_sizes(
-    q_panel: Query<&Node, With<UiPanel>>,
-    q_profile_image: Query<&Node, With<ProfileImage>>,
-    mut q_inner_container: Query<&mut Style, With<PanelInnerContainer>>,
-) {
-    let Some(panel_node) = q_panel.iter().next() else { return };
-    let Some(profile_image_node) = q_profile_image.iter().next() else { return };
-    let panel_width = panel_node.size().x;
-    let profile_image_size = profile_image_node.size().y;
-    let inner_container_width = panel_width - PANEL_GAP - profile_image_size;
-    for mut style in &mut q_inner_container {
-        style.size.width = Val::Px(inner_container_width);
     }
 }
 
