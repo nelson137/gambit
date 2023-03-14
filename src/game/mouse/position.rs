@@ -41,7 +41,7 @@ pub(super) fn mouse_world_position_to_square(
 ) {
     let mouse_pos = **mouse_world_pos;
 
-    let (board_global_transf, board_node) = q_board.single();
+    let Ok((board_global_transf, board_node)) = q_board.get_single() else { return };
     let board_pos = board_global_transf.translation();
     let board_size = board_node.size();
     let tile_size = board_size / 8.0;

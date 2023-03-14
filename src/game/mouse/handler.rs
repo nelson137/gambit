@@ -44,7 +44,8 @@ pub(super) fn update_drag_container(
     q_tiles: Query<&Node, With<Tile>>,
     mut q_container: Query<&mut Style, With<DragContainer>>,
 ) {
-    let Vec2 { x: width, y: height } = q_tiles.iter().next().unwrap().size();
+    let Some(tile_node) = q_tiles.iter().next() else { return };
+    let Vec2 { x: width, y: height } = tile_node.size();
     let mut style = q_container.single_mut();
     style.size.width = Val::Px(width);
     style.size.height = Val::Px(height);

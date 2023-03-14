@@ -176,8 +176,9 @@ pub fn end_game_icon_size(
     q_tiles: Query<&Node, With<Tile>>,
     mut q_end_game_icons: Query<&mut Style, With<EndGameIcon>>,
 ) {
+    let Some(tile_node) = q_tiles.iter().next() else { return };
     let icon_size = {
-        let tile_size = q_tiles.iter().next().unwrap().size().x;
+        let tile_size = tile_node.size().x;
         let size = Val::Px(tile_size * 0.4);
         Size::new(size, size)
     };
