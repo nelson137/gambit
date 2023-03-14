@@ -142,6 +142,9 @@ pub struct PanelInnerContainer;
 #[derive(Component)]
 pub struct CapturesImage;
 
+const PROFILE_IMAGE_SIZE: f32 = CAPTURES_PANEL_HEIGHT - 2.0 * PANEL_GAP;
+const PROFILE_IMAGE_SIZE_VAL: Val = Val::Px(PROFILE_IMAGE_SIZE);
+
 impl Command for PanelBuilderCmd {
     fn write(self, world: &mut World) {
         let color = self.data.color;
@@ -157,7 +160,14 @@ impl Command for PanelBuilderCmd {
             cmds.spawn((
                 ProfileImage,
                 debug_name!("Profile Image"),
-                ImageBundle { image: UiImage(profile_image_handle), ..default() },
+                ImageBundle {
+                    image: UiImage(profile_image_handle),
+                    style: Style {
+                        size: Size::new(PROFILE_IMAGE_SIZE_VAL, PROFILE_IMAGE_SIZE_VAL),
+                        ..default()
+                    },
+                    ..default()
+                },
             ));
 
             cmds.spawn((
@@ -222,13 +232,6 @@ impl Command for PanelBuilderCmd {
         for (cap_state, entity) in state_entities[color].iter_mut().zip(image_entities) {
             cap_state.image_entity = entity;
         }
-    }
-}
-
-pub fn profile_images_sizes(mut q_profile_images: Query<(&Node, &mut Style), With<ProfileImage>>) {
-    for (node, mut style) in &mut q_profile_images {
-        let height = node.size().y;
-        style.size.width = Val::Px(height);
     }
 }
 
