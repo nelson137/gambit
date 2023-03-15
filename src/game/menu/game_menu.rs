@@ -210,27 +210,27 @@ pub fn spawn_menu_buttons(
 
 pub(super) fn game_menu_elements_sizes(
     q_menu: Query<&Node, With<GameMenu>>,
-    mut q_menu_text: Query<
-        (&mut Text, Option<&GameMenuTitle>),
-        Or<(With<GameMenuTitle>, With<GameMenuButtonsText>)>,
-    >,
+    mut q_text: ParamSet<(
+        Query<&mut Text, With<GameMenuTitle>>,
+        Query<&mut Text, With<GameMenuButtonsText>>,
+    )>,
 ) {
     let Ok(menu_node) = q_menu.get_single() else { return };
 
     let menu_width = menu_node.size().x;
-    let ratio = menu_width / INIT_MENU_WIDTH;
+    let scale = menu_width / INIT_MENU_WIDTH;
 
-    let title_size = ratio * INIT_MENU_TITLE_SIZE;
-    let button_text_size = ratio * INIT_MENU_BUTTON_TEXT_SIZE;
-    for (mut text, title_marker) in &mut q_menu_text {
-        for section in &mut text.sections {
-            if title_marker.is_some() {
-                section.style.font_size = title_size;
-            } else {
-                section.style.font_size = button_text_size;
+    fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<Text>) {
+        move |mut text: Mut<Text>| {
+            for section in &mut text.sections {
+                section.style.font_size = font_size;
             }
         }
     }
+
+    q_text.p0().for_each_mut(set_text_font_size_impl(scale * INIT_MENU_TITLE_SIZE));
+
+    q_text.p1().for_each_mut(set_text_font_size_impl(scale * INIT_MENU_BUTTON_TEXT_SIZE));
 }
 
 pub(super) fn game_menu_buttons(
