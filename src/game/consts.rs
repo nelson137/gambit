@@ -11,6 +11,9 @@ pub const COLOR_BG: Color = Color::rgb(
 
 pub const FONT_PATH: &str = "fonts/FiraMono-Medium.ttf";
 
+pub const UI_GAP: f32 = 8.0;
+pub const UI_GAP_VAL: Val = Val::Px(UI_GAP);
+
 pub const MIN_BOARD_SIZE: f32 = 256.0;
 
 pub const Z_GAME_MENU: i32 = 21;

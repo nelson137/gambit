@@ -2,7 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     debug_name,
-    game::ui::{BoardContainer, UiPanel},
+    game::{
+        consts::UI_GAP,
+        ui::{BoardContainer, UiPanel},
+    },
 };
 
 #[derive(Component)]
@@ -15,7 +18,6 @@ pub struct MoveHints {
 }
 
 pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<BoardContainer>>) {
-    // let min_size = PANEL_HEIGHT * 2.0;
     let entity = commands
         .spawn((
             UiBoard,
@@ -23,7 +25,6 @@ pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<Board
             NodeBundle {
                 style: Style {
                     size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                    // min_size: Size::new(min_size, min_size),
                     aspect_ratio: Some(1.0),
                     flex_direction: FlexDirection::Row,
                     flex_wrap: FlexWrap::WrapReverse,
@@ -48,6 +49,11 @@ pub fn board_size(
 
     let Some(win) = windows.get_primary() else { return };
     let Ok(mut board_style) = q_board.get_single_mut() else { return };
-    let size = win.width().min(win.height() - panels_height);
-    board_style.size = Size::new(Val::Px(size), Val::Px(size));
+
+    let size = {
+        let available_width = win.width() - 2.0 * UI_GAP;
+        let available_height = win.height() - panels_height - 4.0 * UI_GAP;
+        Val::Px(available_width.min(available_height))
+    };
+    board_style.size = Size::new(size, size);
 }

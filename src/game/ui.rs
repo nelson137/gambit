@@ -7,7 +7,7 @@ use crate::debug_name;
 use super::{
     board::PieceColor,
     captures::CaptureState,
-    consts::{FONT_PATH, MIN_BOARD_SIZE},
+    consts::{FONT_PATH, MIN_BOARD_SIZE, UI_GAP_VAL},
 };
 
 #[derive(Component)]
@@ -52,6 +52,7 @@ pub fn spawn_ui(mut commands: Commands) {
                 NodeBundle {
                     style: Style {
                         size: Size::new(Val::Auto, Val::Percent(100.0)),
+                        padding: UiRect::all(UI_GAP_VAL),
                         flex_direction: FlexDirection::Column,
                         ..default()
                     },
@@ -64,6 +65,7 @@ pub fn spawn_ui(mut commands: Commands) {
                     color: PieceColor(chess::Color::Black),
                     profile_image_path: "images/profiles/black.png",
                     profile_label: "Black",
+                    margin: UiRect::bottom(UI_GAP_VAL),
                 };
                 let black_panel_entity = cmds.spawn(black_panel.as_bundle()).id();
                 cmds.add_command(black_panel.build(black_panel_entity));
@@ -73,7 +75,6 @@ pub fn spawn_ui(mut commands: Commands) {
                     debug_name!("Board Container"),
                     NodeBundle {
                         style: Style {
-                            size: Size::new(Val::Undefined, Val::Percent(100.0)),
                             min_size: Size::new(Val::Px(MIN_BOARD_SIZE), Val::Px(MIN_BOARD_SIZE)),
                             ..default()
                         },
@@ -86,6 +87,7 @@ pub fn spawn_ui(mut commands: Commands) {
                     color: PieceColor(chess::Color::White),
                     profile_image_path: "images/profiles/white.png",
                     profile_label: "White",
+                    margin: UiRect::top(UI_GAP_VAL),
                 };
                 let white_panel_entity = cmds.spawn(white_panel.as_bundle()).id();
                 cmds.add_command(white_panel.build(white_panel_entity));
@@ -98,12 +100,10 @@ struct PanelBuilder {
     color: PieceColor,
     profile_image_path: &'static str,
     profile_label: &'static str,
+    margin: UiRect,
 }
 
-const CAPTURES_PANEL_HEIGHT: f32 = 48.0;
-
-const PANEL_GAP: f32 = 8.0;
-const PANEL_GAP_VAL: Val = Val::Px(PANEL_GAP);
+const CAPTURES_PANEL_HEIGHT: f32 = 32.0;
 
 impl PanelBuilder {
     fn as_bundle(&self) -> impl Bundle {
@@ -115,7 +115,7 @@ impl PanelBuilder {
                 style: Style {
                     size: Size::new(Val::Percent(100.0), Val::Px(CAPTURES_PANEL_HEIGHT)),
                     min_size: Size::new(Val::Auto, Val::Px(CAPTURES_PANEL_HEIGHT)),
-                    padding: UiRect { top: PANEL_GAP_VAL, bottom: PANEL_GAP_VAL, ..default() },
+                    margin: self.margin,
                     ..default()
                 },
                 ..default()
@@ -142,7 +142,7 @@ pub struct PanelInnerContainer;
 #[derive(Component)]
 pub struct CapturesImage;
 
-const PROFILE_IMAGE_SIZE: f32 = CAPTURES_PANEL_HEIGHT - 2.0 * PANEL_GAP;
+const PROFILE_IMAGE_SIZE: f32 = CAPTURES_PANEL_HEIGHT;
 const PROFILE_IMAGE_SIZE_VAL: Val = Val::Px(PROFILE_IMAGE_SIZE);
 
 impl Command for PanelBuilderCmd {
@@ -176,7 +176,7 @@ impl Command for PanelBuilderCmd {
                 NodeBundle {
                     style: Style {
                         size: Size::new(Val::Auto, Val::Percent(100.0)),
-                        margin: UiRect::left(PANEL_GAP_VAL),
+                        margin: UiRect::left(UI_GAP_VAL),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::FlexStart,
                         flex_grow: 1.0,
@@ -198,7 +198,7 @@ impl Command for PanelBuilderCmd {
                 cmds.spawn(NodeBundle {
                     style: Style {
                         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                        margin: UiRect::top(PANEL_GAP_VAL),
+                        margin: UiRect::top(UI_GAP_VAL),
                         ..default()
                     },
                     ..default()
@@ -213,7 +213,7 @@ impl Command for PanelBuilderCmd {
                                     image: UiImage(handles[0].clone()),
                                     style: Style {
                                         display: Display::None,
-                                        margin: UiRect::right(PANEL_GAP_VAL),
+                                        margin: UiRect::right(UI_GAP_VAL),
                                         ..default()
                                     },
                                     ..default()
