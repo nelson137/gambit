@@ -1,14 +1,14 @@
-use std::{
-    ops::{Index, IndexMut},
-    sync::Arc,
-};
+use std::ops::{Index, IndexMut};
 
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{
+    ecs::system::{Command, SystemState},
+    prelude::*,
+};
 
 use crate::game::board::{PieceColor, PieceType};
 
 #[derive(Deref, DerefMut, Resource)]
-pub struct CaptureState(Arc<GameCaptures<CapState>>);
+pub struct CaptureState(GameCaptures<CapState>);
 
 impl FromWorld for CaptureState {
     fn from_world(world: &mut World) -> Self {
@@ -67,7 +67,7 @@ impl FromWorld for CaptureState {
             .image_handles
             .push(asset_server.load("images/captures/black-queen.png"));
 
-        Self(Arc::new(captures))
+        Self(captures)
     }
 }
 
@@ -171,8 +171,8 @@ pub enum CapStateDiff {
 
 impl Command for CapStateUpdate {
     fn write(self, world: &mut World) {
-        let mut capture_state = world.resource_mut::<CaptureState>();
-        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+        let mut state = SystemState::<ResMut<CaptureState>>::new(world);
+        let mut capture_state = state.get_mut(world);
         let cap = &mut capture_state[self.color][self.typ];
 
         // Update the capture count
@@ -208,6 +208,8 @@ impl Command for CapStateUpdate {
                 style.display = Display::Flex;
             }
         }
+
+        state.apply(world);
     }
 }
 
@@ -245,8 +247,8 @@ pub struct ResetCapturesUi;
 
 impl Command for ResetCapturesUi {
     fn write(self, world: &mut World) {
-        let mut capture_state = world.resource_mut::<CaptureState>();
-        let capture_state = Arc::get_mut(&mut capture_state).unwrap();
+        let mut state = SystemState::<ResMut<CaptureState>>::new(world);
+        let mut capture_state = state.get_mut(world);
 
         let image_entities: Vec<Entity> = capture_state
             .iter_mut()
@@ -262,5 +264,7 @@ impl Command for ResetCapturesUi {
                 style.display = Display::None;
             }
         }
+
+        state.apply(world);
     }
 }

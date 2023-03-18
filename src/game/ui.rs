@@ -1,6 +1,7 @@
-use std::sync::Arc;
-
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{
+    ecs::system::{Command, SystemState},
+    prelude::*,
+};
 
 use crate::debug_name;
 
@@ -151,10 +152,10 @@ impl Command for PanelBuilderCmd {
         let profile_image_handle = asset_server.load(self.data.profile_image_path);
         let font = asset_server.load(FONT_PATH);
 
-        let mut image_entities = Vec::with_capacity(5);
+        let mut state = SystemState::<(Commands, ResMut<CaptureState>)>::new(world);
+        let (mut commands, mut capture_state) = state.get_mut(world);
 
-        let capture_state = Arc::clone(world.resource::<CaptureState>());
-        world.entity_mut(self.entity).with_children(|cmds| {
+        commands.entity(self.entity).with_children(|cmds| {
             cmds.spawn((
                 ProfileImage,
                 debug_name!("Profile Image"),
@@ -202,9 +203,9 @@ impl Command for PanelBuilderCmd {
                     ..default()
                 })
                 .with_children(|cmds| {
-                    for cap_state in capture_state[color].iter() {
+                    for cap_state in capture_state[color].iter_mut() {
                         let handles = &cap_state.image_handles;
-                        let entity = cmds
+                        cap_state.image_entity = cmds
                             .spawn((
                                 CapturesImage,
                                 ImageBundle {
@@ -218,18 +219,12 @@ impl Command for PanelBuilderCmd {
                                 },
                             ))
                             .id();
-                        image_entities.push(entity);
                     }
                 });
             });
         });
-        drop(capture_state);
 
-        let mut capture_state = world.resource_mut::<CaptureState>();
-        let state_entities = Arc::get_mut(&mut capture_state).unwrap();
-        for (cap_state, entity) in state_entities[color].iter_mut().zip(image_entities) {
-            cap_state.image_entity = entity;
-        }
+        state.apply(world);
     }
 }
 
