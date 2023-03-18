@@ -1,7 +1,7 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::Square;
 
-use crate::game::board::{BoardLocation, BoardState};
+use super::board::{BoardLocation, BoardState};
 
 pub struct MoveUiPiece {
     pub piece: Entity,
