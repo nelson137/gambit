@@ -42,6 +42,6 @@ impl BoardLocation {
 
 impl fmt::Display for BoardLocation {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        f.write_fmt(format_args!("{}", **self))
+        fmt::Display::fmt(&self.0, f)
     }
 }
