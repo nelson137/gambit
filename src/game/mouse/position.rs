@@ -1,4 +1,4 @@
-use bevy::{prelude::*, sprite::collide_aabb::collide};
+use bevy::prelude::*;
 use chess::{File, Rank, Square};
 
 use crate::game::{board::UiBoard, camera::MainCamera};
@@ -46,12 +46,15 @@ pub(super) fn mouse_world_position_to_square(
     let board_size = board_node.size();
     let tile_size = board_size / 8.0;
 
-    let mouse_in_board =
-        collide(mouse_pos.extend(0.0), Vec2::ZERO, board_pos, board_size).is_some();
+    let board_top_left = board_pos.truncate() - (board_size / 2.0);
+    let mouse_board_pos = mouse_pos - board_top_left;
+
+    let mouse_in_board = 0.0 < mouse_board_pos.x
+        && mouse_board_pos.x < board_size.x
+        && 0.0 < mouse_board_pos.y
+        && mouse_board_pos.y < board_size.y;
 
     **mouse_loc = if mouse_in_board {
-        let board_top_left = board_pos.truncate() - (board_size / 2.0);
-        let mouse_board_pos = mouse_pos - board_top_left;
         let mouse_board_pos_a1 = Vec2::new(mouse_board_pos.x, board_size.y - mouse_board_pos.y);
         let mouse_square_index = mouse_board_pos_a1 / tile_size;
         let file = File::from_index(mouse_square_index.x as usize);
