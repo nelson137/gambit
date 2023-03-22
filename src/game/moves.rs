@@ -5,6 +5,8 @@ use super::board::{BoardLocation, BoardState};
 
 pub struct MoveUiPiece {
     pub piece: Entity,
+    pub color: chess::Color,
+    pub from_sq: Square,
     pub to_sq: Square,
 }
 
@@ -15,8 +17,14 @@ impl Command for MoveUiPiece {
             square.move_to(self.to_sq);
         }
 
-        let board_state = world.resource::<BoardState>();
+        let mut board_state = world.resource_mut::<BoardState>();
         let to_tile = board_state.tile(self.to_sq);
+
+        let maybe_cmd = board_state.update_piece(self.color, self.from_sq, self.to_sq);
+        if let Some(cmd) = maybe_cmd {
+            cmd.write(world);
+        }
+
         world.entity_mut(to_tile).push_children(&[self.piece]);
     }
 }

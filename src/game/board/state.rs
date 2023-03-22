@@ -150,6 +150,49 @@ impl BoardState {
         };
     }
 
+    #[must_use]
+    pub fn update_piece(
+        &mut self,
+        color: chess::Color,
+        from_sq: Square,
+        to_sq: Square,
+    ) -> Option<impl Command> {
+        let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
+            panic!("Failed to move board state piece: no piece found at source square {from_sq}")
+        });
+
+        let captured_piece = match self.board().en_passant() {
+            // `chess::Board::en_passant` returns an optional square which is that of the piece that
+            // can be captured in the en passant move that is currently available on the board.
+            // The current move is this en passant if there is an en passant square and the
+            // destination of the move is the square behind it (from the perspective of the *other*
+            // player, hence the `!color`).
+            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
+                self.pieces.insert(to_sq, piece);
+                self.pieces
+                    .remove(&ep_sq)
+                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
+            }
+            _ => match self.pieces.entry(to_sq) {
+                // Capture
+                Entry::Occupied(mut entry) => {
+                    let value = entry.get_mut();
+                    let old_piece = *value;
+                    *value = piece;
+                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
+                }
+                // Move
+                Entry::Vacant(entry) => {
+                    entry.insert(piece);
+                    None
+                }
+            },
+        };
+
+        captured_piece
+            .map(|(cap_entity, cap_color, cap_typ)| Captured::new(cap_entity, cap_color, cap_typ))
+    }
+
     pub fn highlight(&self, square: Square) -> Entity {
         self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
     }
@@ -278,7 +321,7 @@ impl BoardState {
         cmd_list.add(self.hide_move_hints());
 
         // Move UI piece
-        cmd_list.add(MoveUiPiece { piece, to_sq });
+        cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
 
         let mut is_castle = false;
         if typ == chess::Piece::King {
@@ -289,57 +332,35 @@ impl BoardState {
 
             // Move UI rook
             if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::H));
+                let from_sq = Square::make_square(back_rank, File::H);
                 let to_sq = Square::make_square(back_rank, File::F);
-                cmd_list.add(MoveUiPiece { piece, to_sq });
+                let piece = self.piece(from_sq);
+                cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let piece = self.piece(Square::make_square(back_rank, File::A));
+                let from_sq = Square::make_square(back_rank, File::A);
                 let to_sq = Square::make_square(back_rank, File::D);
-                cmd_list.add(MoveUiPiece { piece, to_sq });
+                let piece = self.piece(from_sq);
+                cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
                 is_castle = true;
             }
         }
 
-        // Update pieces map
-        let (_old_square, piece) = self
-            .pieces
-            .remove_entry(&from_sq)
-            .expect("Failed to move board state piece: no piece found at source square");
-        let captured_piece = match self.board.en_passant() {
+        let is_capture = match self.board.en_passant() {
             // `chess::Board::en_passant` returns an optional square which is that of the piece that
             // can be captured in the en passant move that is currently available on the board.
             // The current move is this en passant if there is an en passant square and the
             // destination of the move is the square behind it (from the perspective of the *other*
             // player, hence the `!color`).
-            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
-                self.pieces.insert(to_sq, piece);
-                self.pieces
-                    .remove(&ep_sq)
-                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
-            }
-            _ => match self.pieces.entry(to_sq) {
-                // Capture
-                Entry::Occupied(mut entry) => {
-                    let value = entry.get_mut();
-                    let old_piece = *value;
-                    *value = piece;
-                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
-                }
-                // Move
-                Entry::Vacant(entry) => {
-                    entry.insert(piece);
-                    None
-                }
-            },
+            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => true,
+            _ => self.pieces.contains_key(&to_sq),
         };
 
         // Make move on board
         self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));
 
         // Play audio
-        if let Some((cap_entity, cap_color, cap_typ)) = captured_piece {
-            cmd_list.add(Captured::new(cap_entity, cap_color, cap_typ));
+        if is_capture {
             cmd_list.add(PlayGameAudio::Capture);
         } else if is_castle {
             cmd_list.add(PlayGameAudio::Castle);
