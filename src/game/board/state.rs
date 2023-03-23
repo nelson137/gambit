@@ -89,38 +89,21 @@ impl FromWorld for BoardState {
     }
 }
 
-impl BoardState {
-    pub fn reset(&mut self) {
-        self.clear_pieces();
-        self.clear_showing_hints();
-        self.board = Board::default();
-    }
+//==================================================
+// Getters, setters, and delegates
+//==================================================
 
-    pub fn clear_showing_hints(&mut self) {
-        self.showing_hints.clear();
-    }
+impl BoardState {
+    //------------------------------
+    // State
+    //------------------------------
 
     pub fn side_to_move(&self) -> PieceColor {
         self.board.side_to_move().into()
     }
 
-    pub fn clear_pieces(&mut self) {
-        self.pieces.clear();
-    }
-
-    pub fn king_square(&self, color: PieceColor) -> Square {
-        self.board.king_square(color.0).into()
-    }
-
-    fn en_passant(&self) -> Option<Square> {
-        self.board.en_passant().map(Square::new)
-    }
-
-    pub fn get_piece_info_on(&self, square: Square) -> Option<(PieceColor, PieceType)> {
-        match (self.board.color_on(square.0), self.board.piece_on(square.0)) {
-            (Some(color), Some(typ)) => Some((PieceColor(color), PieceType(typ))),
-            _ => None,
-        }
+    pub fn is_colors_turn_at(&self, square: Square) -> bool {
+        self.color_on(square) == self.board.side_to_move()
     }
 
     fn color_on(&self, square: Square) -> PieceColor {
@@ -131,9 +114,50 @@ impl BoardState {
         PieceType(self.board.piece_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
     }
 
-    pub fn is_colors_turn_at(&self, square: Square) -> bool {
-        self.color_on(square) == self.board.side_to_move()
+    pub fn get_piece_info_on(&self, square: Square) -> Option<(PieceColor, PieceType)> {
+        match (self.board.color_on(square.0), self.board.piece_on(square.0)) {
+            (Some(color), Some(typ)) => Some((PieceColor(color), PieceType(typ))),
+            _ => None,
+        }
     }
+
+    pub fn king_square(&self, color: PieceColor) -> Square {
+        self.board.king_square(color.0).into()
+    }
+
+    fn en_passant(&self) -> Option<Square> {
+        self.board.en_passant().map(Square::new)
+    }
+
+    pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
+        let mut move_gen = MoveGen::new_legal(&self.board);
+        // Mask the generator to only gen moves (by any piece) to the destination.
+        move_gen.set_iterator_mask(BitBoard::from_square(dest.0));
+        // Return whether any of the generated moves are from the source.
+        move_gen.any(|m| m.get_source() == source)
+    }
+
+    pub fn reset(&mut self) {
+        self.clear_pieces();
+        self.clear_showing_hints();
+        self.board = Board::default();
+    }
+
+    //------------------------------
+    // Board
+    //------------------------------
+
+    pub fn board(&self) -> &Board {
+        &self.board
+    }
+
+    pub fn set_board(&mut self, board: &Board) {
+        self.board = *board;
+    }
+
+    //------------------------------
+    // Tiles
+    //------------------------------
 
     pub fn tile(&self, square: Square) -> Entity {
         self.tiles.get(&square).copied().unwrap_or_else(|| panic!("no tile at {square}"))
@@ -145,6 +169,44 @@ impl BoardState {
             Entry::Vacant(e) => e.insert(entity),
         };
     }
+
+    //------------------------------
+    // Highlight tiles
+    //------------------------------
+
+    pub fn highlight(&self, square: Square) -> Entity {
+        self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
+    }
+
+    pub fn set_highlight(&mut self, square: Square, entity: Entity) {
+        match self.highlights.entry(square) {
+            Entry::Occupied(_) => panic!("highlight already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(entity),
+        };
+    }
+
+    //------------------------------
+    // Hints
+    //------------------------------
+
+    pub fn move_hints(&self, square: Square) -> &MoveHints {
+        self.move_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
+    }
+
+    pub fn set_move_hints(&mut self, square: Square, hints: MoveHints) {
+        match self.move_hints.entry(square) {
+            Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(hints),
+        };
+    }
+
+    pub fn clear_showing_hints(&mut self) {
+        self.showing_hints.clear();
+    }
+
+    //------------------------------
+    // Pieces
+    //------------------------------
 
     pub fn has_piece_at(&self, square: Square) -> bool {
         self.pieces.contains_key(&square)
@@ -165,76 +227,19 @@ impl BoardState {
         };
     }
 
-    #[must_use]
-    pub fn update_piece(
-        &mut self,
-        color: PieceColor,
-        from_sq: Square,
-        to_sq: Square,
-    ) -> Option<impl Command> {
-        let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
-            panic!("Failed to move board state piece: no piece found at source square {from_sq}")
-        });
-
-        let captured_piece = match self.en_passant() {
-            // `chess::Board::en_passant` returns an optional square which is that of the piece that
-            // can be captured in the en passant move that is currently available on the board.
-            // The current move is this en passant if there is an en passant square and the
-            // destination of the move is the square behind it (from the perspective of the *other*
-            // player, hence the `!color`).
-            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
-                self.pieces.insert(to_sq, piece);
-                self.pieces.remove(&ep_sq).map(|entity| (entity, ep_sq))
-            }
-            _ => match self.pieces.entry(to_sq) {
-                // Capture
-                Entry::Occupied(mut entry) => {
-                    let value = entry.get_mut();
-                    let old_piece = *value;
-                    *value = piece;
-                    Some((old_piece, to_sq))
-                }
-                // Move
-                Entry::Vacant(entry) => {
-                    entry.insert(piece);
-                    None
-                }
-            },
-        };
-
-        captured_piece
-            .map(|(entity, sq)| Captured::new(entity, self.color_on(sq), self.piece_on(sq)))
+    pub fn clear_pieces(&mut self) {
+        self.pieces.clear();
     }
+}
 
-    pub fn highlight(&self, square: Square) -> Entity {
-        self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
-    }
+//==================================================
+// Core game logic
+//==================================================
 
-    pub fn set_highlight(&mut self, square: Square, entity: Entity) {
-        match self.highlights.entry(square) {
-            Entry::Occupied(_) => panic!("highlight already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(entity),
-        };
-    }
-
-    pub fn move_hints(&self, square: Square) -> &MoveHints {
-        self.move_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
-    }
-
-    pub fn set_move_hints(&mut self, square: Square, hints: MoveHints) {
-        match self.move_hints.entry(square) {
-            Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(hints),
-        };
-    }
-
-    pub fn board(&self) -> &Board {
-        &self.board
-    }
-
-    pub fn set_board(&mut self, board: &Board) {
-        self.board = *board;
-    }
+impl BoardState {
+    //------------------------------
+    // Select & unselect
+    //------------------------------
 
     #[must_use]
     pub fn select_square(&mut self, square: Square) -> impl Command {
@@ -317,12 +322,49 @@ impl BoardState {
         cmd_list
     }
 
-    pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
-        let mut move_gen = MoveGen::new_legal(&self.board);
-        // Mask the generator to only gen moves (by any piece) to the destination.
-        move_gen.set_iterator_mask(BitBoard::from_square(dest.0));
-        // Return whether any of the generated moves are from the source.
-        move_gen.any(|m| m.get_source() == source)
+    //------------------------------
+    // Move
+    //------------------------------
+
+    #[must_use]
+    pub fn update_piece(
+        &mut self,
+        color: PieceColor,
+        from_sq: Square,
+        to_sq: Square,
+    ) -> Option<impl Command> {
+        let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
+            panic!("Failed to move board state piece: no piece found at source square {from_sq}")
+        });
+
+        let captured_piece = match self.en_passant() {
+            // `chess::Board::en_passant` returns an optional square which is that of the piece that
+            // can be captured in the en passant move that is currently available on the board.
+            // The current move is this en passant if there is an en passant square and the
+            // destination of the move is the square behind it (from the perspective of the *other*
+            // player, hence the `!color`).
+            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
+                self.pieces.insert(to_sq, piece);
+                self.pieces.remove(&ep_sq).map(|entity| (entity, ep_sq))
+            }
+            _ => match self.pieces.entry(to_sq) {
+                // Capture
+                Entry::Occupied(mut entry) => {
+                    let value = entry.get_mut();
+                    let old_piece = *value;
+                    *value = piece;
+                    Some((old_piece, to_sq))
+                }
+                // Move
+                Entry::Vacant(entry) => {
+                    entry.insert(piece);
+                    None
+                }
+            },
+        };
+
+        captured_piece
+            .map(|(entity, sq)| Captured::new(entity, self.color_on(sq), self.piece_on(sq)))
     }
 
     #[must_use]
