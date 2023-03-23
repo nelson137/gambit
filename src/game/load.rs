@@ -51,7 +51,7 @@ pub(super) fn load_capture_state(world: &mut World) {
     for color in ALL_COLORS {
         let color = PieceColor(color);
         for typ in ALL_PIECES {
-            if typ == chess::Piece::King {
+            if typ == PieceType::KING {
                 continue;
             }
             let typ = PieceType(typ);
@@ -69,10 +69,8 @@ const ROOKS_COUNT: u8 = 2;
 const QUEENS_COUNT: u8 = 1;
 
 fn update_capture_counts(board: &chess::Board) -> GameCaptures<u8> {
-    use chess::{Color, Piece};
-
     let mut capture_counts = GameCaptures::<u8>::default();
-    let kings_bb = board.pieces(Piece::King);
+    let kings_bb = board.pieces(chess::Piece::King);
 
     for color in ALL_COLORS {
         let color_pieces_bb = *board.color_combined(color) & !kings_bb;
@@ -86,18 +84,16 @@ fn update_capture_counts(board: &chess::Board) -> GameCaptures<u8> {
     }
 
     #[inline]
-    fn inverse_count(counts: &mut GameCaptures<u8>, color: Color, typ: Piece, max_count: u8) {
-        let color = PieceColor(color);
-        let typ = PieceType(typ);
-        counts[color][typ] = max_count - counts[color][typ];
+    fn inverse_count(counts: &mut GameCaptures<u8>, color: PieceColor, typ: PieceType, max: u8) {
+        counts[color][typ] = max - counts[color][typ];
     }
 
-    for color in ALL_COLORS {
-        inverse_count(&mut capture_counts, color, Piece::Pawn, PAWNS_COUNT);
-        inverse_count(&mut capture_counts, color, Piece::Knight, KNIGHTS_COUNT);
-        inverse_count(&mut capture_counts, color, Piece::Bishop, BISHOPS_COUNT);
-        inverse_count(&mut capture_counts, color, Piece::Rook, ROOKS_COUNT);
-        inverse_count(&mut capture_counts, color, Piece::Queen, QUEENS_COUNT);
+    for color in ALL_COLORS.map(PieceColor) {
+        inverse_count(&mut capture_counts, color, PieceType::PAWN, PAWNS_COUNT);
+        inverse_count(&mut capture_counts, color, PieceType::KNIGHT, KNIGHTS_COUNT);
+        inverse_count(&mut capture_counts, color, PieceType::BISHOP, BISHOPS_COUNT);
+        inverse_count(&mut capture_counts, color, PieceType::ROOK, ROOKS_COUNT);
+        inverse_count(&mut capture_counts, color, PieceType::QUEEN, QUEENS_COUNT);
     }
 
     capture_counts

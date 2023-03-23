@@ -6,7 +6,7 @@ use crate::{
     game::consts::{FONT_PATH, Z_NOTATION_TEXT, Z_TILE},
 };
 
-use super::{BoardLocation, BoardState, UiBoard};
+use super::{BoardState, Square, UiBoard};
 
 #[derive(Component)]
 pub struct Tile;
@@ -43,10 +43,9 @@ pub fn spawn_tiles(
     let rank_label_margins =
         UiRect { top: Val::Percent(1.0), left: Val::Percent(4.5), ..default() };
 
-    for square in chess::ALL_SQUARES {
+    for square in chess::ALL_SQUARES.map(Square::new) {
         let file = square.get_file();
         let rank = square.get_rank();
-        let location = BoardLocation::new(square);
 
         let file_rank_sum = rank.to_index() + file.to_index();
         let color = if file_rank_sum % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE };
@@ -55,7 +54,7 @@ pub fn spawn_tiles(
             .spawn((
                 Tile,
                 debug_name!("Tile ({square})"),
-                location,
+                square,
                 NodeBundle {
                     background_color: color.into(),
                     style: Style {
@@ -91,7 +90,7 @@ pub fn spawn_tiles(
                     })
                     .with_children(|cmds| {
                         cmds.spawn(TextBundle {
-                            text: Text::from_section(location.file_char(), text_style),
+                            text: Text::from_section(square.file_char(), text_style),
                             style: Style { margin: file_label_margins, ..default() },
                             ..default()
                         });
@@ -119,7 +118,7 @@ pub fn spawn_tiles(
                     })
                     .with_children(|cmds| {
                         cmds.spawn(TextBundle {
-                            text: Text::from_section(location.rank_char(), text_style),
+                            text: Text::from_section(square.rank_char(), text_style),
                             style: Style { margin: rank_label_margins, ..default() },
                             ..default()
                         });

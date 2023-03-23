@@ -15,7 +15,7 @@ impl Plugin for MouseLogicPlugin {
         app
             // Resources
             .init_resource::<MouseWorldPosition>()
-            .init_resource::<MouseBoardLocation>()
+            .init_resource::<MouseBoardSquare>()
             // Systems
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,

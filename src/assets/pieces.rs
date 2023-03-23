@@ -1,24 +1,24 @@
-use chess::{Color, Piece};
+use crate::game::board::{PieceColor, PieceType};
 
 pub trait PieceColorAndTypeAssetPath {
     fn asset_path(self) -> &'static str;
 }
 
-impl PieceColorAndTypeAssetPath for (chess::Color, chess::Piece) {
+impl PieceColorAndTypeAssetPath for (PieceColor, PieceType) {
     fn asset_path(self) -> &'static str {
-        match self {
-            (Color::Black, Piece::Bishop) => "images/pieces/black-bishop.png",
-            (Color::Black, Piece::King) => "images/pieces/black-king.png",
-            (Color::Black, Piece::Knight) => "images/pieces/black-knight.png",
-            (Color::Black, Piece::Pawn) => "images/pieces/black-pawn.png",
-            (Color::Black, Piece::Queen) => "images/pieces/black-queen.png",
-            (Color::Black, Piece::Rook) => "images/pieces/black-rook.png",
-            (Color::White, Piece::Bishop) => "images/pieces/white-bishop.png",
-            (Color::White, Piece::King) => "images/pieces/white-king.png",
-            (Color::White, Piece::Knight) => "images/pieces/white-knight.png",
-            (Color::White, Piece::Pawn) => "images/pieces/white-pawn.png",
-            (Color::White, Piece::Queen) => "images/pieces/white-queen.png",
-            (Color::White, Piece::Rook) => "images/pieces/white-rook.png",
+        match (self.0, self.1) {
+            (PieceColor::BLACK, PieceType::BISHOP) => "images/pieces/black-bishop.png",
+            (PieceColor::BLACK, PieceType::KING) => "images/pieces/black-king.png",
+            (PieceColor::BLACK, PieceType::KNIGHT) => "images/pieces/black-knight.png",
+            (PieceColor::BLACK, PieceType::PAWN) => "images/pieces/black-pawn.png",
+            (PieceColor::BLACK, PieceType::QUEEN) => "images/pieces/black-queen.png",
+            (PieceColor::BLACK, PieceType::ROOK) => "images/pieces/black-rook.png",
+            (PieceColor::WHITE, PieceType::BISHOP) => "images/pieces/white-bishop.png",
+            (PieceColor::WHITE, PieceType::KING) => "images/pieces/white-king.png",
+            (PieceColor::WHITE, PieceType::KNIGHT) => "images/pieces/white-knight.png",
+            (PieceColor::WHITE, PieceType::PAWN) => "images/pieces/white-pawn.png",
+            (PieceColor::WHITE, PieceType::QUEEN) => "images/pieces/white-queen.png",
+            (PieceColor::WHITE, PieceType::ROOK) => "images/pieces/white-rook.png",
         }
     }
 }

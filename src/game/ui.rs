@@ -63,7 +63,7 @@ pub fn spawn_ui(mut commands: Commands) {
             .with_children(|cmds| {
                 let black_panel = PanelBuilder {
                     name: "Top Panel",
-                    color: PieceColor(chess::Color::Black),
+                    color: PieceColor::BLACK,
                     profile_image_path: "images/profiles/black.png",
                     profile_label: "Black",
                     margin: UiRect::bottom(UI_GAP_VAL),
@@ -85,7 +85,7 @@ pub fn spawn_ui(mut commands: Commands) {
 
                 let white_panel = PanelBuilder {
                     name: "Bottom Panel",
-                    color: PieceColor(chess::Color::White),
+                    color: PieceColor::WHITE,
                     profile_image_path: "images/profiles/white.png",
                     profile_label: "White",
                     margin: UiRect::top(UI_GAP_VAL),

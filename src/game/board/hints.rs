@@ -2,7 +2,7 @@ use bevy::{ecs::system::Command, prelude::*};
 
 use crate::{debug_name, game::consts::Z_MOVE_HINT};
 
-use super::{BoardLocation, BoardState, MoveHints};
+use super::{BoardState, MoveHints, Square};
 
 #[derive(Default)]
 pub struct ShowHints(pub Vec<Entity>);
@@ -40,13 +40,13 @@ pub fn spawn_hints(
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
     for square in chess::ALL_SQUARES {
-        let location = BoardLocation::new(square);
+        let square = Square::new(square);
 
         // Move hint
         let move_entity = commands
             .spawn((
                 debug_name!("Move Hint ({square})"),
-                location,
+                square,
                 NodeBundle {
                     style: Style {
                         position_type: PositionType::Absolute,
@@ -77,7 +77,7 @@ pub fn spawn_hints(
         let capture_entity = commands
             .spawn((
                 debug_name!("Capture Hint ({square})"),
-                location,
+                square,
                 ImageBundle {
                     image: UiImage(capture_hint_texture.clone()),
                     style: Style {

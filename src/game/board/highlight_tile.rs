@@ -2,7 +2,7 @@ use bevy::{ecs::system::Command, prelude::*};
 
 use crate::{debug_name, game::consts::Z_HIGHLIGHT_TILE};
 
-use super::{BoardLocation, BoardState};
+use super::{BoardState, Square};
 
 #[derive(Component)]
 pub struct HighlightTile;
@@ -37,13 +37,13 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
     for square in chess::ALL_SQUARES {
-        let location = BoardLocation::new(square);
+        let square = Square::new(square);
 
         let hl_tile_entity = commands
             .spawn((
                 HighlightTile,
                 debug_name!("Highlight Tile ({square})"),
-                location,
+                square,
                 NodeBundle {
                     background_color: COLOR_HIGHLIGHT.into(),
                     style: Style {

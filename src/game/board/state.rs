@@ -4,7 +4,7 @@ use std::{
 };
 
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, Square, EMPTY};
+use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, EMPTY};
 
 use crate::{
     cli::CliArgs,
@@ -14,7 +14,9 @@ use crate::{
     },
 };
 
-use super::{HideHighlight, HideHints, MoveHints, ShowHighlight, ShowHints};
+use super::{
+    HideHighlight, HideHints, MoveHints, PieceColor, PieceType, ShowHighlight, ShowHints, Square,
+};
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
 ///
@@ -98,22 +100,35 @@ impl BoardState {
         self.showing_hints.clear();
     }
 
+    pub fn side_to_move(&self) -> PieceColor {
+        self.board.side_to_move().into()
+    }
+
     pub fn clear_pieces(&mut self) {
         self.pieces.clear();
     }
 
-    pub fn get_piece_info_on(&self, square: Square) -> Option<(chess::Color, chess::Piece)> {
-        self.board
-            .color_on(square)
-            .map(|c| (c, self.board.piece_on(square).expect("invalid board")))
+    pub fn king_square(&self, color: PieceColor) -> Square {
+        self.board.king_square(color.0).into()
     }
 
-    fn color_on(&self, square: Square) -> chess::Color {
-        self.board.color_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
+    fn en_passant(&self) -> Option<Square> {
+        self.board.en_passant().map(Square::new)
     }
 
-    fn piece_on(&self, square: Square) -> chess::Piece {
-        self.board.piece_on(square).unwrap_or_else(|| panic!("no piece at {square}"))
+    pub fn get_piece_info_on(&self, square: Square) -> Option<(PieceColor, PieceType)> {
+        match (self.board.color_on(square.0), self.board.piece_on(square.0)) {
+            (Some(color), Some(typ)) => Some((PieceColor(color), PieceType(typ))),
+            _ => None,
+        }
+    }
+
+    fn color_on(&self, square: Square) -> PieceColor {
+        PieceColor(self.board.color_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
+    }
+
+    fn piece_on(&self, square: Square) -> PieceType {
+        PieceType(self.board.piece_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
     }
 
     pub fn is_colors_turn_at(&self, square: Square) -> bool {
@@ -153,7 +168,7 @@ impl BoardState {
     #[must_use]
     pub fn update_piece(
         &mut self,
-        color: chess::Color,
+        color: PieceColor,
         from_sq: Square,
         to_sq: Square,
     ) -> Option<impl Command> {
@@ -161,7 +176,7 @@ impl BoardState {
             panic!("Failed to move board state piece: no piece found at source square {from_sq}")
         });
 
-        let captured_piece = match self.board().en_passant() {
+        let captured_piece = match self.en_passant() {
             // `chess::Board::en_passant` returns an optional square which is that of the piece that
             // can be captured in the en passant move that is currently available on the board.
             // The current move is this en passant if there is an en passant square and the
@@ -264,7 +279,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.move_hints(r#move.get_dest()).capture_entity);
+            moves.push(self.move_hints(r#move.get_dest().into()).capture_entity);
         }
 
         move_gen.set_iterator_mask(!EMPTY);
@@ -272,7 +287,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.move_hints(r#move.get_dest()).move_entity);
+            moves.push(self.move_hints(r#move.get_dest().into()).move_entity);
         }
 
         if !moves.is_empty() {
@@ -301,7 +316,7 @@ impl BoardState {
     pub fn move_is_valid(&self, source: Square, dest: Square) -> bool {
         let mut move_gen = MoveGen::new_legal(&self.board);
         // Mask the generator to only gen moves (by any piece) to the destination.
-        move_gen.set_iterator_mask(BitBoard::from_square(dest));
+        move_gen.set_iterator_mask(BitBoard::from_square(dest.0));
         // Return whether any of the generated moves are from the source.
         move_gen.any(|m| m.get_source() == source)
     }
@@ -322,29 +337,29 @@ impl BoardState {
         cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
 
         let mut is_castle = false;
-        if typ == chess::Piece::King {
+        if typ == PieceType::KING {
             let castle_rights = self.board.my_castle_rights();
             let back_rank = color.to_my_backrank();
-            let kingside_sq = Square::make_square(back_rank, File::G);
-            let queenside_sq = Square::make_square(back_rank, File::C);
+            let kingside_sq = Square::from_coords(back_rank, File::G);
+            let queenside_sq = Square::from_coords(back_rank, File::C);
 
             // Move UI rook
             if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let from_sq = Square::make_square(back_rank, File::H);
-                let to_sq = Square::make_square(back_rank, File::F);
+                let from_sq = Square::from_coords(back_rank, File::H);
+                let to_sq = Square::from_coords(back_rank, File::F);
                 let piece = self.piece(from_sq);
                 cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let from_sq = Square::make_square(back_rank, File::A);
-                let to_sq = Square::make_square(back_rank, File::D);
+                let from_sq = Square::from_coords(back_rank, File::A);
+                let to_sq = Square::from_coords(back_rank, File::D);
                 let piece = self.piece(from_sq);
                 cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
                 is_castle = true;
             }
         }
 
-        let is_capture = match self.board.en_passant() {
+        let is_capture = match self.en_passant() {
             // `chess::Board::en_passant` returns an optional square which is that of the piece that
             // can be captured in the en passant move that is currently available on the board.
             // The current move is this en passant if there is an en passant square and the
@@ -355,7 +370,7 @@ impl BoardState {
         };
 
         // Make move on board
-        self.board = self.board.make_move_new(ChessMove::new(from_sq, to_sq, None));
+        self.board = self.board.make_move_new(ChessMove::new(from_sq.0, to_sq.0, None));
 
         // Play audio
         if is_capture {
@@ -364,8 +379,8 @@ impl BoardState {
             cmd_list.add(PlayGameAudio::Castle);
         } else {
             cmd_list.add(match color {
-                chess::Color::Black => PlayGameAudio::MoveOpponent,
-                chess::Color::White => PlayGameAudio::MoveSelf,
+                PieceColor::BLACK => PlayGameAudio::MoveOpponent,
+                PieceColor::WHITE => PlayGameAudio::MoveSelf,
             });
         }
 

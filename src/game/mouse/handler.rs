@@ -8,21 +8,21 @@ use crate::{
     },
 };
 
-use super::position::{MouseBoardLocation, MouseWorldPosition};
+use super::position::{MouseBoardSquare, MouseWorldPosition};
 
 pub(super) fn mouse_handler(
     mouse_buttons: Res<Input<MouseButton>>,
-    mouse_loc: Res<MouseBoardLocation>,
+    mouse_sq: Res<MouseBoardSquare>,
     mut event_writer: EventWriter<SelectionEvent>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
-        if let Some(square) = **mouse_loc {
+        if let Some(square) = **mouse_sq {
             event_writer.send(SelectionEvent::MouseDown(square));
         }
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
-        if let Some(square) = **mouse_loc {
+        if let Some(square) = **mouse_sq {
             event_writer.send(SelectionEvent::MouseUp(square));
         }
     }

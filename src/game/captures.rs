@@ -77,18 +77,18 @@ impl CaptureState {
     pub fn log_counts(&self) {
         fn log(color: &str, caps: &ColorCaptures<CapState>) {
             info!(
-                pawns = caps[PieceType(chess::Piece::Pawn)].count,
-                bishops = caps[PieceType(chess::Piece::Bishop)].count,
-                knights = caps[PieceType(chess::Piece::Knight)].count,
-                rooks = caps[PieceType(chess::Piece::Rook)].count,
-                queens = caps[PieceType(chess::Piece::Queen)].count,
-                "{color}"
+                pawns = caps[PieceType::PAWN].count,
+                bishops = caps[PieceType::BISHOP].count,
+                knights = caps[PieceType::KNIGHT].count,
+                rooks = caps[PieceType::ROOK].count,
+                queens = caps[PieceType::QUEEN].count,
+                "{color} :"
             );
         }
         info!("");
         info!("================== Capture Counts ==================");
-        log("White :", &self.0[PieceColor(chess::Color::White)]);
-        log("Black :", &self.0[PieceColor(chess::Color::Black)]);
+        log("White", &self.0[PieceColor::WHITE]);
+        log("Black", &self.0[PieceColor::BLACK]);
     }
 }
 
@@ -99,13 +99,13 @@ impl<C> Index<PieceColor> for GameCaptures<C> {
     type Output = ColorCaptures<C>;
 
     fn index(&self, index: PieceColor) -> &Self::Output {
-        self.0.index(*index as usize)
+        self.0.index(index.0 as usize)
     }
 }
 
 impl<C> IndexMut<PieceColor> for GameCaptures<C> {
     fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
-        self.0.index_mut(*index as usize)
+        self.0.index_mut(index.0 as usize)
     }
 }
 
@@ -130,13 +130,13 @@ impl<C> Index<PieceType> for ColorCaptures<C> {
     type Output = C;
 
     fn index(&self, index: PieceType) -> &Self::Output {
-        self.0.index(*index as usize)
+        self.0.index(index.0 as usize)
     }
 }
 
 impl<C> IndexMut<PieceType> for ColorCaptures<C> {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        self.0.index_mut(*index as usize)
+        self.0.index_mut(index.0 as usize)
     }
 }
 
@@ -216,25 +216,26 @@ impl Command for CapStateUpdate {
 #[derive(Clone, Copy)]
 pub struct Captured {
     entity: Entity,
-    color: chess::Color,
-    typ: chess::Piece,
+    color: PieceColor,
+    typ: PieceType,
 }
 
 impl Captured {
-    pub fn new(entity: Entity, color: chess::Color, typ: chess::Piece) -> Self {
+    pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
         Self { entity, color, typ }
     }
 }
 
 impl Command for Captured {
     fn write(self, world: &mut World) {
+        let Self { entity, mut color, typ } = self;
+
         // The count and capture image need to be updated for the player who performed the capture,
         // i.e. the one whose color is the opposite of that of the captured piece.
-        let color = PieceColor(!self.color);
-        let typ = PieceType(self.typ);
+        color = !color;
 
         // Hide piece
-        if let Some(mut vis) = world.entity_mut(self.entity).get_mut::<Visibility>() {
+        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
             vis.is_visible = false;
         }
 

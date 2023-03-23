@@ -9,7 +9,10 @@ use bevy::prelude::*;
 use bevy_egui::{egui::Ui, EguiContext};
 use chess::{Board, BoardBuilder, CastleRights};
 
-use crate::{game::load::LoadGame, utils::StateExts};
+use crate::{
+    game::{board::PieceColor, load::LoadGame},
+    utils::StateExts,
+};
 
 use super::MenuState;
 
@@ -74,7 +77,7 @@ impl FenPopupData {
             self.invalid_fen = board.is_err();
 
             if let Ok(board) = board {
-                self.black_to_move = board.side_to_move() == chess::Color::Black;
+                self.black_to_move = board.side_to_move() == PieceColor::BLACK;
 
                 let white_castle_rights = board.castle_rights(chess::Color::White);
                 self.castle_rights_white_kingside = white_castle_rights.has_kingside();

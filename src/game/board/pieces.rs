@@ -1,11 +1,11 @@
 use std::ops::Not;
 
 use bevy::prelude::*;
-use chess::Piece;
+use chess::{Piece, Rank};
 
 use crate::{assets::PieceColorAndTypeAssetPath, debug_name, game::consts::Z_PIECE};
 
-use super::{location::BoardLocation, BoardState};
+use super::{square::Square, BoardState};
 
 #[derive(Component)]
 pub struct UiPiece {
@@ -19,14 +19,38 @@ impl UiPiece {
     }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceColor(pub chess::Color);
+
+impl From<chess::Color> for PieceColor {
+    fn from(color: chess::Color) -> Self {
+        Self(color)
+    }
+}
+
+impl From<PieceColor> for chess::Color {
+    fn from(color: PieceColor) -> Self {
+        color.0
+    }
+}
 
 impl Not for PieceColor {
     type Output = Self;
 
     fn not(self) -> Self::Output {
         Self(self.0.not())
+    }
+}
+
+impl PartialEq<chess::Color> for PieceColor {
+    fn eq(&self, other: &chess::Color) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<PieceColor> for chess::Color {
+    fn eq(&self, other: &PieceColor) -> bool {
+        self.eq(&other.0)
     }
 }
 
@@ -40,10 +64,38 @@ impl std::fmt::Display for PieceColor {
 impl PieceColor {
     pub const BLACK: Self = Self(chess::Color::Black);
     pub const WHITE: Self = Self(chess::Color::White);
+
+    pub fn to_my_backrank(self) -> Rank {
+        self.0.to_my_backrank()
+    }
 }
 
-#[derive(Clone, Copy, PartialEq, Eq, Deref, DerefMut)]
+#[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceType(pub Piece);
+
+impl From<chess::Piece> for PieceType {
+    fn from(typ: chess::Piece) -> Self {
+        Self(typ)
+    }
+}
+
+impl From<PieceType> for chess::Piece {
+    fn from(typ: PieceType) -> Self {
+        typ.0
+    }
+}
+
+impl PartialEq<chess::Piece> for PieceType {
+    fn eq(&self, other: &chess::Piece) -> bool {
+        self.0.eq(other)
+    }
+}
+
+impl PartialEq<PieceType> for chess::Piece {
+    fn eq(&self, other: &PieceType) -> bool {
+        self.eq(&other.0)
+    }
+}
 
 #[cfg(debug_assertions)]
 impl std::fmt::Display for PieceType {
@@ -58,6 +110,7 @@ impl PieceType {
     pub const KNIGHT: Self = Self(chess::Piece::Knight);
     pub const ROOK: Self = Self(chess::Piece::Rook);
     pub const QUEEN: Self = Self(chess::Piece::Queen);
+    pub const KING: Self = Self(chess::Piece::King);
 }
 
 pub fn spawn_pieces(
@@ -67,19 +120,16 @@ pub fn spawn_pieces(
 ) {
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
-    for square in chess::ALL_SQUARES {
+    for square in chess::ALL_SQUARES.map(Square::new) {
         let Some(info) = board_state.get_piece_info_on(square) else { continue };
-        let location = BoardLocation::new(square);
-
         let image_path = info.asset_path();
-        let piece_color = PieceColor(info.0);
-        let piece_type = PieceType(info.1);
+        let (piece_color, piece_type) = info;
 
         let piece_entity = commands
             .spawn((
                 UiPiece::new(piece_color, piece_type),
                 debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
-                location,
+                square,
                 ImageBundle {
                     image: UiImage(asset_server.load(image_path)),
                     style: Style {

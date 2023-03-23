@@ -1,9 +1,9 @@
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{File, Rank, Square};
+use chess::{File, Rank};
 
 use crate::{debug_name, game::consts::Z_END_GAME_ICONS};
 
-use super::{BoardState, Tile};
+use super::{BoardState, PieceColor, Square, Tile};
 
 #[derive(Component)]
 pub struct EndGameIcon;
@@ -28,6 +28,8 @@ pub fn spawn_end_game_icons(
     asset_server: Res<AssetServer>,
     board_state: Res<BoardState>,
 ) {
+    const START_SQ: Square = Square::DEFAULT;
+
     let winner_icon_entity = commands
         .spawn((
             EndGameIcon,
@@ -41,7 +43,7 @@ pub fn spawn_end_game_icons(
             },
         ))
         .id();
-    commands.entity(board_state.tile(Square::A1)).add_child(winner_icon_entity);
+    commands.entity(board_state.tile(START_SQ)).add_child(winner_icon_entity);
 
     let black_loser_icon_entity = commands
         .spawn((
@@ -56,7 +58,7 @@ pub fn spawn_end_game_icons(
             },
         ))
         .id();
-    commands.entity(board_state.tile(Square::A2)).add_child(black_loser_icon_entity);
+    commands.entity(board_state.tile(START_SQ)).add_child(black_loser_icon_entity);
 
     let white_loser_icon_entity = commands
         .spawn((
@@ -71,7 +73,7 @@ pub fn spawn_end_game_icons(
             },
         ))
         .id();
-    commands.entity(board_state.tile(Square::A3)).add_child(white_loser_icon_entity);
+    commands.entity(board_state.tile(START_SQ)).add_child(white_loser_icon_entity);
 
     let black_draw_entity = commands
         .spawn((
@@ -85,7 +87,7 @@ pub fn spawn_end_game_icons(
             },
         ))
         .id();
-    commands.entity(board_state.tile(Square::A4)).add_child(black_draw_entity);
+    commands.entity(board_state.tile(START_SQ)).add_child(black_draw_entity);
 
     let white_draw_entity = commands
         .spawn((
@@ -99,7 +101,7 @@ pub fn spawn_end_game_icons(
             },
         ))
         .id();
-    commands.entity(board_state.tile(Square::A4)).add_child(white_draw_entity);
+    commands.entity(board_state.tile(START_SQ)).add_child(white_draw_entity);
 }
 
 #[derive(Debug)]
@@ -108,20 +110,19 @@ pub struct ShowCheckmateIcons;
 impl Command for ShowCheckmateIcons {
     fn write(self, world: &mut World) {
         let board_state = world.resource::<BoardState>();
-        let board = board_state.board();
 
-        let loser_color = board.side_to_move();
-        let loser_square = board.king_square(loser_color);
+        let loser_color = board_state.side_to_move();
+        let loser_square = board_state.king_square(loser_color);
         let loser_tile_entity = board_state.tile(loser_square);
 
         let winner_color = !loser_color;
-        let winner_square = board.king_square(winner_color);
+        let winner_square = board_state.king_square(winner_color);
         let winner_tile_entity = board_state.tile(winner_square);
 
         #[rustfmt::skip]
         match loser_color {
-            chess::Color::Black => set_end_game_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
-            chess::Color::White => set_end_game_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
+            PieceColor::BLACK => set_end_game_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
+            PieceColor::WHITE => set_end_game_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
         };
 
         set_end_game_icon::<WinnerIcon>(world, winner_tile_entity, winner_square);
@@ -133,12 +134,11 @@ pub struct ShowStalemateIcons;
 impl Command for ShowStalemateIcons {
     fn write(self, world: &mut World) {
         let board_state = world.resource::<BoardState>();
-        let board = board_state.board();
 
-        let black_square = board.king_square(chess::Color::Black);
+        let black_square = board_state.king_square(PieceColor::BLACK);
         let black_tile_entity = board_state.tile(black_square);
 
-        let white_square = board.king_square(chess::Color::White);
+        let white_square = board_state.king_square(PieceColor::WHITE);
         let white_tile_entity = board_state.tile(white_square);
 
         set_end_game_icon::<DrawIconBlack>(world, black_tile_entity, black_square);

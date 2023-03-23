@@ -5,12 +5,13 @@ use std::{
 };
 
 use bevy::prelude::*;
-use chess::Square;
 
 use crate::{
-    game::{board::BoardState, menu::MenuState, mouse::DragContainer},
+    game::{menu::MenuState, mouse::DragContainer},
     utils::StateExts,
 };
+
+use super::{BoardState, Square};
 
 pub struct SelectionPlugin;
 
@@ -89,12 +90,12 @@ impl PartialEq for SelectionState {
 }
 
 impl SelectionState {
-    const SELECTING_DRAGGING: SelectionState = SelectionState::SelectingDragging(Square::A1);
-    const SELECTED: SelectionState = SelectionState::Selected(Square::A1);
-    const SELECTED_DRAGGING: SelectionState = SelectionState::SelectedDragging(Square::A1);
-    const DO_CHANGE_SELECTION: SelectionState = SelectionState::DoChangeSelection(Square::A1);
-    const DO_MOVE: SelectionState = SelectionState::DoMove(Square::A1, Square::A1);
-    const DO_UNSELECT: SelectionState = SelectionState::DoUnselect(Square::A1);
+    const SELECTING_DRAGGING: Self = Self::SelectingDragging(Square::DEFAULT);
+    const SELECTED: Self = Self::Selected(Square::DEFAULT);
+    const SELECTED_DRAGGING: Self = Self::SelectedDragging(Square::DEFAULT);
+    const DO_CHANGE_SELECTION: Self = Self::DoChangeSelection(Square::DEFAULT);
+    const DO_MOVE: Self = Self::DoMove(Square::DEFAULT, Square::DEFAULT);
+    const DO_UNSELECT: Self = Self::DoUnselect(Square::DEFAULT);
 }
 
 #[derive(Clone, Copy)]
