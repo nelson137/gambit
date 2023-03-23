@@ -169,9 +169,7 @@ impl BoardState {
             // player, hence the `!color`).
             Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
                 self.pieces.insert(to_sq, piece);
-                self.pieces
-                    .remove(&ep_sq)
-                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
+                self.pieces.remove(&ep_sq).map(|entity| (entity, ep_sq))
             }
             _ => match self.pieces.entry(to_sq) {
                 // Capture
@@ -179,7 +177,7 @@ impl BoardState {
                     let value = entry.get_mut();
                     let old_piece = *value;
                     *value = piece;
-                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
+                    Some((old_piece, to_sq))
                 }
                 // Move
                 Entry::Vacant(entry) => {
@@ -190,7 +188,7 @@ impl BoardState {
         };
 
         captured_piece
-            .map(|(cap_entity, cap_color, cap_typ)| Captured::new(cap_entity, cap_color, cap_typ))
+            .map(|(entity, sq)| Captured::new(entity, self.color_on(sq), self.piece_on(sq)))
     }
 
     pub fn highlight(&self, square: Square) -> Entity {
