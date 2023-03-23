@@ -247,7 +247,11 @@ impl BoardState {
     #[must_use]
     pub fn unselect_square(&mut self) -> impl Command {
         let mut cmd_list = GameCommandList::default();
-        cmd_list.add(self.hide_highlight_tile());
+        match (self.last_move_highlights, self.current_highlight) {
+            (Some((last_src, last_dest)), Some(current))
+                if current == last_src || current == last_dest => {}
+            _ => cmd_list.add(self.hide_highlight_tile()),
+        }
         cmd_list.add(self.hide_move_hints());
         cmd_list
     }
