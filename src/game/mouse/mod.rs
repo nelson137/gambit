@@ -19,14 +19,19 @@ impl Plugin for MouseLogicPlugin {
             // Systems
             .add_system_set_to_stage(
                 CoreStage::PreUpdate,
-                SystemSet::new().with_system(mouse_screen_position_to_world).with_system(
-                    mouse_world_position_to_square
-                        .after(mouse_screen_position_to_world)
-                        .with_run_criteria(is_in_game),
-                ),
+                SystemSet::new()
+                    .with_run_criteria(is_in_game)
+                    .with_system(mouse_screen_position_to_world)
+                    .with_system(
+                        mouse_world_position_to_square.after(mouse_screen_position_to_world),
+                    ),
             )
-            .add_system(mouse_handler.with_run_criteria(is_in_game))
-            .add_system(update_drag_container);
+            .add_system_set(
+                SystemSet::new()
+                    .with_run_criteria(is_in_game)
+                    .with_system(mouse_handler)
+                    .with_system(update_drag_container),
+            );
     }
 }
 
