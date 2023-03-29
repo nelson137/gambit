@@ -47,6 +47,10 @@ impl Plugin for SelectionPlugin {
             .add_system_set(
                 SystemSet::on_enter(SelectionState::DO_UNSELECT)
                     .with_system(on_enter_selection_state),
+            )
+            .add_system_set(
+                SystemSet::on_enter(SelectionState::Unselected)
+                    .with_system(on_enter_selection_state),
             );
     }
 }
