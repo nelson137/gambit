@@ -75,15 +75,28 @@ macro_rules! debug_name {
     ($name:expr) => {
         Name::new($name)
     };
-    ($($name_args:expr),+) => {
-        Name::new(format!($($name_args),+))
-    };
 }
 
 #[cfg(not(feature = "bevy-inspector-egui"))]
 #[macro_export]
 macro_rules! debug_name {
-    ($name_args:tt) => {
+    ($($args:tt),* $(,)?) => {
+        ()
+    };
+}
+
+#[cfg(feature = "bevy-inspector-egui")]
+#[macro_export]
+macro_rules! debug_name_f {
+    ($name_fmt:literal $(, $name_args:expr)* $(,)?) => {
+        Name::new(format!($name_fmt $(, $name_args)*))
+    };
+}
+
+#[cfg(not(feature = "bevy-inspector-egui"))]
+#[macro_export]
+macro_rules! debug_name_f {
+    ($($args:tt),* $(,)?) => {
         ()
     };
 }

@@ -1,6 +1,6 @@
 use bevy::{ecs::system::Command, prelude::*};
 
-use crate::{debug_name, game::consts::Z_HIGHLIGHT_TILE};
+use crate::{debug_name_f, game::consts::Z_HIGHLIGHT_TILE};
 
 use super::{BoardState, Square};
 
@@ -42,7 +42,7 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
         let hl_tile_entity = commands
             .spawn((
                 HighlightTile,
-                debug_name!("Highlight Tile ({square})"),
+                debug_name_f!("Highlight Tile ({square})"),
                 square,
                 NodeBundle {
                     background_color: COLOR_HIGHLIGHT.into(),

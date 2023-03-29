@@ -1,6 +1,6 @@
 use bevy::{ecs::system::Command, prelude::*};
 
-use crate::{debug_name, game::consts::Z_MOVE_HINT};
+use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
 use super::{BoardState, MoveHints, Square};
 
@@ -45,7 +45,7 @@ pub fn spawn_hints(
         // Move hint
         let move_entity = commands
             .spawn((
-                debug_name!("Move Hint ({square})"),
+                debug_name_f!("Move Hint ({square})"),
                 square,
                 NodeBundle {
                     style: Style {
@@ -76,7 +76,7 @@ pub fn spawn_hints(
         // Capture hint
         let capture_entity = commands
             .spawn((
-                debug_name!("Capture Hint ({square})"),
+                debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageBundle {
                     image: UiImage(capture_hint_texture.clone()),

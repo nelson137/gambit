@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use chess::{File, Rank};
 
 use crate::{
-    debug_name,
+    debug_name_f,
     game::consts::{FONT_PATH, Z_NOTATION_TEXT, Z_TILE},
 };
 
@@ -53,7 +53,7 @@ pub fn spawn_tiles(
         let tile_entity = commands
             .spawn((
                 Tile,
-                debug_name!("Tile ({square})"),
+                debug_name_f!("Tile ({square})"),
                 square,
                 NodeBundle {
                     background_color: color.into(),

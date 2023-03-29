@@ -3,7 +3,7 @@ use std::ops::Not;
 use bevy::prelude::*;
 use chess::{Piece, Rank};
 
-use crate::{assets::PieceColorAndTypeAssetPath, debug_name, game::consts::Z_PIECE};
+use crate::{assets::PieceColorAndTypeAssetPath, debug_name_f, game::consts::Z_PIECE};
 
 use super::{square::Square, BoardState};
 
@@ -128,7 +128,7 @@ pub fn spawn_pieces(
         let piece_entity = commands
             .spawn((
                 UiPiece::new(piece_color, piece_type),
-                debug_name!("Piece ({piece_color} {piece_type}) ({square})"),
+                debug_name_f!("Piece ({piece_color} {piece_type}) ({square})"),
                 square,
                 ImageBundle {
                     image: UiImage(asset_server.load(image_path)),
