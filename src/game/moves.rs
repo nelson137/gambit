@@ -3,7 +3,7 @@ use bevy::{ecs::system::Command, prelude::*};
 use super::board::{BoardState, PieceColor, Square};
 
 pub struct MoveUiPiece {
-    pub piece: Entity,
+    pub entity: Entity,
     pub color: PieceColor,
     pub from_sq: Square,
     pub to_sq: Square,
@@ -11,8 +11,7 @@ pub struct MoveUiPiece {
 
 impl Command for MoveUiPiece {
     fn write(self, world: &mut World) {
-        let mut entity = world.entity_mut(self.piece);
-        if let Some(mut square) = entity.get_mut::<Square>() {
+        if let Some(mut square) = world.entity_mut(self.entity).get_mut::<Square>() {
             square.move_to(self.to_sq);
         }
 
@@ -24,6 +23,6 @@ impl Command for MoveUiPiece {
             cmd.write(world);
         }
 
-        world.entity_mut(to_tile).push_children(&[self.piece]);
+        world.entity_mut(to_tile).push_children(&[self.entity]);
     }
 }

@@ -371,7 +371,7 @@ impl BoardState {
     pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
         let mut cmd_list = GameCommandList::default();
 
-        let piece = self.piece(from_sq);
+        let entity = self.piece(from_sq);
         let color = self.color_on(from_sq);
         let typ = self.piece_on(from_sq);
 
@@ -380,7 +380,7 @@ impl BoardState {
         cmd_list.add(self.hide_move_hints());
 
         // Move UI piece
-        cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
+        cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
 
         let mut is_castle = false;
         if typ == PieceType::KING {
@@ -393,14 +393,14 @@ impl BoardState {
             if castle_rights.has_kingside() && to_sq == kingside_sq {
                 let from_sq = Square::from_coords(back_rank, File::H);
                 let to_sq = Square::from_coords(back_rank, File::F);
-                let piece = self.piece(from_sq);
-                cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
+                let entity = self.piece(from_sq);
+                cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let from_sq = Square::from_coords(back_rank, File::A);
                 let to_sq = Square::from_coords(back_rank, File::D);
-                let piece = self.piece(from_sq);
-                cmd_list.add(MoveUiPiece { piece, color, from_sq, to_sq });
+                let entity = self.piece(from_sq);
+                cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
                 is_castle = true;
             }
         }
