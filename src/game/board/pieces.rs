@@ -1,4 +1,4 @@
-use std::ops::Not;
+use std::{fmt, ops::Not};
 
 use bevy::prelude::*;
 use chess::{Piece, Rank};
@@ -54,10 +54,15 @@ impl PartialEq<PieceColor> for chess::Color {
     }
 }
 
-#[cfg(debug_assertions)]
-impl std::fmt::Display for PieceColor {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&self.0, f)
+impl fmt::Debug for PieceColor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Display for PieceColor {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 
@@ -97,10 +102,15 @@ impl PartialEq<PieceType> for chess::Piece {
     }
 }
 
-#[cfg(debug_assertions)]
-impl std::fmt::Display for PieceType {
-    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
-        std::fmt::Debug::fmt(&self.0, f)
+impl fmt::Debug for PieceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
+    }
+}
+
+impl fmt::Display for PieceType {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        fmt::Debug::fmt(&self.0, f)
     }
 }
 

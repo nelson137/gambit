@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use super::board::promotion_ui_sizes;
+
 mod fen_popup;
 mod game_menu;
 mod state;
@@ -34,6 +36,7 @@ impl Plugin for GameMenuPlugin {
                     .with_system(game_menu_buttons)
                     .with_system(game_menu_elements_sizes),
             )
+            .add_system(promotion_ui_sizes)
             .add_system_set(SystemSet::on_update(MenuState::DoGameOver).with_system(game_over));
     }
 }
