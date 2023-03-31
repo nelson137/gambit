@@ -18,7 +18,8 @@ use self::{
     audio::GameAudioHandles,
     board::{
         board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
-        spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState, SelectionPlugin,
+        spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState, PromotionEvent,
+        SelectionPlugin,
     },
     camera::setup_camera,
     captures::CaptureState,
@@ -43,6 +44,8 @@ impl Plugin for GameLogicPlugin {
             .init_resource::<GameAudioHandles>()
             .init_resource::<BoardState>()
             .init_resource::<CaptureState>()
+            // Events
+            .add_event::<PromotionEvent>()
             // Startup
             .add_startup_system(setup_camera)
             .add_startup_system(spawn_drag_container)

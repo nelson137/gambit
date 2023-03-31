@@ -1,9 +1,18 @@
-use bevy::{prelude::*, ui::FocusPolicy};
+use bevy::{
+    ecs::system::{Command, SystemState},
+    prelude::*,
+    ui::FocusPolicy,
+};
 
 use crate::{
     assets::PieceColorAndTypeAssetPath,
     debug_name_f,
-    game::consts::{FONT_PATH, Z_PROMOTER},
+    game::{
+        board::PromoteUiPiece,
+        consts::{FONT_PATH, Z_PROMOTER},
+        menu::MenuState,
+    },
+    utils::StateExts,
 };
 
 use super::{BoardState, PieceColor, PieceType, Square, Tile};
@@ -24,9 +33,9 @@ pub fn spawn_promoters(
 ) {
     let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
-    for (color, flex_direction, square) in [
-        (PieceColor::WHITE, FlexDirection::Column, chess::Square::F8),
-        (PieceColor::BLACK, FlexDirection::ColumnReverse, chess::Square::C1),
+    for (color, flex_direction) in [
+        (PieceColor::WHITE, FlexDirection::Column),
+        (PieceColor::BLACK, FlexDirection::ColumnReverse),
     ] {
         let promo_entity = commands
             .spawn((
@@ -44,7 +53,7 @@ pub fn spawn_promoters(
                         size: Size::AUTO,
                         ..default()
                     },
-                    visibility: Visibility::VISIBLE,
+                    visibility: Visibility::INVISIBLE,
                     z_index: ZIndex::Global(Z_PROMOTER),
                     ..default()
                 },
@@ -126,8 +135,94 @@ pub fn spawn_promoters(
             })
             .id();
 
-        let tile_entity = board_state.tile(Square::new(square));
+        let tile_entity = board_state.tile(Square::new(chess::Square::H8));
         commands.entity(tile_entity).add_child(promo_entity);
+    }
+}
+
+pub struct StartPromotion {
+    pub entity: Entity,
+    pub color: PieceColor,
+    pub from_sq: Square,
+    pub to_sq: Square,
+}
+
+impl Command for StartPromotion {
+    fn write(self, world: &mut World) {
+        let StartPromotion { entity, color, from_sq, to_sq } = self;
+
+        // Hide the piece
+        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
+            vis.is_visible = false;
+        }
+
+        // Show the promotion UI
+        let mut state = SystemState::<(
+            Commands,
+            Res<BoardState>,
+            Query<(Entity, &PromotionUi, &mut Visibility)>,
+        )>::new(world);
+        let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
+        for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
+            if ui_color == color {
+                commands.entity(entity).set_parent(board_state.tile(to_sq));
+                vis.is_visible = true;
+                break;
+            }
+        }
+        state.apply(world);
+
+        world.resource_mut::<State<MenuState>>().transition(MenuState::GamePromotion {
+            entity,
+            color,
+            from_sq,
+            to_sq,
+        });
+    }
+}
+
+pub struct FinishPromotion {
+    pub entity: Entity,
+    pub color: PieceColor,
+    pub from_sq: Square,
+    pub to_sq: Square,
+    pub event: PromotionEvent,
+}
+
+impl Command for FinishPromotion {
+    fn write(self, world: &mut World) {
+        let FinishPromotion { entity, color, from_sq, to_sq, event } = self;
+
+        // Hide the promotion UI
+        let mut state = SystemState::<Query<(&PromotionUi, &mut Visibility)>>::new(world);
+        let mut q_promo_ui = state.get_mut(world);
+        for (&PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
+            if ui_color == color {
+                vis.is_visible = false;
+                break;
+            }
+        }
+        state.apply(world);
+
+        let mut board_state = world.resource_mut::<BoardState>();
+        match event {
+            PromotionEvent::Promote(typ) => {
+                board_state.move_piece_inner(entity, color, from_sq, to_sq, Some(typ)).write(world);
+                PromoteUiPiece::new(entity, color, typ).write(world);
+            }
+            PromotionEvent::Cancel => {
+                let from_sq_entity = board_state.tile(from_sq);
+                world.entity_mut(from_sq_entity).push_children(&[entity]);
+            }
+        }
+
+        // Show the piece
+        let mut e = world.entity_mut(entity);
+        if let Some(mut vis) = e.get_mut::<Visibility>() {
+            vis.is_visible = true;
+        }
+
+        world.resource_mut::<State<MenuState>>().transition(MenuState::Game);
     }
 }
 
@@ -150,5 +245,54 @@ pub fn promotion_ui_sizes(
 
     for mut style in &mut button_set.p1() {
         style.size = promo_cancel_button_size;
+    }
+}
+
+#[derive(Clone, Copy)]
+pub enum PromotionEvent {
+    Promote(PieceType),
+    Cancel,
+}
+
+pub fn promotion_buttons(
+    q_button: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
+    mut event_writer: EventWriter<PromotionEvent>,
+) {
+    for (button, interaction) in &q_button {
+        if let Interaction::Clicked = interaction {
+            event_writer.send(PromotionEvent::Promote(button.1));
+        }
+    }
+}
+
+pub fn promotion_cancel_click_handler(
+    mouse_buttons: Res<Input<MouseButton>>,
+    mut event_writer: EventWriter<PromotionEvent>,
+) {
+    if mouse_buttons.just_pressed(MouseButton::Left) {
+        event_writer.send(PromotionEvent::Cancel);
+    }
+}
+
+pub fn promotion_event_handler(
+    mut commands: Commands,
+    mut event_reader: EventReader<PromotionEvent>,
+    menu_state: Res<State<MenuState>>,
+) {
+    let mut event_iter = event_reader.iter();
+    if let Some(event) = event_iter.next().copied() {
+        // Exhaust the rest of the events.
+        // Currently there is no easy way to scope click events to entities given the state of
+        // `bevy_ui`. The easiest way to handle promotions and cancels is to always have the cancel
+        // event fire on any click but run the system after the buttons system. That way, within 1
+        // frame, there may be 2 events fired but only the first is used.
+        event_iter.count();
+
+        let &MenuState::GamePromotion { entity, color, from_sq, to_sq } = menu_state.current() else {
+            warn!("Ignoring received promotion event, not in promotion state");
+            return;
+        };
+
+        commands.add(FinishPromotion { entity, color, from_sq, to_sq, event });
     }
 }

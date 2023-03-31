@@ -9,8 +9,8 @@ use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, EMPTY};
 use crate::{
     cli::CliArgs,
     game::{
-        audio::PlayGameAudio, captures::Captured, game_over::GameOver, moves::MoveUiPiece,
-        utils::GameCommandList,
+        audio::PlayGameAudio, board::StartPromotion, captures::Captured, game_over::GameOver,
+        moves::MoveUiPiece, utils::GameCommandList,
     },
 };
 
@@ -369,15 +369,45 @@ impl BoardState {
 
     #[must_use]
     pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
-        let mut cmd_list = GameCommandList::default();
-
         let entity = self.piece(from_sq);
         let color = self.color_on(from_sq);
         let typ = self.piece_on(from_sq);
 
-        // `Self::unselect_square()` without hiding the highlight tile
-        self.current_highlight.take();
-        cmd_list.add(self.hide_move_hints());
+        if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
+            self.start_promotion(entity, color, from_sq, to_sq)
+        } else {
+            self.move_piece_inner(entity, color, from_sq, to_sq, None)
+        }
+    }
+
+    #[must_use]
+    fn start_promotion(
+        &mut self,
+        entity: Entity,
+        color: PieceColor,
+        from_sq: Square,
+        to_sq: Square,
+    ) -> GameCommandList {
+        let mut cmd_list = GameCommandList::default();
+        cmd_list.add(self.unselect_square());
+        cmd_list.add(StartPromotion { entity, color, from_sq, to_sq });
+        cmd_list
+    }
+
+    #[must_use]
+    pub fn move_piece_inner(
+        &mut self,
+        entity: Entity,
+        color: PieceColor,
+        from_sq: Square,
+        to_sq: Square,
+        promotion: Option<PieceType>,
+    ) -> GameCommandList {
+        let mut cmd_list = GameCommandList::default();
+
+        let typ = self.piece_on(from_sq);
+
+        cmd_list.add(self.unselect_square());
 
         // Move UI piece
         cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
@@ -416,7 +446,8 @@ impl BoardState {
         };
 
         // Make move on board
-        self.board = self.board.make_move_new(ChessMove::new(from_sq.0, to_sq.0, None));
+        let r#move = ChessMove::new(from_sq.0, to_sq.0, promotion.map(|p| p.0));
+        self.board = self.board.make_move_new(r#move);
 
         // Play audio
         if is_capture {

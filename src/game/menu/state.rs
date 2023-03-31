@@ -1,11 +1,11 @@
-use std::fmt;
+use std::{fmt, hash, mem};
 
 use bevy::prelude::*;
 
 use crate::{
     cli::CliArgs,
     game::{
-        board::{spawn_pieces, BoardState, EndGameIcon},
+        board::{spawn_pieces, BoardState, EndGameIcon, PieceColor, Square},
         captures::ResetCapturesUi,
         load::DespawnPieces,
     },
@@ -14,11 +14,12 @@ use crate::{
 
 use super::{FenPopupData, GameMenu, GameMenuDimLayer};
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Eq)]
 pub enum MenuState {
     FenInput,
     Menu,
     Game,
+    GamePromotion { entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square },
     DoGameOver,
 }
 
@@ -29,6 +30,27 @@ impl FromWorld for MenuState {
             _ => Self::Menu,
         }
     }
+}
+
+impl PartialEq for MenuState {
+    fn eq(&self, other: &Self) -> bool {
+        mem::discriminant(self) == mem::discriminant(other)
+    }
+}
+
+impl hash::Hash for MenuState {
+    fn hash<H: hash::Hasher>(&self, state: &mut H) {
+        mem::discriminant(self).hash(state);
+    }
+}
+
+impl MenuState {
+    pub const GAME_PROMOTION: Self = Self::GamePromotion {
+        entity: Entity::from_raw(0),
+        color: PieceColor::WHITE,
+        from_sq: Square::DEFAULT,
+        to_sq: Square::DEFAULT,
+    };
 }
 
 impl fmt::Display for MenuState {
@@ -49,6 +71,7 @@ pub(super) fn on_enter_menu_state(
         MenuState::FenInput => fen_popup_data.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),
+        MenuState::GamePromotion { .. } => {}
         MenuState::DoGameOver => *game_over_timer = default(),
     }
 }
