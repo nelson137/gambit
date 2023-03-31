@@ -171,9 +171,7 @@ pub enum CapStateDiff {
 
 impl Command for CapStateUpdate {
     fn write(self, world: &mut World) {
-        let mut state = SystemState::<ResMut<CaptureState>>::new(world);
-        let mut capture_state = state.get_mut(world);
-        let cap = &mut capture_state[self.color][self.typ];
+        let cap = &mut world.resource_mut::<CaptureState>()[self.color][self.typ];
 
         // Update the capture count
         match self.diff {
@@ -208,8 +206,6 @@ impl Command for CapStateUpdate {
                 style.display = Display::Flex;
             }
         }
-
-        state.apply(world);
     }
 }
 
