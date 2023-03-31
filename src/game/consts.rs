@@ -9,7 +9,9 @@ pub const COLOR_BG: Color = Color::rgb(
     0x2b as f32 / u8::MAX as f32,
 );
 
-pub const FONT_PATH: &str = "fonts/FiraMono-Medium.ttf";
+pub const FONT_PATH: &str = "fonts/montserrat-700.otf";
+
+pub const TITLE_FONT_PATH: &str = "fonts/montserrat-800.otf";
 
 //==================================================
 // Sizes

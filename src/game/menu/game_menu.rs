@@ -4,8 +4,8 @@ use crate::{
     debug_name,
     game::{
         consts::{
-            INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_TITLE_SIZE, INIT_MENU_WIDTH, MENU_HEIGHT,
-            MENU_WIDTH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
+            FONT_PATH, INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_TITLE_SIZE, INIT_MENU_WIDTH,
+            MENU_HEIGHT, MENU_WIDTH, TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
         },
         ui::BoardContainer,
     },
@@ -77,8 +77,6 @@ pub fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<BoardCont
     commands.entity(parent_entity).add_child(menu_entity);
 }
 
-const MENU_FONT_PATH: &str = "fonts/montserrat-800.otf";
-
 #[derive(Component)]
 pub struct GameMenuTitle;
 
@@ -113,7 +111,7 @@ pub fn spawn_menu_elements(
     asset_server: Res<AssetServer>,
     q_menu: Query<Entity, With<GameMenu>>,
 ) {
-    let font = asset_server.load(MENU_FONT_PATH);
+    let font = asset_server.load(TITLE_FONT_PATH);
     let title_style = TextStyle { font, font_size: INIT_MENU_TITLE_SIZE, color: Color::WHITE };
     let margin = UiRect::top(Val::Percent(4.0));
     let title_entity = commands
@@ -162,7 +160,7 @@ pub fn spawn_menu_buttons(
         ..default()
     };
 
-    let font = asset_server.load(MENU_FONT_PATH);
+    let font = asset_server.load(FONT_PATH);
     let text_style = TextStyle { font, font_size: 48.0, color: Color::WHITE };
 
     let start_button_entity = commands
