@@ -135,7 +135,7 @@ pub fn spawn_promoters(
             })
             .id();
 
-        let tile_entity = board_state.tile(Square::new(chess::Square::H8));
+        let tile_entity = board_state.tile(Square::H8);
         commands.entity(tile_entity).add_child(promo_entity);
     }
 }
