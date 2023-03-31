@@ -16,7 +16,9 @@ impl Command for GameOver {
         match board.status() {
             BoardStatus::Checkmate => ShowCheckmateIcons.write(world),
             BoardStatus::Stalemate => ShowStalemateIcons.write(world),
-            BoardStatus::Ongoing => (),
+            BoardStatus::Ongoing => {
+                warn!("Running game over sequence when the game is still ongoing")
+            }
         }
 
         world.resource_mut::<State<MenuState>>().transition(MenuState::DoGameOver);
