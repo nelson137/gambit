@@ -11,6 +11,7 @@ use crate::{
         board::PromoteUiPiece,
         consts::{FONT_PATH, Z_PROMOTER},
         menu::MenuState,
+        moves::MovePiece,
     },
     utils::StateExts,
 };
@@ -141,15 +142,21 @@ pub fn spawn_promoters(
 }
 
 pub struct StartPromotion {
-    pub entity: Entity,
-    pub color: PieceColor,
-    pub from_sq: Square,
-    pub to_sq: Square,
+    entity: Entity,
+    color: PieceColor,
+    from_sq: Square,
+    to_sq: Square,
+}
+
+impl StartPromotion {
+    pub fn new(entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
+        Self { entity, color, from_sq, to_sq }
+    }
 }
 
 impl Command for StartPromotion {
     fn write(self, world: &mut World) {
-        let StartPromotion { entity, color, from_sq, to_sq } = self;
+        let Self { entity, color, from_sq, to_sq } = self;
 
         // Hide the piece
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
@@ -182,16 +189,28 @@ impl Command for StartPromotion {
 }
 
 pub struct FinishPromotion {
-    pub entity: Entity,
-    pub color: PieceColor,
-    pub from_sq: Square,
-    pub to_sq: Square,
-    pub event: PromotionEvent,
+    entity: Entity,
+    color: PieceColor,
+    from_sq: Square,
+    to_sq: Square,
+    event: PromotionEvent,
+}
+
+impl FinishPromotion {
+    pub fn new(
+        entity: Entity,
+        color: PieceColor,
+        from_sq: Square,
+        to_sq: Square,
+        event: PromotionEvent,
+    ) -> Self {
+        Self { entity, color, from_sq, to_sq, event }
+    }
 }
 
 impl Command for FinishPromotion {
     fn write(self, world: &mut World) {
-        let FinishPromotion { entity, color, from_sq, to_sq, event } = self;
+        let Self { entity, color, from_sq, to_sq, event } = self;
 
         // Hide the promotion UI
         let mut state = SystemState::<Query<(&PromotionUi, &mut Visibility)>>::new(world);
@@ -204,14 +223,14 @@ impl Command for FinishPromotion {
         }
         state.apply(world);
 
-        let mut board_state = world.resource_mut::<BoardState>();
         match event {
-            PromotionEvent::Promote(typ) => {
-                board_state.move_piece_inner(entity, color, from_sq, to_sq, Some(typ)).write(world);
-                PromoteUiPiece::new(entity, color, typ).write(world);
+            PromotionEvent::Promote(promo_typ) => {
+                MovePiece::new(entity, color, PieceType::PAWN, from_sq, to_sq, Some(promo_typ))
+                    .write(world);
+                PromoteUiPiece::new(entity, color, promo_typ).write(world);
             }
             PromotionEvent::Cancel => {
-                let from_sq_entity = board_state.tile(from_sq);
+                let from_sq_entity = world.resource_mut::<BoardState>().tile(from_sq);
                 world.entity_mut(from_sq_entity).push_children(&[entity]);
             }
         }
@@ -293,6 +312,6 @@ pub fn promotion_event_handler(
             return;
         };
 
-        commands.add(FinishPromotion { entity, color, from_sq, to_sq, event });
+        commands.add(FinishPromotion::new(entity, color, from_sq, to_sq, event));
     }
 }

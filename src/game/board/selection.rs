@@ -199,7 +199,6 @@ fn on_enter_selection_state(
             selection_state.transition_overwrite(SelectionState::SelectingDragging(to_sq));
         }
         SelectionState::DoMove(from_sq, to_sq) => {
-            // Re-parent piece to destination tile & start move
             commands.add(board_state.move_piece(from_sq, to_sq));
             // Transition to Unselected
             selection_state.transition_overwrite(SelectionState::Unselected);

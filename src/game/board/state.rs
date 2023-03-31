@@ -4,14 +4,11 @@ use std::{
 };
 
 use bevy::{ecs::system::Command, prelude::*};
-use chess::{BitBoard, Board, BoardStatus, ChessMove, File, MoveGen, EMPTY};
+use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPTY};
 
 use crate::{
     cli::CliArgs,
-    game::{
-        audio::PlayGameAudio, board::StartPromotion, captures::Captured, game_over::GameOver,
-        moves::MoveUiPiece, utils::GameCommandList,
-    },
+    game::{moves::StartMove, utils::GameCommandList},
 };
 
 use super::{
@@ -98,6 +95,10 @@ impl BoardState {
     // State
     //------------------------------
 
+    pub fn is_game_over(&self) -> bool {
+        matches!(self.board.status(), BoardStatus::Checkmate | BoardStatus::Stalemate)
+    }
+
     pub fn side_to_move(&self) -> PieceColor {
         self.board.side_to_move().into()
     }
@@ -119,6 +120,10 @@ impl BoardState {
             (Some(color), Some(typ)) => Some((PieceColor(color), PieceType(typ))),
             _ => None,
         }
+    }
+
+    pub fn my_castle_rights(&self) -> CastleRights {
+        self.board.my_castle_rights()
     }
 
     pub fn king_square(&self, color: PieceColor) -> Square {
@@ -183,6 +188,22 @@ impl BoardState {
             Entry::Occupied(_) => panic!("highlight already in the state at {square}"),
             Entry::Vacant(e) => e.insert(entity),
         };
+    }
+
+    #[must_use]
+    pub fn update_move_highlights(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
+        let mut cmd_list = GameCommandList::default();
+
+        let hl_1 = self.highlight(from_sq);
+        let hl_2 = self.highlight(to_sq);
+        if let Some((prev_hl_1, prev_hl_2)) = self.last_move_highlights.replace((hl_1, hl_2)) {
+            cmd_list.add(HideHighlight(Some(prev_hl_1)));
+            cmd_list.add(HideHighlight(Some(prev_hl_2)));
+        }
+        cmd_list.add(ShowHighlight(hl_1));
+        cmd_list.add(ShowHighlight(hl_2));
+
+        cmd_list
     }
 
     //------------------------------
@@ -326,26 +347,38 @@ impl BoardState {
     // Move
     //------------------------------
 
+    pub fn make_board_move(
+        &mut self,
+        from_sq: Square,
+        to_sq: Square,
+        promotion: Option<PieceType>,
+    ) {
+        let r#move = ChessMove::new(from_sq.0, to_sq.0, promotion.map(|p| p.0));
+        self.board = self.board.make_move_new(r#move);
+    }
+
     #[must_use]
     pub fn update_piece(
         &mut self,
         color: PieceColor,
         from_sq: Square,
         to_sq: Square,
-    ) -> Option<impl Command> {
+    ) -> Option<(Entity, PieceColor, PieceType)> {
         let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
             panic!("Failed to move board state piece: no piece found at source square {from_sq}")
         });
 
-        let captured_piece = match self.en_passant() {
+        match self.en_passant() {
             // `chess::Board::en_passant` returns an optional square which is that of the piece that
             // can be captured in the en passant move that is currently available on the board.
             // The current move is this en passant if there is an en passant square and the
-            // destination of the move is the square behind it (from the perspective of the *other*
-            // player, hence the `!color`).
-            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => {
+            // destination of the move is the square behind it (from the perspective of the
+            // capturer).
+            Some(ep_sq) if ep_sq.forward(color).map(|sq| sq == to_sq).unwrap_or(false) => {
                 self.pieces.insert(to_sq, piece);
-                self.pieces.remove(&ep_sq).map(|entity| (entity, ep_sq))
+                self.pieces
+                    .remove(&ep_sq)
+                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
             }
             _ => match self.pieces.entry(to_sq) {
                 // Capture
@@ -353,7 +386,7 @@ impl BoardState {
                     let value = entry.get_mut();
                     let old_piece = *value;
                     *value = piece;
-                    Some((old_piece, to_sq))
+                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
                 }
                 // Move
                 Entry::Vacant(entry) => {
@@ -361,10 +394,7 @@ impl BoardState {
                     None
                 }
             },
-        };
-
-        captured_piece
-            .map(|(entity, sq)| Captured::new(entity, self.color_on(sq), self.piece_on(sq)))
+        }
     }
 
     #[must_use]
@@ -372,110 +402,6 @@ impl BoardState {
         let entity = self.piece(from_sq);
         let color = self.color_on(from_sq);
         let typ = self.piece_on(from_sq);
-
-        if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
-            self.start_promotion(entity, color, from_sq, to_sq)
-        } else {
-            self.move_piece_inner(entity, color, from_sq, to_sq, None)
-        }
-    }
-
-    #[must_use]
-    fn start_promotion(
-        &mut self,
-        entity: Entity,
-        color: PieceColor,
-        from_sq: Square,
-        to_sq: Square,
-    ) -> GameCommandList {
-        let mut cmd_list = GameCommandList::default();
-        cmd_list.add(self.unselect_square());
-        cmd_list.add(StartPromotion { entity, color, from_sq, to_sq });
-        cmd_list
-    }
-
-    #[must_use]
-    pub fn move_piece_inner(
-        &mut self,
-        entity: Entity,
-        color: PieceColor,
-        from_sq: Square,
-        to_sq: Square,
-        promotion: Option<PieceType>,
-    ) -> GameCommandList {
-        let mut cmd_list = GameCommandList::default();
-
-        let typ = self.piece_on(from_sq);
-
-        cmd_list.add(self.unselect_square());
-
-        // Move UI piece
-        cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
-
-        let mut is_castle = false;
-        if typ == PieceType::KING {
-            let castle_rights = self.board.my_castle_rights();
-            let back_rank = color.to_my_backrank();
-            let kingside_sq = Square::from_coords(back_rank, File::G);
-            let queenside_sq = Square::from_coords(back_rank, File::C);
-
-            // Move UI rook
-            if castle_rights.has_kingside() && to_sq == kingside_sq {
-                let from_sq = Square::from_coords(back_rank, File::H);
-                let to_sq = Square::from_coords(back_rank, File::F);
-                let entity = self.piece(from_sq);
-                cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
-                is_castle = true;
-            } else if castle_rights.has_queenside() && to_sq == queenside_sq {
-                let from_sq = Square::from_coords(back_rank, File::A);
-                let to_sq = Square::from_coords(back_rank, File::D);
-                let entity = self.piece(from_sq);
-                cmd_list.add(MoveUiPiece { entity, color, from_sq, to_sq });
-                is_castle = true;
-            }
-        }
-
-        let is_capture = match self.en_passant() {
-            // `chess::Board::en_passant` returns an optional square which is that of the piece that
-            // can be captured in the en passant move that is currently available on the board.
-            // The current move is this en passant if there is an en passant square and the
-            // destination of the move is the square behind it (from the perspective of the *other*
-            // player, hence the `!color`).
-            Some(ep_sq) if ep_sq.backward(!color).map(|sq| sq == to_sq).unwrap_or(false) => true,
-            _ => self.pieces.contains_key(&to_sq),
-        };
-
-        // Make move on board
-        let r#move = ChessMove::new(from_sq.0, to_sq.0, promotion.map(|p| p.0));
-        self.board = self.board.make_move_new(r#move);
-
-        // Play audio
-        if promotion.is_some() {
-            cmd_list.add(PlayGameAudio::Promote);
-        } else if is_capture {
-            cmd_list.add(PlayGameAudio::Capture);
-        } else if is_castle {
-            cmd_list.add(PlayGameAudio::Castle);
-        } else {
-            cmd_list.add(match color {
-                PieceColor::BLACK => PlayGameAudio::MoveOpponent,
-                PieceColor::WHITE => PlayGameAudio::MoveSelf,
-            });
-        }
-
-        let hl_1 = self.highlight(from_sq);
-        let hl_2 = self.highlight(to_sq);
-        if let Some((prev_hl_1, prev_hl_2)) = self.last_move_highlights.replace((hl_1, hl_2)) {
-            cmd_list.add(HideHighlight(Some(prev_hl_1)));
-            cmd_list.add(HideHighlight(Some(prev_hl_2)));
-        }
-        cmd_list.add(ShowHighlight(hl_1));
-        cmd_list.add(ShowHighlight(hl_2));
-
-        if let BoardStatus::Checkmate | BoardStatus::Stalemate = self.board.status() {
-            cmd_list.add(GameOver);
-        }
-
-        cmd_list
+        StartMove::new(entity, color, typ, from_sq, to_sq)
     }
 }

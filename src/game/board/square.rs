@@ -62,8 +62,12 @@ impl Square {
         Self::rank_to_char(self.get_rank())
     }
 
+    pub fn forward(self, color: PieceColor) -> Option<Self> {
+        self.0.forward(color.0).map(Self)
+    }
+
     pub fn backward(self, color: PieceColor) -> Option<Self> {
-        self.0.backward(color.0).map(Self::new)
+        self.0.backward(color.0).map(Self)
     }
 
     pub fn move_to(&mut self, other: Self) {
