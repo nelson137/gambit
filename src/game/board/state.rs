@@ -450,7 +450,9 @@ impl BoardState {
         self.board = self.board.make_move_new(r#move);
 
         // Play audio
-        if is_capture {
+        if promotion.is_some() {
+            cmd_list.add(PlayGameAudio::Promote);
+        } else if is_capture {
             cmd_list.add(PlayGameAudio::Capture);
         } else if is_castle {
             cmd_list.add(PlayGameAudio::Castle);

@@ -10,6 +10,7 @@ pub struct GameAudioHandles {
     pub move_check: Handle<AudioSource>,
     pub move_opponent: Handle<AudioSource>,
     pub move_self: Handle<AudioSource>,
+    pub promote: Handle<AudioSource>,
 }
 
 impl FromWorld for GameAudioHandles {
@@ -21,6 +22,7 @@ impl FromWorld for GameAudioHandles {
             move_check: asset_server.load("audio/move-check.flac"),
             move_opponent: asset_server.load("audio/move-opponent.flac"),
             move_self: asset_server.load("audio/move-self.flac"),
+            promote: asset_server.load("audio/promote.flac"),
         }
     }
 }
@@ -35,6 +37,7 @@ pub enum PlayGameAudio {
     // MoveCheck,
     MoveOpponent,
     MoveSelf,
+    Promote,
 }
 
 impl Command for PlayGameAudio {
@@ -48,6 +51,7 @@ impl Command for PlayGameAudio {
             Self::Castle => &audio_handles.castle,
             Self::MoveOpponent => &audio_handles.move_opponent,
             Self::MoveSelf => &audio_handles.move_self,
+            Self::Promote => &audio_handles.promote,
         }
         .clone_weak();
 
