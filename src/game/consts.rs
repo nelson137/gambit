@@ -1,4 +1,13 @@
-use bevy::prelude::*;
+use bevy::{log::Level, prelude::*};
+
+pub const LOG_LEVEL: Level = Level::INFO;
+
+#[cfg(all(not(debug_assertions), not(feature = "trace_logs")))]
+pub const LOG_FILTER: &str = "wgpu=error";
+#[cfg(all(debug_assertions, not(feature = "trace_logs")))]
+pub const LOG_FILTER: &str = "wgpu=error,gambit=debug";
+#[cfg(all(feature = "trace_logs"))]
+pub const LOG_FILTER: &str = "wgpu=error,gambit=trace";
 
 /// The game background color.
 ///

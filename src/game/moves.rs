@@ -32,6 +32,7 @@ impl StartMove {
 impl Command for StartMove {
     fn write(self, world: &mut World) {
         let Self { entity, color, typ, from_sq, to_sq } = self;
+        trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
         let mut board_state = world.resource_mut::<BoardState>();
 
@@ -70,6 +71,8 @@ impl MovePiece {
 impl Command for MovePiece {
     fn write(self, world: &mut World) {
         let Self { entity, color, typ, from_sq, to_sq, promotion } = self;
+        trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
+
         let mut board_state = world.resource_mut::<BoardState>();
         let mut cmd_list = GameCommandList::default();
 
@@ -146,6 +149,8 @@ impl MoveUiPiece {
 
 impl Command for MoveUiPiece {
     fn write(self, world: &mut World) {
+        trace!(to_sq = %self.to_sq, "Move UI piece");
+
         if let Some(mut square) = world.entity_mut(self.entity).get_mut::<Square>() {
             square.move_to(self.to_sq);
         }

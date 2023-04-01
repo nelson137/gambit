@@ -145,6 +145,7 @@ struct ShowPromoter(pub PieceColor, pub Square);
 
 impl Command for ShowPromoter {
     fn write(self, world: &mut World) {
+        trace!(color = ?self.0, square = %self.1, "Show promoter");
         SetPromoterVisibility::new(self.0, Some(self.1)).write(world);
     }
 }
@@ -153,6 +154,7 @@ struct HidePromoter(pub PieceColor);
 
 impl Command for HidePromoter {
     fn write(self, world: &mut World) {
+        trace!(color = ?self.0, "Hide promoter");
         SetPromoterVisibility::new(self.0, None).write(world);
     }
 }
@@ -210,6 +212,7 @@ impl StartPromotion {
 impl Command for StartPromotion {
     fn write(self, world: &mut World) {
         let Self { entity, color, from_sq, to_sq } = self;
+        trace!(?color, %from_sq, %to_sq, "Start promotion");
 
         // Hide the piece
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
@@ -250,6 +253,7 @@ impl FinishPromotion {
 impl Command for FinishPromotion {
     fn write(self, world: &mut World) {
         let Self { entity, color, from_sq, to_sq, event } = self;
+        trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
 
         HidePromoter(color).write(world);
 
@@ -297,7 +301,7 @@ pub fn promotion_ui_sizes(
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum PromotionEvent {
     Promote(PieceType),
     Cancel,

@@ -164,6 +164,7 @@ impl CapStateUpdate {
     }
 }
 
+#[derive(Debug)]
 pub enum CapStateDiff {
     Increment,
     Set(u8),
@@ -171,6 +172,8 @@ pub enum CapStateDiff {
 
 impl Command for CapStateUpdate {
     fn write(self, world: &mut World) {
+        trace!(side = ?self.color, typ = ?self.typ, action = ?self.diff, "Update capture state");
+
         let cap = &mut world.resource_mut::<CaptureState>()[self.color][self.typ];
 
         // Update the capture count
@@ -225,6 +228,8 @@ impl Captured {
 impl Command for Captured {
     fn write(self, world: &mut World) {
         let Self { entity, mut color, typ } = self;
+
+        trace!(?color, ?typ, "Capture piece");
 
         // The count and capture image need to be updated for the player who performed the capture,
         // i.e. the one whose color is the opposite of that of the captured piece.

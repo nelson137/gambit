@@ -12,6 +12,8 @@ pub struct GameOver;
 
 impl Command for GameOver {
     fn write(self, world: &mut World) {
+        trace!("Game over");
+
         let board = world.resource::<BoardState>().board();
         match board.status() {
             BoardStatus::Checkmate => ShowCheckmateIcons.write(world),

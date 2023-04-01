@@ -1,6 +1,6 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
-use bevy::prelude::*;
+use bevy::{log::LogPlugin, prelude::*};
 use bevy_egui::EguiPlugin;
 use clap::Parser;
 
@@ -12,7 +12,7 @@ mod utils;
 use self::{
     cli::CliArgs,
     game::{
-        consts::{COLOR_BG, INIT_WIN_HEIGHT, INIT_WIN_WIDTH},
+        consts::{COLOR_BG, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, LOG_FILTER, LOG_LEVEL},
         GameLogicPlugin,
     },
     utils::DebugBevyInspectorPlugin,
@@ -23,16 +23,20 @@ fn main() {
         // Cli
         .insert_resource(CliArgs::parse())
         // Plugins
-        .add_plugins(DefaultPlugins.set(WindowPlugin {
-            window: WindowDescriptor {
-                title: "Gambit".into(),
-                width: INIT_WIN_WIDTH,
-                height: INIT_WIN_HEIGHT,
-                resizable: true,
-                ..default()
-            },
-            ..default()
-        }))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    window: WindowDescriptor {
+                        title: "Gambit".into(),
+                        width: INIT_WIN_WIDTH,
+                        height: INIT_WIN_HEIGHT,
+                        resizable: true,
+                        ..default()
+                    },
+                    ..default()
+                })
+                .set(LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() }),
+        )
         .add_plugin(EguiPlugin)
         .add_plugin(GameLogicPlugin)
         .add_plugin(DebugBevyInspectorPlugin)

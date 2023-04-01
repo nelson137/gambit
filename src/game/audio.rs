@@ -42,6 +42,8 @@ pub enum PlayGameAudio {
 
 impl Command for PlayGameAudio {
     fn write(self, world: &mut World) {
+        trace!(action = ?self, "Play audio");
+
         let checkers = *world.resource::<BoardState>().board().checkers();
 
         let audio_handles = world.resource::<GameAudioHandles>();

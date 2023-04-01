@@ -177,6 +177,8 @@ impl PromoteUiPiece {
 
 impl Command for PromoteUiPiece {
     fn write(self, world: &mut World) {
+        trace!(color = ?self.color, typ = ?self.typ, "Promote UI piece");
+
         let new_asset_path = (self.color, self.typ).asset_path();
         let new_asset = world.resource_mut::<AssetServer>().load(new_asset_path);
 

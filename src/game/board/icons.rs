@@ -119,6 +119,8 @@ impl Command for ShowCheckmateIcons {
         let winner_square = board_state.king_square(winner_color);
         let winner_tile_entity = board_state.tile(winner_square);
 
+        trace!(%winner_square, %loser_square, "Show checkmate icons");
+
         #[rustfmt::skip]
         match loser_color {
             PieceColor::BLACK => set_end_game_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
@@ -140,6 +142,8 @@ impl Command for ShowStalemateIcons {
 
         let white_square = board_state.king_square(PieceColor::WHITE);
         let white_tile_entity = board_state.tile(white_square);
+
+        trace!(%white_square, %black_square, "Show stalemate icons");
 
         set_end_game_icon::<DrawIconBlack>(world, black_tile_entity, black_square);
 
