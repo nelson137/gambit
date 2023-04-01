@@ -219,9 +219,12 @@ pub(super) fn game_menu_elements_sizes(
     let scale = menu_width / INIT_MENU_WIDTH;
 
     fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<Text>) {
+        const STEP: u32 = 8;
+        const HALF_STEP: u32 = STEP / 2;
+        let stepped_font_size = (((font_size as u32 + HALF_STEP) / STEP) * STEP) as f32;
         move |mut text: Mut<Text>| {
             for section in &mut text.sections {
-                section.style.font_size = font_size;
+                section.style.font_size = stepped_font_size;
             }
         }
     }
