@@ -141,6 +141,59 @@ pub fn spawn_promoters(
     }
 }
 
+struct ShowPromoter(pub PieceColor, pub Square);
+
+impl Command for ShowPromoter {
+    fn write(self, world: &mut World) {
+        SetPromoterVisibility::new(self.0, Some(self.1)).write(world);
+    }
+}
+
+struct HidePromoter(pub PieceColor);
+
+impl Command for HidePromoter {
+    fn write(self, world: &mut World) {
+        SetPromoterVisibility::new(self.0, None).write(world);
+    }
+}
+
+struct SetPromoterVisibility {
+    color: PieceColor,
+    square: Option<Square>,
+}
+
+impl SetPromoterVisibility {
+    pub fn new(color: PieceColor, square: Option<Square>) -> Self {
+        Self { color, square }
+    }
+}
+
+impl Command for SetPromoterVisibility {
+    fn write(self, world: &mut World) {
+        let mut state = SystemState::<(
+            Commands,
+            Res<BoardState>,
+            Query<(Entity, &PromotionUi, &mut Visibility)>,
+        )>::new(world);
+        let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
+
+        for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
+            if ui_color == self.color {
+                match self.square {
+                    Some(square) => {
+                        commands.entity(entity).set_parent(board_state.tile(square));
+                        vis.is_visible = true;
+                    }
+                    None => vis.is_visible = false,
+                }
+                break;
+            }
+        }
+
+        state.apply(world);
+    }
+}
+
 pub struct StartPromotion {
     entity: Entity,
     color: PieceColor,
@@ -163,21 +216,7 @@ impl Command for StartPromotion {
             vis.is_visible = false;
         }
 
-        // Show the promotion UI
-        let mut state = SystemState::<(
-            Commands,
-            Res<BoardState>,
-            Query<(Entity, &PromotionUi, &mut Visibility)>,
-        )>::new(world);
-        let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
-        for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
-            if ui_color == color {
-                commands.entity(entity).set_parent(board_state.tile(to_sq));
-                vis.is_visible = true;
-                break;
-            }
-        }
-        state.apply(world);
+        ShowPromoter(color, to_sq).write(world);
 
         world.resource_mut::<State<MenuState>>().transition(MenuState::GamePromotion {
             entity,
@@ -212,16 +251,7 @@ impl Command for FinishPromotion {
     fn write(self, world: &mut World) {
         let Self { entity, color, from_sq, to_sq, event } = self;
 
-        // Hide the promotion UI
-        let mut state = SystemState::<Query<(&PromotionUi, &mut Visibility)>>::new(world);
-        let mut q_promo_ui = state.get_mut(world);
-        for (&PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
-            if ui_color == color {
-                vis.is_visible = false;
-                break;
-            }
-        }
-        state.apply(world);
+        HidePromoter(color).write(world);
 
         match event {
             PromotionEvent::Promote(promo_typ) => {
