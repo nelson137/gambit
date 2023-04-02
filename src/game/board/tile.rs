@@ -36,12 +36,6 @@ pub fn spawn_tiles(
     q_board: Query<Entity, With<UiBoard>>,
 ) {
     let board = q_board.single();
-    let font = asset_server.load(FONT_PATH);
-    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
-    let file_label_margins =
-        UiRect { bottom: Val::Percent(3.5), right: Val::Percent(8.0), ..default() };
-    let rank_label_margins =
-        UiRect { top: Val::Percent(1.0), left: Val::Percent(4.5), ..default() };
 
     for square in chess::ALL_SQUARES.map(Square::new) {
         let file = square.get_file();
@@ -69,59 +63,41 @@ pub fn spawn_tiles(
             .with_children(|cmds| {
                 pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 
+                let file_label_pos =
+                    UiRect { bottom: Val::Percent(3.5), right: Val::Percent(8.0), ..default() };
+                let rank_label_pos =
+                    UiRect { top: Val::Percent(1.0), left: Val::Percent(4.5), ..default() };
+                let text_style = TextStyle {
+                    color: if file_rank_sum % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                    font_size: BOARD_TEXT_FONT_SIZE,
+                    font: asset_server.load(FONT_PATH),
+                };
+
                 // File markers
                 if square.get_rank() == Rank::First {
-                    let text_style = TextStyle {
-                        color: if file.to_index() % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
-                        font_size: BOARD_TEXT_FONT_SIZE,
-                        font: font.clone(),
-                    };
-                    cmds.spawn(NodeBundle {
+                    cmds.spawn(TextBundle {
+                        text: Text::from_section(square.file_char(), text_style.clone()),
                         style: Style {
                             position_type: PositionType::Absolute,
-                            position: pos_top_left,
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            justify_content: JustifyContent::FlexEnd,
-                            align_items: AlignItems::FlexEnd,
+                            position: file_label_pos,
                             ..default()
                         },
                         z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
-                    })
-                    .with_children(|cmds| {
-                        cmds.spawn(TextBundle {
-                            text: Text::from_section(square.file_char(), text_style),
-                            style: Style { margin: file_label_margins, ..default() },
-                            ..default()
-                        });
                     });
                 }
 
                 // Rank markers
                 if square.get_file() == File::A {
-                    let text_style = TextStyle {
-                        color: if rank.to_index() % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
-                        font_size: BOARD_TEXT_FONT_SIZE,
-                        font: font.clone(),
-                    };
-                    cmds.spawn(NodeBundle {
+                    cmds.spawn(TextBundle {
+                        text: Text::from_section(square.rank_char(), text_style),
                         style: Style {
                             position_type: PositionType::Absolute,
-                            position: pos_top_left,
-                            size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
-                            justify_content: JustifyContent::FlexStart,
-                            align_items: AlignItems::FlexStart,
+                            position: rank_label_pos,
                             ..default()
                         },
                         z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
-                    })
-                    .with_children(|cmds| {
-                        cmds.spawn(TextBundle {
-                            text: Text::from_section(square.rank_char(), text_style),
-                            style: Style { margin: rank_label_margins, ..default() },
-                            ..default()
-                        });
                     });
                 }
             })
