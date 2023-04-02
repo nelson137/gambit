@@ -57,7 +57,7 @@ pub fn spawn_hints(
                         ..default()
                     },
                     visibility: Visibility::INVISIBLE,
-                    z_index: ZIndex::Local(Z_MOVE_HINT),
+                    z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },
             ))
@@ -87,7 +87,7 @@ pub fn spawn_hints(
                         ..default()
                     },
                     visibility: Visibility::INVISIBLE,
-                    z_index: ZIndex::Local(Z_MOVE_HINT),
+                    z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },
             ))

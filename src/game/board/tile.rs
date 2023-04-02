@@ -62,7 +62,7 @@ pub fn spawn_tiles(
                         size: Size::new(Val::Percent(100.0 / 8.0), Val::Percent(100.0 / 8.0)),
                         ..default()
                     },
-                    z_index: ZIndex::Local(Z_TILE),
+                    z_index: ZIndex::Global(Z_TILE),
                     ..default()
                 },
             ))
@@ -85,7 +85,7 @@ pub fn spawn_tiles(
                             align_items: AlignItems::FlexEnd,
                             ..default()
                         },
-                        z_index: ZIndex::Local(Z_NOTATION_TEXT),
+                        z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
                     })
                     .with_children(|cmds| {
@@ -113,7 +113,7 @@ pub fn spawn_tiles(
                             align_items: AlignItems::FlexStart,
                             ..default()
                         },
-                        z_index: ZIndex::Local(Z_NOTATION_TEXT),
+                        z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
                     })
                     .with_children(|cmds| {

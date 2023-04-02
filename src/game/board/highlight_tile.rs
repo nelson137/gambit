@@ -53,7 +53,7 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                         ..default()
                     },
                     visibility: Visibility::INVISIBLE,
-                    z_index: ZIndex::Local(Z_HIGHLIGHT_TILE),
+                    z_index: ZIndex::Global(Z_HIGHLIGHT_TILE),
                     ..default()
                 },
             ))

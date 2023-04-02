@@ -152,7 +152,7 @@ pub fn spawn_pieces(
                         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                         ..default()
                     },
-                    z_index: ZIndex::Local(Z_PIECE),
+                    z_index: ZIndex::Global(Z_PIECE),
                     ..default()
                 },
             ))
