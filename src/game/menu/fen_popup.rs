@@ -315,8 +315,11 @@ mod egui {
 
         data.sync();
 
-        if let FenPopupInteraction::Submit = interaction {
-            data.fen.replace_range(.., DEFAULT_BOARD_FEN);
+        match interaction {
+            FenPopupInteraction::Submit if data.fen.is_empty() => {
+                data.fen.replace_range(.., DEFAULT_BOARD_FEN)
+            }
+            _ => {}
         }
 
         interaction
