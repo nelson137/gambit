@@ -341,7 +341,8 @@ pub fn promotion_event_handler(
         // frame, there may be 2 events fired but only the first is used.
         event_iter.count();
 
-        let &MenuState::GamePromotion { entity, color, from_sq, to_sq } = menu_state.current() else {
+        let &MenuState::GamePromotion { entity, color, from_sq, to_sq } = menu_state.current()
+        else {
             warn!("Ignoring received promotion event, not in promotion state");
             return;
         };

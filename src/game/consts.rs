@@ -6,7 +6,7 @@ pub const LOG_LEVEL: Level = Level::INFO;
 pub const LOG_FILTER: &str = "wgpu=error";
 #[cfg(all(debug_assertions, not(feature = "trace_logs")))]
 pub const LOG_FILTER: &str = "wgpu=error,gambit=debug";
-#[cfg(all(feature = "trace_logs"))]
+#[cfg(feature = "trace_logs")]
 pub const LOG_FILTER: &str = "wgpu=error,gambit=trace";
 
 /// The game background color.
