@@ -38,11 +38,13 @@ impl Command for LoadGame {
         spawn_pieces.run((), system_state.get_mut(world));
         system_state.apply(world);
 
+        load_capture_state(world);
+
         world.resource_mut::<State<MenuState>>().transition_replace(MenuState::Game);
     }
 }
 
-pub(super) fn load_capture_state(world: &mut World) {
+fn load_capture_state(world: &mut World) {
     let board_state = world.get_resource::<BoardState>().unwrap_or_else(|| panic!("TODO"));
     let board = board_state.board();
 

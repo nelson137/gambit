@@ -23,7 +23,6 @@ use self::{
     },
     camera::setup_camera,
     captures::CaptureState,
-    load::load_capture_state,
     menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
     ui::{captures_images_sizes, spawn_ui},
@@ -58,7 +57,6 @@ impl Plugin for GameLogicPlugin {
                             spawn_end_game_icons,
                         },
                     },
-                    load_capture_state
                 }
             })
             // Systems
