@@ -2,12 +2,10 @@ use bevy::prelude::*;
 
 use crate::{
     debug_name,
-    game::{
-        consts::{
-            FONT_PATH, INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_TITLE_SIZE, INIT_MENU_WIDTH,
-            MENU_HEIGHT, MENU_WIDTH, TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
-        },
-        ui::BoardContainer,
+    game::consts::{
+        FONT_PATH, INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_HEIGHT, INIT_MENU_TITLE_SIZE,
+        INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
+        TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
     },
     utils::StateExts,
 };
@@ -29,6 +27,8 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
                 position_type: PositionType::Absolute,
                 position: UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() },
                 size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
                 ..default()
             },
             z_index: ZIndex::Global(Z_GAME_MENU_DIM_LAYER),
@@ -48,11 +48,8 @@ const MENU_COLOR: Color = Color::rgba(
     0.975,
 );
 
-pub fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<BoardContainer>>) {
+pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<GameMenuDimLayer>>) {
     let Ok(parent_entity) = q_parent.get_single() else { return };
-
-    const LEFT: Val = Val::Percent((100.0 - MENU_WIDTH) / 2.0);
-    const TOP: Val = Val::Percent((100.0 - MENU_HEIGHT) / 2.0);
 
     let menu_entity = commands
         .spawn((
@@ -61,9 +58,7 @@ pub fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<BoardCont
             NodeBundle {
                 background_color: MENU_COLOR.into(),
                 style: Style {
-                    position_type: PositionType::Absolute,
-                    position: UiRect { top: TOP, left: LEFT, ..default() },
-                    size: Size::new(Val::Percent(MENU_WIDTH), Val::Percent(MENU_HEIGHT)),
+                    size: Size::new(Val::Px(INIT_MENU_WIDTH), Val::Px(INIT_MENU_HEIGHT)),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceEvenly,
                     align_items: AlignItems::Center,
@@ -75,6 +70,27 @@ pub fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<BoardCont
         ))
         .id();
     commands.entity(parent_entity).add_child(menu_entity);
+}
+
+pub fn menu_size(windows: Res<Windows>, mut q_menu: Query<&mut Style, With<GameMenu>>) {
+    let Some(win) = windows.get_primary() else { return };
+    let Ok(mut menu_style) = q_menu.get_single_mut() else { return };
+
+    let win_width_scale = win.width() / INIT_WIN_WIDTH;
+    let win_height_scale = win.height() / INIT_WIN_HEIGHT;
+    let scale = win_width_scale.min(win_height_scale);
+
+    let width_scale = scale * MENU_WIDTH_RATIO;
+    let height_scale = scale * MENU_HEIGHT_RATIO;
+
+    let width = (width_scale * INIT_WIN_WIDTH) as u32;
+    let height = (height_scale * INIT_WIN_HEIGHT) as u32;
+
+    const MENU_SIZE_STEP: u32 = 32;
+    let width_stepped = ((width + MENU_SIZE_STEP / 2) / MENU_SIZE_STEP) * MENU_SIZE_STEP;
+    let height_stepped = ((height + MENU_SIZE_STEP / 2) / MENU_SIZE_STEP) * MENU_SIZE_STEP;
+
+    menu_style.size = Size::new(Val::Px(width_stepped as f32), Val::Px(height_stepped as f32));
 }
 
 #[derive(Component)]

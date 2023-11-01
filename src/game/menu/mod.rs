@@ -1,4 +1,5 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, ui::UiSystem};
+use bevy_startup_tree::{startup_tree, AddStartupTree};
 
 use super::board::{
     promotion_buttons, promotion_cancel_click_handler, promotion_event_handler, promotion_ui_sizes,
@@ -24,6 +25,17 @@ impl Plugin for GameMenuPlugin {
             // States
             .add_state(menu_state)
             // Systems
+            .add_startup_tree(startup_tree! {
+                spawn_menu_dim_layer => {
+                    spawn_menu => {
+                        spawn_menu_elements => spawn_menu_buttons,
+                    },
+                },
+            })
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                SystemSet::new().before(UiSystem::Flex).with_system(menu_size),
+            )
             .add_system_set(
                 SystemSet::on_enter(MenuState::FenInput).with_system(on_enter_menu_state),
             )

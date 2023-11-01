@@ -24,9 +24,7 @@ use self::{
     camera::setup_camera,
     captures::CaptureState,
     load::load_capture_state,
-    menu::{
-        spawn_menu, spawn_menu_buttons, spawn_menu_dim_layer, spawn_menu_elements, GameMenuPlugin,
-    },
+    menu::GameMenuPlugin,
     mouse::{spawn_drag_container, MouseLogicPlugin},
     ui::{captures_images_sizes, spawn_ui},
 };
@@ -50,12 +48,8 @@ impl Plugin for GameLogicPlugin {
             .add_startup_system(setup_camera)
             .add_startup_system(spawn_drag_container)
             .add_startup_tree(startup_tree! {
-                spawn_menu_dim_layer,
                 spawn_ui => {
                     spawn_board => {
-                        spawn_menu => {
-                            spawn_menu_elements => spawn_menu_buttons,
-                        },
                         spawn_tiles => {
                             spawn_highlight_tiles,
                             spawn_hints,
