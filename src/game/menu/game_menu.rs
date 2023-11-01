@@ -7,7 +7,7 @@ use crate::{
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
         TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
     },
-    utils::StateExts,
+    utils::{RoundToNearest, StateExts},
 };
 
 use super::MenuState;
@@ -87,8 +87,8 @@ pub fn menu_size(windows: Res<Windows>, mut q_menu: Query<&mut Style, With<GameM
     let height = (height_scale * INIT_WIN_HEIGHT) as u32;
 
     const MENU_SIZE_STEP: u32 = 32;
-    let width_stepped = ((width + MENU_SIZE_STEP / 2) / MENU_SIZE_STEP) * MENU_SIZE_STEP;
-    let height_stepped = ((height + MENU_SIZE_STEP / 2) / MENU_SIZE_STEP) * MENU_SIZE_STEP;
+    let width_stepped = width.round_to_nearest(MENU_SIZE_STEP);
+    let height_stepped = height.round_to_nearest(MENU_SIZE_STEP);
 
     menu_style.size = Size::new(Val::Px(width_stepped as f32), Val::Px(height_stepped as f32));
 }
@@ -235,9 +235,7 @@ pub(super) fn game_menu_elements_sizes(
     let scale = menu_width / INIT_MENU_WIDTH;
 
     fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<Text>) {
-        const STEP: u32 = 8;
-        const HALF_STEP: u32 = STEP / 2;
-        let stepped_font_size = (((font_size as u32 + HALF_STEP) / STEP) * STEP) as f32;
+        let stepped_font_size = (font_size as u32).round_to_nearest(8) as f32;
         move |mut text: Mut<Text>| {
             for section in &mut text.sections {
                 section.style.font_size = stepped_font_size;
