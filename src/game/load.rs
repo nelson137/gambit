@@ -38,14 +38,15 @@ impl Command for LoadGame {
         spawn_pieces.run((), system_state.get_mut(world));
         system_state.apply(world);
 
-        load_capture_state(world);
+        let mut system_state = SystemState::<(Commands, Res<BoardState>)>::new(world);
+        load_capture_state.run((), system_state.get_mut(world));
+        system_state.apply(world);
 
         world.resource_mut::<State<MenuState>>().transition_replace(MenuState::Game);
     }
 }
 
-fn load_capture_state(world: &mut World) {
-    let board_state = world.get_resource::<BoardState>().unwrap_or_else(|| panic!("TODO"));
+fn load_capture_state(mut commands: Commands, board_state: Res<BoardState>) {
     let board = board_state.board();
 
     let capture_counts = update_capture_counts(board);
@@ -59,7 +60,7 @@ fn load_capture_state(world: &mut World) {
             let typ = PieceType(typ);
             let count = capture_counts[color][typ];
             let diff = CapStateDiff::Set(count);
-            CapStateUpdate::new(color, typ, diff).write(world);
+            commands.add(CapStateUpdate::new(color, typ, diff));
         }
     }
 }
