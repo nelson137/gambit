@@ -1,5 +1,7 @@
 target/
 
+/tarpaulin
+
 .vscode/*
 !/.vscode/tasks.json
 !/.vscode/launch.json
