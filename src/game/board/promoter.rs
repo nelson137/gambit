@@ -141,59 +141,28 @@ pub fn spawn_promoters(
     }
 }
 
-struct ShowPromoter(pub PieceColor, pub Square);
+fn set_promoter_visibility(world: &mut World, color: PieceColor, square: Option<Square>) {
+    let mut state = SystemState::<(
+        Commands,
+        Res<BoardState>,
+        Query<(Entity, &PromotionUi, &mut Visibility)>,
+    )>::new(world);
+    let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
 
-impl Command for ShowPromoter {
-    fn write(self, world: &mut World) {
-        trace!(color = ?self.0, square = %self.1, "Show promoter");
-        SetPromoterVisibility::new(self.0, Some(self.1)).write(world);
-    }
-}
-
-struct HidePromoter(pub PieceColor);
-
-impl Command for HidePromoter {
-    fn write(self, world: &mut World) {
-        trace!(color = ?self.0, "Hide promoter");
-        SetPromoterVisibility::new(self.0, None).write(world);
-    }
-}
-
-struct SetPromoterVisibility {
-    color: PieceColor,
-    square: Option<Square>,
-}
-
-impl SetPromoterVisibility {
-    pub fn new(color: PieceColor, square: Option<Square>) -> Self {
-        Self { color, square }
-    }
-}
-
-impl Command for SetPromoterVisibility {
-    fn write(self, world: &mut World) {
-        let mut state = SystemState::<(
-            Commands,
-            Res<BoardState>,
-            Query<(Entity, &PromotionUi, &mut Visibility)>,
-        )>::new(world);
-        let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
-
-        for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
-            if ui_color == self.color {
-                match self.square {
-                    Some(square) => {
-                        commands.entity(entity).set_parent(board_state.tile(square));
-                        vis.is_visible = true;
-                    }
-                    None => vis.is_visible = false,
+    for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
+        if ui_color == color {
+            match square {
+                Some(square) => {
+                    commands.entity(entity).set_parent(board_state.tile(square));
+                    vis.is_visible = true;
                 }
-                break;
+                None => vis.is_visible = false,
             }
+            break;
         }
-
-        state.apply(world);
     }
+
+    state.apply(world);
 }
 
 pub struct StartPromotion {
@@ -219,7 +188,7 @@ impl Command for StartPromotion {
             vis.is_visible = false;
         }
 
-        ShowPromoter(color, to_sq).write(world);
+        set_promoter_visibility(world, color, Some(to_sq));
 
         world.resource_mut::<State<MenuState>>().transition(MenuState::GamePromotion {
             entity,
@@ -255,7 +224,7 @@ impl Command for FinishPromotion {
         let Self { entity, color, from_sq, to_sq, event } = self;
         trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
 
-        HidePromoter(color).write(world);
+        set_promoter_visibility(world, color, None);
 
         match event {
             PromotionEvent::Promote(promo_typ) => {
