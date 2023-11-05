@@ -1,15 +1,58 @@
 use bevy::{
     ecs::system::{Command, SystemState},
     prelude::*,
+    ui::UiSystem,
 };
+use bevy_startup_tree::{startup_tree, AddStartupTree};
 
 use crate::debug_name;
 
 use super::{
-    board::PieceColor,
+    audio::GameAudioHandles,
+    board::{
+        board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
+        spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState, PieceColor,
+    },
     captures::CaptureState,
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, MIN_BOARD_SIZE, UI_GAP_VAL},
+    menu::GameMenuUiPlugin,
+    mouse::spawn_drag_container,
 };
+
+pub struct GameUiPlugin;
+
+impl Plugin for GameUiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_plugin(GameMenuUiPlugin)
+            // Resources
+            .init_resource::<GameAudioHandles>()
+            .init_resource::<BoardState>()
+            .init_resource::<CaptureState>()
+            // Systems
+            .add_startup_system(spawn_drag_container)
+            .add_startup_tree(startup_tree! {
+                spawn_ui => {
+                    spawn_board => {
+                        spawn_tiles => {
+                            spawn_highlight_tiles,
+                            spawn_hints,
+                            spawn_pieces,
+                            spawn_promoters,
+                            spawn_end_game_icons,
+                        },
+                    },
+                }
+            })
+            .add_system_set_to_stage(
+                CoreStage::PostUpdate,
+                SystemSet::new()
+                    .before(UiSystem::Flex)
+                    .with_system(board_size)
+                    .with_system(captures_images_sizes)
+                    .with_system(end_game_icon_size),
+            );
+    }
+}
 
 #[derive(Component)]
 pub struct Ui;
@@ -228,14 +271,17 @@ impl Command for PanelBuilderCmd {
     }
 }
 
-pub fn captures_images_sizes(
+fn captures_images_sizes(
     image_assets: Res<Assets<Image>>,
     mut q_captures_images: Query<(&UiImage, &Node, &mut Style), With<CapturesImage>>,
 ) {
     for (ui_image, node, mut style) in &mut q_captures_images {
-        let image_size = image_assets.get(&ui_image.0).unwrap().size();
-        let size = node.size();
-        let scale = size.y / image_size.y;
-        style.size.width = Val::Px(image_size.x * scale);
+        // eprintln!("== get image {:?}", ui_image.0.id());
+        if let Some(img) = image_assets.get(&ui_image.0) {
+            let image_size = img.size();
+            let size = node.size();
+            let scale = size.y / image_size.y;
+            style.size.width = Val::Px(image_size.x * scale);
+        }
     }
 }

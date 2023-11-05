@@ -1,5 +1,4 @@
-use bevy::{prelude::*, ui::UiSystem};
-use bevy_startup_tree::{startup_tree, AddStartupTree};
+use bevy::prelude::*;
 
 pub mod audio;
 pub mod board;
@@ -15,17 +14,11 @@ pub mod ui;
 pub mod utils;
 
 use self::{
-    audio::GameAudioHandles,
-    board::{
-        board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
-        spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState, PromotionEvent,
-        SelectionPlugin,
-    },
+    board::{BoardState, PromotionEvent, SelectionPlugin},
     camera::setup_camera,
-    captures::CaptureState,
-    menu::GameMenuPlugin,
-    mouse::{spawn_drag_container, MouseLogicPlugin},
-    ui::{captures_images_sizes, spawn_ui},
+    menu::GameMenuLogicPlugin,
+    mouse::MouseLogicPlugin,
+    ui::GameUiPlugin,
 };
 
 pub struct GameLogicPlugin;
@@ -34,39 +27,13 @@ impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app
             // Plugins
+            .add_plugin(GameUiPlugin)
             .add_plugin(MouseLogicPlugin)
-            .add_plugin(GameMenuPlugin)
+            .add_plugin(GameMenuLogicPlugin)
             .add_plugin(SelectionPlugin)
-            // Resources
-            .init_resource::<GameAudioHandles>()
-            .init_resource::<BoardState>()
-            .init_resource::<CaptureState>()
             // Events
             .add_event::<PromotionEvent>()
             // Startup
-            .add_startup_system(setup_camera)
-            .add_startup_system(spawn_drag_container)
-            .add_startup_tree(startup_tree! {
-                spawn_ui => {
-                    spawn_board => {
-                        spawn_tiles => {
-                            spawn_highlight_tiles,
-                            spawn_hints,
-                            spawn_pieces,
-                            spawn_promoters,
-                            spawn_end_game_icons,
-                        },
-                    },
-                }
-            })
-            // Systems
-            .add_system_set_to_stage(
-                CoreStage::PostUpdate,
-                SystemSet::new()
-                    .before(UiSystem::Flex)
-                    .with_system(board_size)
-                    .with_system(captures_images_sizes)
-                    .with_system(end_game_icon_size),
-            );
+            .add_startup_system(setup_camera);
     }
 }

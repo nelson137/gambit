@@ -12,9 +12,23 @@ mod state;
 #[allow(unused_imports)]
 pub use self::{fen_popup::*, game_menu::*, state::*};
 
-pub struct GameMenuPlugin;
+pub struct GameMenuUiPlugin;
 
-impl Plugin for GameMenuPlugin {
+impl Plugin for GameMenuUiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_startup_tree(startup_tree! {
+            spawn_menu_dim_layer => {
+                spawn_menu => {
+                    spawn_menu_elements => spawn_menu_buttons,
+                },
+            },
+        });
+    }
+}
+
+pub struct GameMenuLogicPlugin;
+
+impl Plugin for GameMenuLogicPlugin {
     fn build(&self, app: &mut App) {
         let menu_state = MenuState::from_world(&mut app.world);
 
@@ -25,13 +39,6 @@ impl Plugin for GameMenuPlugin {
             // States
             .add_state(menu_state)
             // Systems
-            .add_startup_tree(startup_tree! {
-                spawn_menu_dim_layer => {
-                    spawn_menu => {
-                        spawn_menu_elements => spawn_menu_buttons,
-                    },
-                },
-            })
             .add_system_set_to_stage(
                 CoreStage::PostUpdate,
                 SystemSet::new().before(UiSystem::Flex).with_system(menu_size),

@@ -7,9 +7,9 @@ use chess::{ALL_COLORS, ALL_PIECES};
 use crate::{game::menu::MenuState, utils::StateExts};
 
 use super::{
-    board::{PieceColor, PieceType, UiPiece},
+    board::{spawn_pieces, PieceColor, PieceType, UiPiece},
     captures::{CapStateDiff, CapStateUpdate, GameCaptures},
-    spawn_pieces, BoardState,
+    BoardState,
 };
 
 pub struct DespawnPieces;
