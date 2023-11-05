@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{
     cli::CliArgs,
     game::{
-        board::{spawn_pieces, BoardState, EndGameIcon, PieceColor, Square},
+        board::{spawn_pieces, BoardState, EndGameIcon},
         captures::ResetCapturesUi,
         load::DespawnPieces,
     },
@@ -19,7 +19,6 @@ pub enum MenuState {
     FenInput,
     Menu,
     Game,
-    GamePromotion { entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square },
     DoGameOver,
 }
 
@@ -44,15 +43,6 @@ impl hash::Hash for MenuState {
     }
 }
 
-impl MenuState {
-    pub const GAME_PROMOTION: Self = Self::GamePromotion {
-        entity: Entity::from_raw(0),
-        color: PieceColor::WHITE,
-        from_sq: Square::DEFAULT,
-        to_sq: Square::DEFAULT,
-    };
-}
-
 impl fmt::Display for MenuState {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         fmt::Debug::fmt(self, f)
@@ -71,7 +61,6 @@ pub(super) fn on_enter_menu_state(
         MenuState::FenInput => fen_popup_data.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),
-        MenuState::GamePromotion { .. } => {}
         MenuState::DoGameOver => *game_over_timer = default(),
     }
 }

@@ -1,5 +1,8 @@
 use bevy::{
-    ecs::system::{Command, SystemState},
+    ecs::{
+        schedule::ShouldRun,
+        system::{Command, SystemState},
+    },
     prelude::*,
     ui::FocusPolicy,
 };
@@ -10,10 +13,8 @@ use crate::{
     game::{
         board::PromoteUiPiece,
         consts::{FONT_PATH, Z_PROMOTER},
-        menu::MenuState,
         moves::MovePiece,
     },
-    utils::StateExts,
 };
 
 use super::{BoardState, PieceColor, PieceType, Square, Tile};
@@ -190,12 +191,7 @@ impl Command for StartPromotion {
 
         set_promoter_visibility(world, color, Some(to_sq));
 
-        world.resource_mut::<State<MenuState>>().transition(MenuState::GamePromotion {
-            entity,
-            color,
-            from_sq,
-            to_sq,
-        });
+        world.entity_mut(entity).insert(PromotingPiece::new(color, from_sq, to_sq));
     }
 }
 
@@ -238,13 +234,38 @@ impl Command for FinishPromotion {
             }
         }
 
+        let promo = world.entity_mut(entity).remove::<PromotingPiece>();
+        debug_assert!(
+            promo.is_some(),
+            "finished promotion on piece without PromotingPiece component"
+        );
+
         // Show the piece
         let mut e = world.entity_mut(entity);
         if let Some(mut vis) = e.get_mut::<Visibility>() {
             vis.is_visible = true;
         }
+    }
+}
 
-        world.resource_mut::<State<MenuState>>().transition(MenuState::Game);
+#[derive(Component)]
+pub struct PromotingPiece {
+    color: PieceColor,
+    from_sq: Square,
+    to_sq: Square,
+}
+
+impl PromotingPiece {
+    pub fn new(color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
+        Self { color, from_sq, to_sq }
+    }
+}
+
+pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> ShouldRun {
+    if q_promo.is_empty() {
+        ShouldRun::No
+    } else {
+        ShouldRun::Yes
     }
 }
 
@@ -299,7 +320,7 @@ pub fn promotion_cancel_click_handler(
 pub fn promotion_event_handler(
     mut commands: Commands,
     mut event_reader: EventReader<PromotionEvent>,
-    menu_state: Res<State<MenuState>>,
+    q_promo: Query<(Entity, &PromotingPiece)>,
 ) {
     let mut event_iter = event_reader.iter();
     if let Some(event) = event_iter.next().copied() {
@@ -310,8 +331,7 @@ pub fn promotion_event_handler(
         // frame, there may be 2 events fired but only the first is used.
         event_iter.count();
 
-        let &MenuState::GamePromotion { entity, color, from_sq, to_sq } = menu_state.current()
-        else {
+        let Ok((entity, &PromotingPiece { color, from_sq, to_sq })) = q_promo.get_single() else {
             warn!("Ignoring received promotion event, not in promotion state");
             return;
         };
