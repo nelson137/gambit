@@ -5,7 +5,7 @@ use chess::{File, Rank};
 
 use super::PieceColor;
 
-#[derive(Component, Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
+#[derive(Component, Clone, Copy, Default, PartialEq, Eq, Hash)]
 pub struct Square(pub chess::Square);
 
 macro_rules! define_square_consts {
@@ -90,6 +90,12 @@ impl PartialEq<chess::Square> for Square {
 impl PartialEq<Square> for chess::Square {
     fn eq(&self, other: &Square) -> bool {
         self.eq(&other.0)
+    }
+}
+
+impl fmt::Debug for Square {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Square({})", self.0)
     }
 }
 
