@@ -6,8 +6,6 @@ use bevy_egui::egui::{TextStyle, Ui};
 pub trait StateExts<S> {
     fn transition_overwrite(&mut self, state: S);
     fn transition(&mut self, state: S);
-    fn transition_push(&mut self, state: S);
-    fn transition_pop(&mut self);
     fn transition_replace(&mut self, state: S);
 }
 
@@ -18,14 +16,6 @@ impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
 
     fn transition(&mut self, state: S) {
         self.set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
-    }
-
-    fn transition_push(&mut self, state: S) {
-        self.push(state).unwrap_or_else(|e| panic!("Failed to push state {state}: {e}"));
-    }
-
-    fn transition_pop(&mut self) {
-        self.pop().unwrap_or_else(|e| panic!("Failed to pop state: {e}"));
     }
 
     fn transition_replace(&mut self, state: S) {

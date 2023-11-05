@@ -206,7 +206,7 @@ pub(super) fn fen_menu(
 ) {
     match egui::fen_window(egui_context.ctx_mut(), &mut data) {
         FenPopupInteraction::Cancel => {
-            menu_state.transition_pop();
+            menu_state.transition(MenuState::Menu);
         }
         FenPopupInteraction::Submit => match chess::Board::from_str(&data.fen) {
             Ok(board) => commands.add(LoadGame(board)),

@@ -260,7 +260,7 @@ pub(super) fn game_menu_buttons(
             Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
             Interaction::Clicked => match *button {
                 GameMenuButton::Start => menu_state.transition(MenuState::Game),
-                GameMenuButton::LoadFen => menu_state.transition_push(MenuState::FenInput),
+                GameMenuButton::LoadFen => menu_state.transition(MenuState::FenInput),
             },
             Interaction::None => bg_color.0 = BUTTON_COLOR_DEFAULT,
         }
