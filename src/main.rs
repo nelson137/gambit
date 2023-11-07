@@ -1,6 +1,6 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
-use bevy::{log::LogPlugin, prelude::*};
+use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
 use bevy_egui::EguiPlugin;
 use clap::Parser;
 
@@ -26,13 +26,12 @@ fn main() {
         .add_plugins(
             DefaultPlugins
                 .set(WindowPlugin {
-                    window: WindowDescriptor {
+                    primary_window: Some(Window {
                         title: "Gambit".into(),
-                        width: INIT_WIN_WIDTH,
-                        height: INIT_WIN_HEIGHT,
+                        resolution: WindowResolution::new(INIT_WIN_WIDTH, INIT_WIN_HEIGHT),
                         resizable: true,
                         ..default()
-                    },
+                    }),
                     ..default()
                 })
                 .set(LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() }),

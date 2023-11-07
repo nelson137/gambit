@@ -43,13 +43,10 @@ impl Plugin for GameUiPlugin {
                     },
                 }
             })
-            .add_system_set_to_stage(
-                CoreStage::PostUpdate,
-                SystemSet::new()
-                    .before(UiSystem::Flex)
-                    .with_system(board_size)
-                    .with_system(captures_images_sizes)
-                    .with_system(end_game_icon_size),
+            .add_systems(
+                (board_size, captures_images_sizes, end_game_icon_size)
+                    .in_base_set(CoreSet::PostUpdate)
+                    .before(UiSystem::Flex),
             );
     }
 }
@@ -203,7 +200,7 @@ impl Command for PanelBuilderCmd {
                 ProfileImage,
                 debug_name!("Profile Image"),
                 ImageBundle {
-                    image: UiImage(profile_image_handle),
+                    image: UiImage::new(profile_image_handle),
                     style: Style {
                         size: Size::new(PROFILE_IMAGE_SIZE_VAL, PROFILE_IMAGE_SIZE_VAL),
                         ..default()
@@ -252,7 +249,7 @@ impl Command for PanelBuilderCmd {
                             .spawn((
                                 CapturesImage,
                                 ImageBundle {
-                                    image: UiImage(handles[0].clone()),
+                                    image: UiImage::new(handles[0].clone()),
                                     style: Style {
                                         display: Display::None,
                                         margin: UiRect::right(UI_GAP_VAL),
@@ -277,7 +274,7 @@ fn captures_images_sizes(
 ) {
     for (ui_image, node, mut style) in &mut q_captures_images {
         // eprintln!("== get image {:?}", ui_image.0.id());
-        if let Some(img) = image_assets.get(&ui_image.0) {
+        if let Some(img) = image_assets.get(&ui_image.texture) {
             let image_size = img.size();
             let size = node.size();
             let scale = size.y / image_size.y;

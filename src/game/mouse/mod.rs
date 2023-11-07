@@ -1,4 +1,4 @@
-use bevy::{ecs::schedule::ShouldRun, prelude::*};
+use bevy::prelude::*;
 
 use super::menu::MenuState;
 
@@ -17,27 +17,21 @@ impl Plugin for MouseLogicPlugin {
             .init_resource::<MouseWorldPosition>()
             .init_resource::<MouseBoardSquare>()
             // Systems
-            .add_system_set_to_stage(
-                CoreStage::PreUpdate,
-                SystemSet::new()
-                    .with_run_criteria(is_in_game)
-                    .with_system(mouse_screen_position_to_world)
-                    .with_system(
-                        mouse_world_position_to_square.after(mouse_screen_position_to_world),
-                    ),
+            .add_systems(
+                (
+                    mouse_screen_position_to_world,
+                    mouse_world_position_to_square.after(mouse_screen_position_to_world),
+                )
+                    .distributive_run_if(is_in_game)
+                    .in_base_set(CoreSet::PreUpdate),
             )
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(is_in_game)
-                    .with_system(mouse_handler)
-                    .with_system(update_drag_container),
-            );
+            .add_systems((
+                mouse_handler.run_if(is_in_game),
+                update_drag_container.run_if(is_in_game),
+            ));
     }
 }
 
-fn is_in_game(menu_state: Res<State<MenuState>>) -> ShouldRun {
-    match menu_state.current() {
-        MenuState::Game => ShouldRun::Yes,
-        _ => ShouldRun::No,
-    }
+fn is_in_game(menu_state: Res<State<MenuState>>) -> bool {
+    matches!(menu_state.0, MenuState::Game)
 }

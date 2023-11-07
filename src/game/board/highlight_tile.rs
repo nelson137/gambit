@@ -16,7 +16,7 @@ pub struct ShowHighlight(pub Entity);
 impl Command for ShowHighlight {
     fn write(self, world: &mut World) {
         if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            vis.is_visible = true;
+            *vis = Visibility::Visible;
         }
     }
 }
@@ -28,7 +28,7 @@ impl Command for HideHighlight {
     fn write(self, world: &mut World) {
         let Some(entity) = *self else { return };
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            vis.is_visible = false;
+            *vis = Visibility::Hidden;
         }
     }
 }
@@ -52,7 +52,7 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                         ..default()
                     },
-                    visibility: Visibility::INVISIBLE,
+                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_HIGHLIGHT_TILE),
                     ..default()
                 },

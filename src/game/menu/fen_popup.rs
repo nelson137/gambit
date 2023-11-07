@@ -6,13 +6,10 @@ use std::{
 };
 
 use bevy::prelude::*;
-use bevy_egui::{egui::Ui, EguiContext};
+use bevy_egui::{egui::Ui, EguiContexts};
 use chess::{Board, BoardBuilder, CastleRights};
 
-use crate::{
-    game::{board::PieceColor, load::LoadGame},
-    utils::StateExts,
-};
+use crate::game::{board::PieceColor, load::LoadGame};
 
 use super::MenuState;
 
@@ -200,13 +197,13 @@ enum FenPopupInteraction {
 
 pub(super) fn fen_menu(
     mut commands: Commands,
-    mut egui_context: ResMut<EguiContext>,
-    mut menu_state: ResMut<State<MenuState>>,
+    mut egui_contexts: EguiContexts,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
     mut data: ResMut<FenPopupData>,
 ) {
-    match egui::fen_window(egui_context.ctx_mut(), &mut data) {
+    match egui::fen_window(egui_contexts.ctx_mut(), &mut data) {
         FenPopupInteraction::Cancel => {
-            menu_state.transition(MenuState::Menu);
+            next_menu_state.set(MenuState::Menu);
         }
         FenPopupInteraction::Submit => match chess::Board::from_str(&data.fen) {
             Ok(board) => commands.add(LoadGame(board)),
@@ -246,7 +243,7 @@ mod egui {
             .title_bar(false)
             .anchor(Align2::CENTER_CENTER, Vec2::ZERO)
             .show(ctx, |ui| {
-                if ui.input().key_pressed(Key::Escape) {
+                if ui.input(|i| i.key_pressed(Key::Escape)) {
                     interaction = FenPopupInteraction::Cancel;
                     return;
                 }
@@ -267,7 +264,7 @@ mod egui {
                             ui.label(RichText::new("FEN:").underline());
 
                             let response = fen_text_edit(ui, &mut data.fen);
-                            if response.lost_focus() && ui.input().key_pressed(Key::Enter) {
+                            if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
                                 interaction = FenPopupInteraction::Submit;
                             }
                         });

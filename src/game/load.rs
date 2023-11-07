@@ -4,7 +4,7 @@ use bevy::{
 };
 use chess::{ALL_COLORS, ALL_PIECES};
 
-use crate::{game::menu::MenuState, utils::StateExts};
+use crate::game::menu::MenuState;
 
 use super::{
     board::{spawn_pieces, PieceColor, PieceType, UiPiece},
@@ -42,7 +42,7 @@ impl Command for LoadGame {
         load_capture_state.run((), system_state.get_mut(world));
         system_state.apply(world);
 
-        world.resource_mut::<State<MenuState>>().transition_replace(MenuState::Game);
+        world.resource_mut::<NextState<MenuState>>().set(MenuState::Game);
     }
 }
 

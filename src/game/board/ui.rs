@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
     debug_name,
@@ -38,7 +38,7 @@ pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<Board
 }
 
 pub fn board_size(
-    windows: Res<Windows>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
     q_panels: Query<&Node, With<UiPanel>>,
     mut q_board: Query<&mut Style, With<BoardContainer>>,
 ) {
@@ -47,7 +47,7 @@ pub fn board_size(
         return;
     }
 
-    let Some(win) = windows.get_primary() else { return };
+    let Ok(win) = q_window.get_single() else { return };
     let Ok(mut board_style) = q_board.get_single_mut() else { return };
 
     let size = {

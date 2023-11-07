@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 use chess::{File, Rank};
 
 use crate::game::{
@@ -11,11 +11,11 @@ pub struct MouseWorldPosition(pub Vec2);
 
 // Source: https://bevy-cheatbook.github.io/cookbook/cursor2world.html
 pub(super) fn mouse_screen_position_to_world(
-    windows: Res<Windows>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
 ) {
-    let Some(win) = windows.get_primary() else { return };
+    let Ok(win) = q_window.get_single() else { return };
     let Some(screen_pos) = win.cursor_position() else { return };
 
     let (camera, camera_transf) = q_camera.single();

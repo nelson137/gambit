@@ -37,7 +37,7 @@ pub fn spawn_end_game_icons(
             debug_name!("Winner Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/winner.png").into(),
-                visibility: Visibility::INVISIBLE,
+                visibility: Visibility::Hidden,
                 z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
@@ -52,7 +52,7 @@ pub fn spawn_end_game_icons(
             debug_name!("Black Loser Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/loser-black.png").into(),
-                visibility: Visibility::INVISIBLE,
+                visibility: Visibility::Hidden,
                 z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
@@ -67,7 +67,7 @@ pub fn spawn_end_game_icons(
             debug_name!("White Loser Icon"),
             ImageBundle {
                 image: asset_server.load("images/checkmate/loser-white.png").into(),
-                visibility: Visibility::INVISIBLE,
+                visibility: Visibility::Hidden,
                 z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
@@ -81,7 +81,7 @@ pub fn spawn_end_game_icons(
             DrawIconBlack,
             ImageBundle {
                 image: asset_server.load("images/draw/draw-black.png").into(),
-                visibility: Visibility::INVISIBLE,
+                visibility: Visibility::Hidden,
                 z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
@@ -95,7 +95,7 @@ pub fn spawn_end_game_icons(
             DrawIconWhite,
             ImageBundle {
                 image: asset_server.load("images/draw/draw-white.png").into(),
-                visibility: Visibility::INVISIBLE,
+                visibility: Visibility::Hidden,
                 z_index: ZIndex::Global(Z_END_GAME_ICONS),
                 ..default()
             },
@@ -162,7 +162,7 @@ fn set_end_game_icon<IconMarker: Component>(
         world.entity_mut(tile_entity).push_children(&[icon_entity]);
     }
     let mut icon = world.entity_mut(icon_entity);
-    icon.get_mut::<Visibility>().unwrap().is_visible = true;
+    *icon.get_mut::<Visibility>().unwrap() = Visibility::Visible;
     let mut style = icon.get_mut::<Style>().unwrap();
     if square.get_rank() == Rank::Eighth {
         style.position.top = Val::Percent(3.0);

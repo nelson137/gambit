@@ -1,8 +1,5 @@
 use bevy::{
-    ecs::{
-        schedule::ShouldRun,
-        system::{Command, SystemState},
-    },
+    ecs::system::{Command, SystemState},
     prelude::*,
     ui::FocusPolicy,
 };
@@ -55,7 +52,7 @@ pub fn spawn_promoters(
                         size: Size::AUTO,
                         ..default()
                     },
-                    visibility: Visibility::INVISIBLE,
+                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_PROMOTER),
                     ..default()
                 },
@@ -80,7 +77,7 @@ pub fn spawn_promoters(
                         cmds.spawn((
                             debug_name_f!("Promotion Piece ({color}) ({typ})"),
                             ImageBundle {
-                                image: UiImage(asset_server.load(asset_path)),
+                                image: UiImage::new(asset_server.load(asset_path)),
                                 focus_policy: FocusPolicy::Pass,
                                 style: Style {
                                     position_type: PositionType::Absolute,
@@ -155,9 +152,9 @@ fn set_promoter_visibility(world: &mut World, color: PieceColor, square: Option<
             match square {
                 Some(square) => {
                     commands.entity(entity).set_parent(board_state.tile(square));
-                    vis.is_visible = true;
+                    *vis = Visibility::Visible;
                 }
-                None => vis.is_visible = false,
+                None => *vis = Visibility::Hidden,
             }
             break;
         }
@@ -186,7 +183,7 @@ impl Command for StartPromotion {
 
         // Hide the piece
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            vis.is_visible = false;
+            *vis = Visibility::Hidden;
         }
 
         set_promoter_visibility(world, color, Some(to_sq));
@@ -234,16 +231,12 @@ impl Command for FinishPromotion {
             }
         }
 
-        let promo = world.entity_mut(entity).remove::<PromotingPiece>();
-        debug_assert!(
-            promo.is_some(),
-            "finished promotion on piece without PromotingPiece component"
-        );
+        world.entity_mut(entity).remove::<PromotingPiece>();
 
         // Show the piece
         let mut e = world.entity_mut(entity);
         if let Some(mut vis) = e.get_mut::<Visibility>() {
-            vis.is_visible = true;
+            *vis = Visibility::Visible;
         }
     }
 }
@@ -261,12 +254,8 @@ impl PromotingPiece {
     }
 }
 
-pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> ShouldRun {
-    if q_promo.is_empty() {
-        ShouldRun::No
-    } else {
-        ShouldRun::Yes
-    }
+pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> bool {
+    !q_promo.is_empty()
 }
 
 pub fn promotion_ui_sizes(

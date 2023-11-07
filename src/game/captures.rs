@@ -201,7 +201,7 @@ impl Command for CapStateUpdate {
 
             // Update image handle
             if let Some(mut image) = image_entity.get_mut::<UiImage>() {
-                image.0 = handle;
+                image.texture = handle;
             }
 
             // Set display to not-none if the count was previously 0
@@ -237,7 +237,7 @@ impl Command for Captured {
 
         // Hide piece
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            vis.is_visible = false;
+            *vis = Visibility::Hidden;
         }
 
         // Update count state & ui images

@@ -15,12 +15,11 @@ opt-level = 0
 opt-level = 3
 
 [dependencies]
-bevy = { version = "0.9", features = ["filesystem_watcher", "flac"] }
-# bevy = { version = "0.8", features = ["dynamic"] }
-bevy_egui = "0.19"
-bevy_startup_tree = "0.1.1"
-bevy-inspector-egui = { version = "0.17", optional = true }
+bevy = { version = "0.10", features = ["filesystem_watcher", "flac"] }
+bevy_egui = "0.20"
+bevy_startup_tree = "0.2"
+bevy-inspector-egui = { version = "0.18", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
-egui_extras = "0.20"
+egui_extras = "0.21"
 grid = "0.9"

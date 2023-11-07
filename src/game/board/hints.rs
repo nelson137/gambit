@@ -11,7 +11,7 @@ impl Command for ShowHints {
     fn write(self, world: &mut World) {
         for entity in self.0 {
             if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = true;
+                *vis = Visibility::Visible;
             }
         }
     }
@@ -24,7 +24,7 @@ impl Command for HideHints {
     fn write(self, world: &mut World) {
         for entity in self.0 {
             if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                vis.is_visible = false;
+                *vis = Visibility::Hidden;
             }
         }
     }
@@ -56,14 +56,14 @@ pub fn spawn_hints(
                         align_items: AlignItems::Center,
                         ..default()
                     },
-                    visibility: Visibility::INVISIBLE,
+                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },
             ))
             .with_children(|cmds| {
                 cmds.spawn(ImageBundle {
-                    image: UiImage(move_hint_texture.clone()),
+                    image: UiImage::new(move_hint_texture.clone()),
                     style: Style {
                         size: Size::new(Val::Percent(100.0 / 3.0), Val::Percent(100.0 / 3.0)),
                         ..default()
@@ -79,14 +79,14 @@ pub fn spawn_hints(
                 debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageBundle {
-                    image: UiImage(capture_hint_texture.clone()),
+                    image: UiImage::new(capture_hint_texture.clone()),
                     style: Style {
                         position_type: PositionType::Absolute,
                         position: pos_top_left,
                         size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
                         ..default()
                     },
-                    visibility: Visibility::INVISIBLE,
+                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },

@@ -9,26 +9,27 @@ use crate::{
         captures::ResetCapturesUi,
         load::DespawnPieces,
     },
-    utils::StateExts,
 };
 
 use super::{FenPopupData, GameMenu, GameMenuDimLayer};
 
-#[derive(Clone, Copy, Debug, Eq)]
+#[derive(Clone, Copy, Debug, Default, Eq, States)]
 pub enum MenuState {
     FenInput,
+    #[default]
     Menu,
     Game,
     DoGameOver,
 }
 
-impl FromWorld for MenuState {
-    fn from_world(world: &mut World) -> Self {
-        match world.resource::<CliArgs>().fen {
-            Some(_) => Self::Game,
-            _ => Self::Menu,
-        }
-    }
+pub(super) fn init_menu_state_from_cli(
+    cli_args: Res<CliArgs>,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
+) {
+    next_menu_state.set(match cli_args.fen {
+        Some(_) => MenuState::Game,
+        _ => MenuState::Menu,
+    });
 }
 
 impl PartialEq for MenuState {
@@ -57,7 +58,7 @@ pub(super) fn on_enter_menu_state(
 ) {
     let mut set_menu_display =
         |d| q_menu_components.iter_mut().for_each(|mut style| style.display = d);
-    match menu_state.current() {
+    match menu_state.0 {
         MenuState::FenInput => fen_popup_data.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),
@@ -79,13 +80,13 @@ pub(super) fn game_over(
     time: Res<Time>,
     asset_server: Res<AssetServer>,
     mut game_over_timer: ResMut<GameOverTimer>,
-    mut menu_state: ResMut<State<MenuState>>,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
     mut board_state: ResMut<BoardState>,
     mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
 ) {
     game_over_timer.0.tick(time.delta());
     if game_over_timer.0.just_finished() {
-        q_end_game_icons.for_each_mut(|mut vis| vis.is_visible = false);
+        q_end_game_icons.for_each_mut(|mut vis| *vis = Visibility::Hidden);
 
         commands.add(board_state.unselect_square());
         commands.add(board_state.hide_last_move_highlights());
@@ -96,6 +97,6 @@ pub(super) fn game_over(
         commands.add(DespawnPieces);
         spawn_pieces(commands, asset_server, board_state);
 
-        menu_state.transition(MenuState::Menu);
+        next_menu_state.set(MenuState::Menu);
     }
 }

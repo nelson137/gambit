@@ -1,4 +1,4 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
     debug_name,
@@ -7,7 +7,7 @@ use crate::{
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
         TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
     },
-    utils::{RoundToNearest, StateExts},
+    utils::RoundToNearest,
 };
 
 use super::MenuState;
@@ -72,8 +72,11 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
     commands.entity(parent_entity).add_child(menu_entity);
 }
 
-pub fn menu_size(windows: Res<Windows>, mut q_menu: Query<&mut Style, With<GameMenu>>) {
-    let Some(win) = windows.get_primary() else { return };
+pub fn menu_size(
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    mut q_menu: Query<&mut Style, With<GameMenu>>,
+) {
+    let Ok(win) = q_window.get_single() else { return };
     let Ok(mut menu_style) = q_menu.get_single_mut() else { return };
 
     let win_width_scale = win.width() / INIT_WIN_WIDTH;
@@ -253,14 +256,14 @@ pub(super) fn game_menu_buttons(
         (&GameMenuButton, &Interaction, &mut BackgroundColor),
         Changed<Interaction>,
     >,
-    mut menu_state: ResMut<State<MenuState>>,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
 ) {
     if let Ok((button, interaction, mut bg_color)) = q_button.get_single_mut() {
         match interaction {
             Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
             Interaction::Clicked => match *button {
-                GameMenuButton::Start => menu_state.transition(MenuState::Game),
-                GameMenuButton::LoadFen => menu_state.transition(MenuState::FenInput),
+                GameMenuButton::Start => next_menu_state.set(MenuState::Game),
+                GameMenuButton::LoadFen => next_menu_state.set(MenuState::FenInput),
             },
             Interaction::None => bg_color.0 = BUTTON_COLOR_DEFAULT,
         }

@@ -14,9 +14,8 @@ impl Plugin for SelectionPlugin {
             // Events
             .add_event::<SelectionEvent>()
             // Systems
-            .add_system_set(
-                SystemSet::on_update(MenuState::Game).with_system(handle_selection_events.at_end()),
-            );
+            // TODO: handle_selection_events should run at the end of the set
+            .add_system(handle_selection_events.in_set(OnUpdate(MenuState::Game)));
     }
 }
 
@@ -175,14 +174,13 @@ mod tests {
 
         pub fn build_app() -> App {
             let mut app = App::new();
-            app.add_plugin(CorePlugin::default())
+            app.add_plugin(TaskPoolPlugin::default())
                 .add_plugin(AssetPlugin::default())
                 .add_plugin(ImagePlugin::default())
                 .add_plugin(AudioPlugin)
-                .add_state(MenuState::Game)
+                .add_state::<MenuState>()
                 .init_resource::<CliArgs>()
                 .init_resource::<BoardState>()
-                .init_resource::<Windows>()
                 .add_plugin(GameUiPlugin)
                 .add_plugin(SelectionPlugin);
             app
@@ -219,8 +217,8 @@ mod tests {
             app.world
                 .entity(entity)
                 .get::<Visibility>()
-                .map(|vis| vis.is_visible)
-                .unwrap_or_default()
+                .map(|vis| *vis == Visibility::Visible)
+                .unwrap_or(false)
         }
     }
     use utils::*;

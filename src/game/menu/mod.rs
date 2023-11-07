@@ -31,41 +31,32 @@ pub struct GameMenuLogicPlugin;
 
 impl Plugin for GameMenuLogicPlugin {
     fn build(&self, app: &mut App) {
-        let menu_state = MenuState::from_world(&mut app.world);
-
         app
             // Resources
             .init_resource::<FenPopupData>()
             .init_resource::<GameOverTimer>()
             // States
-            .add_state(menu_state)
+            .add_state::<MenuState>()
             // Systems
-            .add_system_set_to_stage(
-                CoreStage::PostUpdate,
-                SystemSet::new().before(UiSystem::Flex).with_system(menu_size),
+            .add_startup_system(init_menu_state_from_cli)
+            .add_system(menu_size.in_base_set(CoreSet::PostUpdate).before(UiSystem::Flex))
+            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::FenInput)))
+            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::Menu)))
+            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::Game)))
+            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::DoGameOver)))
+            .add_system(fen_menu.in_set(OnUpdate(MenuState::FenInput)))
+            .add_systems(
+                (game_menu_buttons, game_menu_elements_sizes).in_set(OnUpdate(MenuState::Menu)),
             )
-            .add_system_set(
-                SystemSet::on_enter(MenuState::FenInput).with_system(on_enter_menu_state),
-            )
-            .add_system_set(SystemSet::on_enter(MenuState::Menu).with_system(on_enter_menu_state))
-            .add_system_set(SystemSet::on_enter(MenuState::Game).with_system(on_enter_menu_state))
-            .add_system_set(
-                SystemSet::on_enter(MenuState::DoGameOver).with_system(on_enter_menu_state),
-            )
-            .add_system_set(SystemSet::on_update(MenuState::FenInput).with_system(fen_menu))
-            .add_system_set(
-                SystemSet::on_update(MenuState::Menu)
-                    .with_system(game_menu_buttons)
-                    .with_system(game_menu_elements_sizes),
-            )
-            .add_system_set(
-                SystemSet::new()
-                    .with_run_criteria(is_promoting_piece)
-                    .with_system(promotion_ui_sizes)
-                    .with_system(promotion_buttons)
-                    .with_system(promotion_cancel_click_handler.after(promotion_buttons))
-                    .with_system(promotion_event_handler.after(promotion_cancel_click_handler)),
-            )
-            .add_system_set(SystemSet::on_update(MenuState::DoGameOver).with_system(game_over));
+            .add_system(game_over.in_set(OnUpdate(MenuState::DoGameOver)))
+            .add_systems(
+                (
+                    promotion_ui_sizes,
+                    promotion_buttons,
+                    promotion_cancel_click_handler.after(promotion_buttons),
+                    promotion_event_handler.after(promotion_cancel_click_handler),
+                )
+                    .distributive_run_if(is_promoting_piece),
+            );
     }
 }

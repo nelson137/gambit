@@ -1,8 +1,6 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::BoardStatus;
 
-use crate::utils::StateExts;
-
 use super::{
     board::{BoardState, ShowCheckmateIcons, ShowStalemateIcons},
     menu::MenuState,
@@ -23,6 +21,6 @@ impl Command for GameOver {
             }
         }
 
-        world.resource_mut::<State<MenuState>>().transition(MenuState::DoGameOver);
+        world.resource_mut::<NextState<MenuState>>().set(MenuState::DoGameOver);
     }
 }

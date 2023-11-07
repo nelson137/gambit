@@ -1,27 +1,5 @@
-use std::fmt;
-
-use bevy::{ecs::schedule::StateData, prelude::*};
+use bevy::prelude::*;
 use bevy_egui::egui::{TextStyle, Ui};
-
-pub trait StateExts<S> {
-    fn transition_overwrite(&mut self, state: S);
-    fn transition(&mut self, state: S);
-    fn transition_replace(&mut self, state: S);
-}
-
-impl<S: StateData + Copy + fmt::Display> StateExts<S> for State<S> {
-    fn transition_overwrite(&mut self, state: S) {
-        self.overwrite_set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
-    }
-
-    fn transition(&mut self, state: S) {
-        self.set(state).unwrap_or_else(|e| panic!("Failed to set state {state}: {e}"));
-    }
-
-    fn transition_replace(&mut self, state: S) {
-        self.replace(state).unwrap_or_else(|e| panic!("Failed to replace state {state}: {e}"));
-    }
-}
 
 pub struct DebugBevyInspectorPlugin;
 
@@ -39,14 +17,16 @@ impl Plugin for DebugBevyInspectorPlugin {
 impl DebugBevyInspectorPlugin {
     #[cfg(feature = "bevy-inspector-egui")]
     fn world_inspector_ui(world: &mut World) {
+        use bevy::ecs::system::SystemState;
         use bevy_inspector_egui::{
-            bevy_egui::{egui, EguiContext},
+            bevy_egui::{egui, EguiContexts},
             bevy_inspector::ui_for_world,
         };
 
         const DEFAULT_SIZE: (f32, f32) = (300.0, 200.0);
 
-        let ctx = world.resource_mut::<EguiContext>().ctx_mut().clone();
+        let mut egui_state = SystemState::<EguiContexts>::new(world);
+        let ctx = egui_state.get_mut(world).ctx_mut().clone();
         egui::Window::new("World Inspector").default_size(DEFAULT_SIZE).show(&ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
                 ui_for_world(world, ui);

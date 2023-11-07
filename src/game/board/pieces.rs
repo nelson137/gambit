@@ -145,7 +145,7 @@ pub fn spawn_pieces(
                 debug_name_f!("Piece ({piece_color} {piece_type}) ({square})"),
                 square,
                 ImageBundle {
-                    image: UiImage(asset_server.load(image_path)),
+                    image: UiImage::new(asset_server.load(image_path)),
                     style: Style {
                         position_type: PositionType::Absolute,
                         position: pos_top_left,
@@ -184,7 +184,7 @@ impl Command for PromoteUiPiece {
 
         let mut e = world.entity_mut(self.entity);
         if let Some(mut image) = e.get_mut::<UiImage>() {
-            image.0 = new_asset;
+            image.texture = new_asset;
         }
     }
 }
