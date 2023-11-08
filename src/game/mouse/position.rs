@@ -23,7 +23,7 @@ pub(super) fn mouse_screen_position_to_world(
     let window_size = Vec2::new(win.width(), win.height());
 
     // Convert mouse position on screen [0..resolution] to ndc [0..2] (gpu coordinates)
-    let ndc = 2.0 * (Vec2::new(0.0, 1.0) - (screen_pos / window_size)).abs();
+    let ndc = 2.0 * screen_pos / window_size;
 
     // Matrix for undoing the projection and camera transform
     let ndc_to_world = camera_transf.compute_matrix() * camera.projection_matrix().inverse();
