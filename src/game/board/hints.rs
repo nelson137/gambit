@@ -8,7 +8,7 @@ use super::{BoardState, MoveHints, Square};
 pub struct ShowHints(pub Vec<Entity>);
 
 impl Command for ShowHints {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         for entity in self.0 {
             if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
                 *vis = Visibility::Visible;
@@ -21,7 +21,7 @@ impl Command for ShowHints {
 pub struct HideHints(pub Vec<Entity>);
 
 impl Command for HideHints {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         for entity in self.0 {
             if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
                 *vis = Visibility::Hidden;
@@ -37,7 +37,6 @@ pub fn spawn_hints(
 ) {
     let move_hint_texture = asset_server.load("images/hints/move.png");
     let capture_hint_texture = asset_server.load("images/hints/capture.png");
-    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
 
     for square in chess::ALL_SQUARES {
         let square = Square::new(square);
@@ -50,8 +49,10 @@ pub fn spawn_hints(
                 NodeBundle {
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: pos_top_left,
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        top: Val::Px(0.0),
+                        left: Val::Px(0.0),
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         justify_content: JustifyContent::Center,
                         align_items: AlignItems::Center,
                         ..default()
@@ -65,7 +66,8 @@ pub fn spawn_hints(
                 cmds.spawn(ImageBundle {
                     image: UiImage::new(move_hint_texture.clone()),
                     style: Style {
-                        size: Size::new(Val::Percent(100.0 / 3.0), Val::Percent(100.0 / 3.0)),
+                        width: Val::Percent(100.0 / 3.0),
+                        height: Val::Percent(100.0 / 3.0),
                         ..default()
                     },
                     ..default()
@@ -82,8 +84,10 @@ pub fn spawn_hints(
                     image: UiImage::new(capture_hint_texture.clone()),
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: pos_top_left,
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        top: Val::Px(0.0),
+                        left: Val::Px(0.0),
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
                     visibility: Visibility::Hidden,

@@ -25,8 +25,10 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
             background_color: MENU_DIM_LAYER_COLOR.into(),
             style: Style {
                 position_type: PositionType::Absolute,
-                position: UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() },
-                size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
                 justify_content: JustifyContent::Center,
                 align_items: AlignItems::Center,
                 ..default()
@@ -58,7 +60,8 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
             NodeBundle {
                 background_color: MENU_COLOR.into(),
                 style: Style {
-                    size: Size::new(Val::Px(INIT_MENU_WIDTH), Val::Px(INIT_MENU_HEIGHT)),
+                    width: Val::Px(INIT_MENU_WIDTH),
+                    height: Val::Px(INIT_MENU_HEIGHT),
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceEvenly,
                     align_items: AlignItems::Center,
@@ -93,7 +96,8 @@ pub fn menu_size(
     let width_stepped = width.round_to_nearest(MENU_SIZE_STEP);
     let height_stepped = height.round_to_nearest(MENU_SIZE_STEP);
 
-    menu_style.size = Size::new(Val::Px(width_stepped as f32), Val::Px(height_stepped as f32));
+    menu_style.width = Val::Px(width_stepped as f32);
+    menu_style.height = Val::Px(height_stepped as f32);
 }
 
 #[derive(Component)]
@@ -151,7 +155,7 @@ pub fn spawn_menu_elements(
             debug_name!("Game Menu Buttons Container"),
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Auto),
+                    width: Val::Percent(100.0),
                     flex_grow: 1.0,
                     flex_direction: FlexDirection::Column,
                     justify_content: JustifyContent::SpaceEvenly,
@@ -172,7 +176,7 @@ pub fn spawn_menu_buttons(
     q_menu_buttons_container: Query<Entity, With<GameMenuButtonsContainer>>,
 ) {
     let button_style = Style {
-        size: Size::new(Val::Percent(50.0), Val::Auto),
+        width: Val::Percent(50.0),
         padding: UiRect::vertical(Val::Px(8.0)),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
@@ -261,7 +265,7 @@ pub(super) fn game_menu_buttons(
     if let Ok((button, interaction, mut bg_color)) = q_button.get_single_mut() {
         match interaction {
             Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
-            Interaction::Clicked => match *button {
+            Interaction::Pressed => match *button {
                 GameMenuButton::Start => next_menu_state.set(MenuState::Game),
                 GameMenuButton::LoadFen => next_menu_state.set(MenuState::FenInput),
             },

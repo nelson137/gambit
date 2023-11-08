@@ -6,8 +6,8 @@ pub struct DebugBevyInspectorPlugin;
 impl Plugin for DebugBevyInspectorPlugin {
     #[cfg(feature = "bevy-inspector-egui")]
     fn build(&self, app: &mut App) {
-        app.add_plugin(bevy_inspector_egui::DefaultInspectorConfigPlugin)
-            .add_system(Self::world_inspector_ui);
+        app.add_plugins(bevy_inspector_egui::DefaultInspectorConfigPlugin)
+            .add_systems(Update, Self::world_inspector_ui);
     }
 
     #[cfg(not(feature = "bevy-inspector-egui"))]

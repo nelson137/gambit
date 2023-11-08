@@ -30,12 +30,15 @@ pub fn spawn_promoters(
     asset_server: Res<AssetServer>,
     board_state: Res<BoardState>,
 ) {
-    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
-
     for (color, flex_direction) in [
         (PieceColor::WHITE, FlexDirection::Column),
         (PieceColor::BLACK, FlexDirection::ColumnReverse),
     ] {
+        let (left, top, bottom) = if let PieceColor::WHITE = color {
+            (Val::Px(0.0), Val::Px(0.0), Val::Auto)
+        } else {
+            (Val::Px(0.0), Val::Auto, Val::Px(0.0))
+        };
         let promo_entity = commands
             .spawn((
                 PromotionUi(color),
@@ -43,13 +46,10 @@ pub fn spawn_promoters(
                 NodeBundle {
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: if let PieceColor::WHITE = color {
-                            pos_top_left
-                        } else {
-                            UiRect { bottom: Val::Px(0.0), left: Val::Px(0.0), ..default() }
-                        },
+                        left,
+                        top,
+                        bottom,
                         flex_direction,
-                        size: Size::AUTO,
                         ..default()
                     },
                     visibility: Visibility::Hidden,
@@ -81,8 +81,10 @@ pub fn spawn_promoters(
                                 focus_policy: FocusPolicy::Pass,
                                 style: Style {
                                     position_type: PositionType::Absolute,
-                                    position: pos_top_left,
-                                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                                    top: Val::Px(0.0),
+                                    left: Val::Px(0.0),
+                                    width: Val::Percent(100.0),
+                                    height: Val::Percent(100.0),
                                     ..default()
                                 },
                                 ..default()
@@ -114,7 +116,7 @@ pub fn spawn_promoters(
                             style: Style {
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
-                                size: Size::new(Val::Percent(100.0), Val::Auto),
+                                width: Val::Percent(100.0),
                                 ..default()
                             },
                             ..default()
@@ -177,7 +179,7 @@ impl StartPromotion {
 }
 
 impl Command for StartPromotion {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Self { entity, color, from_sq, to_sq } = self;
         trace!(?color, %from_sq, %to_sq, "Start promotion");
 
@@ -213,7 +215,7 @@ impl FinishPromotion {
 }
 
 impl Command for FinishPromotion {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Self { entity, color, from_sq, to_sq, event } = self;
         trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
 
@@ -222,8 +224,8 @@ impl Command for FinishPromotion {
         match event {
             PromotionEvent::Promote(promo_typ) => {
                 MovePiece::new(entity, color, PieceType::PAWN, from_sq, to_sq, Some(promo_typ))
-                    .write(world);
-                PromoteUiPiece::new(entity, color, promo_typ).write(world);
+                    .apply(world);
+                PromoteUiPiece::new(entity, color, promo_typ).apply(world);
             }
             PromotionEvent::Cancel => {
                 let from_sq_entity = world.resource_mut::<BoardState>().tile(from_sq);
@@ -268,19 +270,18 @@ pub fn promotion_ui_sizes(
     let Some(tile_node) = q_tile.iter().next() else { return };
     let tile_size = tile_node.size();
 
-    let promo_piece_button_size = Size::new(Val::Px(tile_size.x), Val::Px(tile_size.y));
-    let promo_cancel_button_size = Size::new(Val::Px(tile_size.x), Val::Px(tile_size.y / 2.0));
-
     for mut style in &mut button_set.p0() {
-        style.size = promo_piece_button_size;
+        style.width = Val::Px(tile_size.x);
+        style.height = Val::Px(tile_size.y);
     }
 
     for mut style in &mut button_set.p1() {
-        style.size = promo_cancel_button_size;
+        style.width = Val::Px(tile_size.x);
+        style.height = Val::Px(tile_size.y / 2.0);
     }
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Event)]
 pub enum PromotionEvent {
     Promote(PieceType),
     Cancel,
@@ -291,7 +292,7 @@ pub fn promotion_buttons(
     mut event_writer: EventWriter<PromotionEvent>,
 ) {
     for (button, interaction) in &q_button {
-        if let Interaction::Clicked = interaction {
+        if let Interaction::Pressed = interaction {
             event_writer.send(PromotionEvent::Promote(button.1));
         }
     }

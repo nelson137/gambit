@@ -108,7 +108,7 @@ pub fn spawn_end_game_icons(
 pub struct ShowCheckmateIcons;
 
 impl Command for ShowCheckmateIcons {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let board_state = world.resource::<BoardState>();
 
         let loser_color = board_state.side_to_move();
@@ -134,7 +134,7 @@ impl Command for ShowCheckmateIcons {
 pub struct ShowStalemateIcons;
 
 impl Command for ShowStalemateIcons {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let board_state = world.resource::<BoardState>();
 
         let black_square = board_state.king_square(PieceColor::BLACK);
@@ -165,14 +165,14 @@ fn set_end_game_icon<IconMarker: Component>(
     *icon.get_mut::<Visibility>().unwrap() = Visibility::Visible;
     let mut style = icon.get_mut::<Style>().unwrap();
     if square.get_rank() == Rank::Eighth {
-        style.position.top = Val::Percent(3.0);
+        style.top = Val::Percent(3.0);
     } else {
-        style.position.top = Val::Percent(-14.0);
+        style.top = Val::Percent(-14.0);
     }
     if square.get_file() == File::H {
-        style.position.left = Val::Percent(57.0);
+        style.left = Val::Percent(57.0);
     } else {
-        style.position.left = Val::Percent(74.0);
+        style.left = Val::Percent(74.0);
     }
 }
 
@@ -181,12 +181,10 @@ pub fn end_game_icon_size(
     mut q_end_game_icons: Query<&mut Style, With<EndGameIcon>>,
 ) {
     let Some(tile_node) = q_tiles.iter().next() else { return };
-    let icon_size = {
-        let tile_size = tile_node.size().x;
-        let size = Val::Px(tile_size * 0.4);
-        Size::new(size, size)
-    };
+    let tile_size = tile_node.size().x;
+    let icon_size = Val::Px(tile_size * 0.4);
     for mut style in &mut q_end_game_icons {
-        style.size = icon_size;
+        style.width = icon_size;
+        style.height = icon_size;
     }
 }

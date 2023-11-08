@@ -13,7 +13,7 @@ impl GameCommandList {
 }
 
 impl Command for GameCommandList {
-    fn write(mut self, world: &mut World) {
+    fn apply(mut self, world: &mut World) {
         self.0.apply(world);
     }
 }

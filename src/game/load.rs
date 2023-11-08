@@ -15,7 +15,7 @@ use super::{
 pub struct DespawnPieces;
 
 impl Command for DespawnPieces {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut state = SystemState::<(Commands, Query<Entity, With<UiPiece>>)>::new(world);
         let (mut commands, q_pieces) = state.get_mut(world);
         q_pieces.for_each(|e| commands.entity(e).despawn_recursive());
@@ -26,12 +26,12 @@ impl Command for DespawnPieces {
 pub struct LoadGame(pub chess::Board);
 
 impl Command for LoadGame {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut board_state = world.resource_mut::<BoardState>();
         board_state.clear_pieces();
         board_state.set_board(&self.0);
 
-        DespawnPieces.write(world);
+        DespawnPieces.apply(world);
 
         let mut system_state =
             SystemState::<(Commands, Res<AssetServer>, ResMut<BoardState>)>::new(world);

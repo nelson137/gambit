@@ -53,7 +53,8 @@ pub fn spawn_tiles(
                     background_color: color.into(),
                     style: Style {
                         position_type: PositionType::Relative,
-                        size: Size::new(Val::Percent(100.0 / 8.0), Val::Percent(100.0 / 8.0)),
+                        width: Val::Percent(100.0 / 8.0),
+                        height: Val::Percent(100.0 / 8.0),
                         ..default()
                     },
                     z_index: ZIndex::Global(Z_TILE),
@@ -63,10 +64,6 @@ pub fn spawn_tiles(
             .with_children(|cmds| {
                 pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 
-                let file_label_pos =
-                    UiRect { bottom: Val::Percent(3.5), right: Val::Percent(8.0), ..default() };
-                let rank_label_pos =
-                    UiRect { top: Val::Percent(1.0), left: Val::Percent(4.5), ..default() };
                 let text_style = TextStyle {
                     color: if file_rank_sum % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
                     font_size: BOARD_TEXT_FONT_SIZE,
@@ -79,7 +76,8 @@ pub fn spawn_tiles(
                         text: Text::from_section(square.file_char(), text_style.clone()),
                         style: Style {
                             position_type: PositionType::Absolute,
-                            position: file_label_pos,
+                            bottom: Val::Percent(3.5),
+                            right: Val::Percent(8.0),
                             ..default()
                         },
                         z_index: ZIndex::Global(Z_NOTATION_TEXT),
@@ -93,7 +91,8 @@ pub fn spawn_tiles(
                         text: Text::from_section(square.rank_char(), text_style),
                         style: Style {
                             position_type: PositionType::Absolute,
-                            position: rank_label_pos,
+                            top: Val::Percent(1.0),
+                            left: Val::Percent(4.5),
                             ..default()
                         },
                         z_index: ZIndex::Global(Z_NOTATION_TEXT),

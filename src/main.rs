@@ -36,9 +36,9 @@ fn main() {
                 })
                 .set(LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() }),
         )
-        .add_plugin(EguiPlugin)
-        .add_plugin(GameLogicPlugin)
-        .add_plugin(DebugBevyInspectorPlugin)
+        .add_plugins(EguiPlugin)
+        .add_plugins(GameLogicPlugin)
+        .add_plugins(DebugBevyInspectorPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         // Run

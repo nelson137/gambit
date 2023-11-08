@@ -27,13 +27,13 @@ impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
         app
             // Plugins
-            .add_plugin(GameUiPlugin)
-            .add_plugin(MouseLogicPlugin)
-            .add_plugin(GameMenuLogicPlugin)
-            .add_plugin(SelectionPlugin)
+            .add_plugins(GameUiPlugin)
+            .add_plugins(MouseLogicPlugin)
+            .add_plugins(GameMenuLogicPlugin)
+            .add_plugins(SelectionPlugin)
             // Events
             .add_event::<PromotionEvent>()
             // Startup
-            .add_startup_system(setup_camera);
+            .add_systems(Startup, setup_camera);
     }
 }

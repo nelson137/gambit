@@ -15,7 +15,7 @@ impl Plugin for SelectionPlugin {
             .add_event::<SelectionEvent>()
             // Systems
             // TODO: handle_selection_events should run at the end of the set
-            .add_system(handle_selection_events.in_set(OnUpdate(MenuState::Game)));
+            .add_systems(Update, handle_selection_events.run_if(in_state(MenuState::Game)));
     }
 }
 
@@ -39,7 +39,7 @@ pub enum SelectionStateAction {
     Unselect(Square),
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Event)]
 pub enum SelectionEvent {
     MouseDown(Square),
     MouseUp(Square),
@@ -174,15 +174,15 @@ mod tests {
 
         pub fn build_app() -> App {
             let mut app = App::new();
-            app.add_plugin(TaskPoolPlugin::default())
-                .add_plugin(AssetPlugin::default())
-                .add_plugin(ImagePlugin::default())
-                .add_plugin(AudioPlugin)
+            app.add_plugins(TaskPoolPlugin::default())
+                .add_plugins(AssetPlugin::default())
+                .add_plugins(ImagePlugin::default())
+                .add_plugins(AudioPlugin::default())
                 .add_state::<MenuState>()
                 .init_resource::<CliArgs>()
                 .init_resource::<BoardState>()
-                .add_plugin(GameUiPlugin)
-                .add_plugin(SelectionPlugin);
+                .add_plugins(GameUiPlugin)
+                .add_plugins(SelectionPlugin);
             app
         }
 
@@ -286,7 +286,7 @@ mod tests {
         let expected_hl_2 = board_state.highlight(Square::D4);
         let drag_container = get_tagged_entity::<DragContainer>(&mut app);
         // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.write(&mut app.world);
+        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseUp(Square::D4));
         app.update();
@@ -314,7 +314,7 @@ mod tests {
         let dragging_piece = board_state.piece(Square::D2);
         let drag_container = get_tagged_entity::<DragContainer>(&mut app);
         // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.write(&mut app.world);
+        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseUp(Square::A8));
         app.update();
@@ -333,7 +333,7 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::Selected(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).write(&mut app.world);
+        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseDown(Square::D2));
         app.update();
@@ -430,14 +430,14 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).write(&mut app.world);
+        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D2);
         let unexpected_hl = board_state.highlight(Square::D2);
         let drag_container = get_tagged_entity::<DragContainer>(&mut app);
         // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.write(&mut app.world);
+        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseUp(Square::D2));
         app.update();
@@ -460,7 +460,7 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).write(&mut app.world);
+        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D4);
@@ -468,7 +468,7 @@ mod tests {
         let expected_hl_2 = board_state.highlight(Square::D4);
         let drag_container = get_tagged_entity::<DragContainer>(&mut app);
         // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.write(&mut app.world);
+        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseUp(Square::D4));
         app.update();
@@ -492,14 +492,14 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).write(&mut app.world);
+        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D2);
         let expected_hl = board_state.highlight(Square::D2);
         let drag_container = get_tagged_entity::<DragContainer>(&mut app);
         // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.write(&mut app.world);
+        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
         app.world.send_event(SelectionEvent::MouseUp(Square::A8));
         app.update();

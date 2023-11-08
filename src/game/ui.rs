@@ -8,7 +8,6 @@ use bevy_startup_tree::{startup_tree, AddStartupTree};
 use crate::debug_name;
 
 use super::{
-    audio::GameAudioHandles,
     board::{
         board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
         spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState, PieceColor,
@@ -23,13 +22,12 @@ pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugin(GameMenuUiPlugin)
+        app.add_plugins(GameMenuUiPlugin)
             // Resources
-            .init_resource::<GameAudioHandles>()
             .init_resource::<BoardState>()
             .init_resource::<CaptureState>()
             // Systems
-            .add_startup_system(spawn_drag_container)
+            .add_systems(Startup, spawn_drag_container)
             .add_startup_tree(startup_tree! {
                 spawn_ui => {
                     spawn_board => {
@@ -44,9 +42,8 @@ impl Plugin for GameUiPlugin {
                 }
             })
             .add_systems(
-                (board_size, captures_images_sizes, end_game_icon_size)
-                    .in_base_set(CoreSet::PostUpdate)
-                    .before(UiSystem::Flex),
+                PostUpdate,
+                (board_size, captures_images_sizes, end_game_icon_size).before(UiSystem::Layout),
             );
     }
 }
@@ -72,13 +69,11 @@ pub fn spawn_ui(mut commands: Commands) {
             debug_name!("Ui Wrapper"),
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     position_type: PositionType::Absolute,
-                    position: UiRect {
-                        left: Val::Percent(0.0),
-                        top: Val::Percent(0.0),
-                        ..default()
-                    },
+                    left: Val::Percent(0.0),
+                    top: Val::Percent(0.0),
                     flex_direction: FlexDirection::Row,
                     justify_content: JustifyContent::Center,
                     ..default()
@@ -92,7 +87,7 @@ pub fn spawn_ui(mut commands: Commands) {
                 debug_name!("Ui"),
                 NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Auto, Val::Percent(100.0)),
+                        height: Val::Percent(100.0),
                         padding: UiRect::all(UI_GAP_VAL),
                         flex_direction: FlexDirection::Column,
                         ..default()
@@ -116,7 +111,8 @@ pub fn spawn_ui(mut commands: Commands) {
                     debug_name!("Board Container"),
                     NodeBundle {
                         style: Style {
-                            min_size: Size::new(Val::Px(MIN_BOARD_SIZE), Val::Px(MIN_BOARD_SIZE)),
+                            min_width: MIN_BOARD_SIZE,
+                            min_height: MIN_BOARD_SIZE,
                             ..default()
                         },
                         ..default()
@@ -152,8 +148,9 @@ impl PanelBuilder {
             UiPanel,
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Px(CAPTURES_PANEL_HEIGHT)),
-                    min_size: Size::new(Val::Auto, Val::Px(CAPTURES_PANEL_HEIGHT)),
+                    width: Val::Percent(100.0),
+                    height: Val::Px(CAPTURES_PANEL_HEIGHT),
+                    min_height: Val::Px(CAPTURES_PANEL_HEIGHT),
                     margin: self.margin,
                     ..default()
                 },
@@ -185,7 +182,7 @@ const PROFILE_IMAGE_SIZE: f32 = CAPTURES_PANEL_HEIGHT;
 const PROFILE_IMAGE_SIZE_VAL: Val = Val::Px(PROFILE_IMAGE_SIZE);
 
 impl Command for PanelBuilderCmd {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let color = self.data.color;
 
         let asset_server = world.resource::<AssetServer>();
@@ -202,7 +199,8 @@ impl Command for PanelBuilderCmd {
                 ImageBundle {
                     image: UiImage::new(profile_image_handle),
                     style: Style {
-                        size: Size::new(PROFILE_IMAGE_SIZE_VAL, PROFILE_IMAGE_SIZE_VAL),
+                        width: PROFILE_IMAGE_SIZE_VAL,
+                        height: PROFILE_IMAGE_SIZE_VAL,
                         ..default()
                     },
                     ..default()
@@ -214,7 +212,7 @@ impl Command for PanelBuilderCmd {
                 debug_name!("Panel Inner Container"),
                 NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Auto, Val::Percent(100.0)),
+                        height: Val::Percent(100.0),
                         margin: UiRect::left(UI_GAP_VAL),
                         flex_direction: FlexDirection::Column,
                         align_items: AlignItems::FlexStart,
@@ -236,7 +234,8 @@ impl Command for PanelBuilderCmd {
 
                 cmds.spawn(NodeBundle {
                     style: Style {
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         margin: UiRect::top(UI_GAP_VAL),
                         ..default()
                     },
@@ -278,7 +277,7 @@ fn captures_images_sizes(
             let image_size = img.size();
             let size = node.size();
             let scale = size.y / image_size.y;
-            style.size.width = Val::Px(image_size.x * scale);
+            style.width = Val::Px(image_size.x * scale);
         }
     }
 }

@@ -24,7 +24,8 @@ pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<Board
             debug_name!("Board"),
             NodeBundle {
                 style: Style {
-                    size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     aspect_ratio: Some(1.0),
                     flex_direction: FlexDirection::Row,
                     flex_wrap: FlexWrap::WrapReverse,
@@ -55,5 +56,6 @@ pub fn board_size(
         let available_height = win.height() - panels_height - 4.0 * UI_GAP;
         Val::Px(available_width.min(available_height))
     };
-    board_style.size = Size::new(size, size);
+    board_style.width = size;
+    board_style.height = size;
 }

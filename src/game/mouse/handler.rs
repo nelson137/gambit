@@ -47,8 +47,8 @@ pub(super) fn update_drag_container(
     let Some(tile_node) = q_tiles.iter().next() else { return };
     let Vec2 { x: width, y: height } = tile_node.size();
     let mut style = q_container.single_mut();
-    style.size.width = Val::Px(width);
-    style.size.height = Val::Px(height);
-    style.position.top = Val::Px(mouse_world_pos.y - height / 2.0);
-    style.position.left = Val::Px(mouse_world_pos.x - width / 2.0);
+    style.width = Val::Px(width);
+    style.height = Val::Px(height);
+    style.top = Val::Px(mouse_world_pos.y - height / 2.0);
+    style.left = Val::Px(mouse_world_pos.x - width / 2.0);
 }

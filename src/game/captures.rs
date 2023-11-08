@@ -171,7 +171,7 @@ pub enum CapStateDiff {
 }
 
 impl Command for CapStateUpdate {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         trace!(side = ?self.color, typ = ?self.typ, action = ?self.diff, "Update capture state");
 
         let cap = &mut world.resource_mut::<CaptureState>()[self.color][self.typ];
@@ -226,7 +226,7 @@ impl Captured {
 }
 
 impl Command for Captured {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Self { entity, mut color, typ } = self;
 
         trace!(?color, ?typ, "Capture piece");
@@ -241,14 +241,14 @@ impl Command for Captured {
         }
 
         // Update count state & ui images
-        CapStateUpdate::new(color, typ, CapStateDiff::Increment).write(world);
+        CapStateUpdate::new(color, typ, CapStateDiff::Increment).apply(world);
     }
 }
 
 pub struct ResetCapturesUi;
 
 impl Command for ResetCapturesUi {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let mut state = SystemState::<ResMut<CaptureState>>::new(world);
         let mut capture_state = state.get_mut(world);
 

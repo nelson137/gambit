@@ -58,7 +58,7 @@ pub(super) fn on_enter_menu_state(
 ) {
     let mut set_menu_display =
         |d| q_menu_components.iter_mut().for_each(|mut style| style.display = d);
-    match menu_state.0 {
+    match *menu_state.get() {
         MenuState::FenInput => fen_popup_data.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),

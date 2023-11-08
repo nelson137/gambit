@@ -9,13 +9,13 @@ use super::{
 pub struct GameOver;
 
 impl Command for GameOver {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         trace!("Game over");
 
         let board = world.resource::<BoardState>().board();
         match board.status() {
-            BoardStatus::Checkmate => ShowCheckmateIcons.write(world),
-            BoardStatus::Stalemate => ShowStalemateIcons.write(world),
+            BoardStatus::Checkmate => ShowCheckmateIcons.apply(world),
+            BoardStatus::Stalemate => ShowStalemateIcons.apply(world),
             BoardStatus::Ongoing => {
                 warn!("Running game over sequence when the game is still ongoing")
             }

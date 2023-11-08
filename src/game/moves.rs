@@ -30,18 +30,18 @@ impl StartMove {
 }
 
 impl Command for StartMove {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Self { entity, color, typ, from_sq, to_sq } = self;
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
         let mut board_state = world.resource_mut::<BoardState>();
 
-        board_state.unselect_square().write(world);
+        board_state.unselect_square().apply(world);
 
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
-            StartPromotion::new(entity, color, from_sq, to_sq).write(world);
+            StartPromotion::new(entity, color, from_sq, to_sq).apply(world);
         } else {
-            MovePiece::new(entity, color, typ, from_sq, to_sq, None).write(world);
+            MovePiece::new(entity, color, typ, from_sq, to_sq, None).apply(world);
         }
     }
 }
@@ -69,7 +69,7 @@ impl MovePiece {
 }
 
 impl Command for MovePiece {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Self { entity, color, typ, from_sq, to_sq, promotion } = self;
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
@@ -132,7 +132,7 @@ impl Command for MovePiece {
             cmd_list.add(GameOver);
         }
 
-        cmd_list.write(world);
+        cmd_list.apply(world);
     }
 }
 
@@ -148,7 +148,7 @@ impl MoveUiPiece {
 }
 
 impl Command for MoveUiPiece {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         trace!(to_sq = %self.to_sq, "Move UI piece");
 
         if let Some(mut square) = world.entity_mut(self.entity).get_mut::<Square>() {

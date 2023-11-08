@@ -132,8 +132,6 @@ pub fn spawn_pieces(
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
 ) {
-    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
-
     for square in chess::ALL_SQUARES.map(Square::new) {
         let Some(info) = board_state.get_piece_info_on(square) else { continue };
         let image_path = info.asset_path();
@@ -148,8 +146,10 @@ pub fn spawn_pieces(
                     image: UiImage::new(asset_server.load(image_path)),
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: pos_top_left,
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        top: Val::Px(0.0),
+                        left: Val::Px(0.0),
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
                     z_index: ZIndex::Global(Z_PIECE),
@@ -176,7 +176,7 @@ impl PromoteUiPiece {
 }
 
 impl Command for PromoteUiPiece {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         trace!(color = ?self.color, typ = ?self.typ, "Promote UI piece");
 
         let new_asset_path = (self.color, self.typ).asset_path();

@@ -44,7 +44,7 @@ pub const INIT_MENU_TITLE_SIZE: f32 = 128.0;
 
 pub const INIT_MENU_BUTTON_TEXT_SIZE: f32 = 48.0;
 
-pub const MIN_BOARD_SIZE: f32 = 256.0;
+pub const MIN_BOARD_SIZE: Val = Val::Px(256.0);
 
 //==================================================
 // Z-Values

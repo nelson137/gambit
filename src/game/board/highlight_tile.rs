@@ -14,7 +14,7 @@ pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
 pub struct ShowHighlight(pub Entity);
 
 impl Command for ShowHighlight {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
             *vis = Visibility::Visible;
         }
@@ -25,7 +25,7 @@ impl Command for ShowHighlight {
 pub struct HideHighlight(pub Option<Entity>);
 
 impl Command for HideHighlight {
-    fn write(self, world: &mut World) {
+    fn apply(self, world: &mut World) {
         let Some(entity) = *self else { return };
         if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
             *vis = Visibility::Hidden;
@@ -34,7 +34,8 @@ impl Command for HideHighlight {
 }
 
 pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<BoardState>) {
-    let pos_top_left = UiRect { top: Val::Px(0.0), left: Val::Px(0.0), ..default() };
+    let top = Val::Px(0.0);
+    let left = Val::Px(0.0);
 
     for square in chess::ALL_SQUARES {
         let square = Square::new(square);
@@ -48,8 +49,10 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                     background_color: COLOR_HIGHLIGHT.into(),
                     style: Style {
                         position_type: PositionType::Absolute,
-                        position: pos_top_left,
-                        size: Size::new(Val::Percent(100.0), Val::Percent(100.0)),
+                        top,
+                        left,
+                        width: Val::Percent(100.0),
+                        height: Val::Percent(100.0),
                         ..default()
                     },
                     visibility: Visibility::Hidden,

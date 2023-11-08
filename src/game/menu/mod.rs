@@ -38,18 +38,20 @@ impl Plugin for GameMenuLogicPlugin {
             // States
             .add_state::<MenuState>()
             // Systems
-            .add_startup_system(init_menu_state_from_cli)
-            .add_system(menu_size.in_base_set(CoreSet::PostUpdate).before(UiSystem::Flex))
-            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::FenInput)))
-            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::Menu)))
-            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::Game)))
-            .add_system(on_enter_menu_state.in_schedule(OnEnter(MenuState::DoGameOver)))
-            .add_system(fen_menu.in_set(OnUpdate(MenuState::FenInput)))
+            .add_systems(Startup, init_menu_state_from_cli)
+            .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
+            .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state)
+            .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state)
+            .add_systems(OnEnter(MenuState::Game), on_enter_menu_state)
+            .add_systems(OnEnter(MenuState::DoGameOver), on_enter_menu_state)
+            .add_systems(Update, fen_menu.run_if(in_state(MenuState::FenInput)))
             .add_systems(
-                (game_menu_buttons, game_menu_elements_sizes).in_set(OnUpdate(MenuState::Menu)),
+                Update,
+                (game_menu_buttons, game_menu_elements_sizes).run_if(in_state(MenuState::Menu)),
             )
-            .add_system(game_over.in_set(OnUpdate(MenuState::DoGameOver)))
+            .add_systems(Update, game_over.run_if(in_state(MenuState::DoGameOver)))
             .add_systems(
+                Update,
                 (
                     promotion_ui_sizes,
                     promotion_buttons,

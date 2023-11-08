@@ -18,20 +18,16 @@ impl Plugin for MouseLogicPlugin {
             .init_resource::<MouseBoardSquare>()
             // Systems
             .add_systems(
+                PreUpdate,
                 (
                     mouse_screen_position_to_world,
                     mouse_world_position_to_square.after(mouse_screen_position_to_world),
                 )
-                    .distributive_run_if(is_in_game)
-                    .in_base_set(CoreSet::PreUpdate),
+                    .run_if(in_state(MenuState::Game)),
             )
-            .add_systems((
-                mouse_handler.run_if(is_in_game),
-                update_drag_container.run_if(is_in_game),
-            ));
+            .add_systems(
+                Update,
+                (mouse_handler, update_drag_container).run_if(in_state(MenuState::Game)),
+            );
     }
-}
-
-fn is_in_game(menu_state: Res<State<MenuState>>) -> bool {
-    matches!(menu_state.0, MenuState::Game)
 }
