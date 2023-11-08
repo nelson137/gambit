@@ -22,4 +22,3 @@ bevy-inspector-egui = { version = "0.20", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 egui_extras = "0.23"
-grid = "0.9"
