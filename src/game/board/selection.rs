@@ -179,6 +179,7 @@ mod tests {
                 .add_plugins(ImagePlugin::default())
                 .add_plugins(AudioPlugin::default())
                 .add_state::<MenuState>()
+                .add_systems(Startup, |mut s: ResMut<NextState<_>>| s.set(MenuState::Game))
                 .init_resource::<CliArgs>()
                 .init_resource::<BoardState>()
                 .add_plugins(GameUiPlugin)
