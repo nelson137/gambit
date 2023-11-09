@@ -7,6 +7,7 @@ edition = "2021"
 
 [features]
 trace_logs = []
+file_watcher = ["bevy/file_watcher"]
 
 [profile.dev]
 opt-level = 0
@@ -15,7 +16,7 @@ opt-level = 0
 opt-level = 2
 
 [dependencies]
-bevy = { version = "0.12", features = ["file_watcher", "flac"] }
+bevy = { version = "0.12", features = ["flac"] }
 bevy_egui = "0.23"
 bevy_startup_tree = "0.4"
 bevy-inspector-egui = { version = "0.21", optional = true }
