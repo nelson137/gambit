@@ -52,7 +52,7 @@ fn handle_selection_events(
     mut event_reader: EventReader<SelectionEvent>,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
-    for &event in event_reader.iter() {
+    for &event in event_reader.read() {
         let action = match *selection_state {
             SelectionState::Unselected => match event {
                 SelectionEvent::MouseDown(square) => {

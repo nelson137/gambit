@@ -312,7 +312,7 @@ pub fn promotion_event_handler(
     mut event_reader: EventReader<PromotionEvent>,
     q_promo: Query<(Entity, &PromotingPiece)>,
 ) {
-    let mut event_iter = event_reader.iter();
+    let mut event_iter = event_reader.read();
     if let Some(event) = event_iter.next().copied() {
         // Exhaust the rest of the events.
         // Currently there is no easy way to scope click events to entities given the state of

@@ -276,8 +276,8 @@ fn captures_images_sizes(
         if let Some(img) = image_assets.get(&ui_image.texture) {
             let image_size = img.size();
             let size = node.size();
-            let scale = size.y / image_size.y;
-            style.width = Val::Px(image_size.x * scale);
+            let scale = size.y / image_size.y as f32;
+            style.width = Val::Px(image_size.x as f32 * scale);
         }
     }
 }
