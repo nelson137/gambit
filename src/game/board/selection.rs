@@ -160,16 +160,15 @@ fn handle_selection_events(
 
 #[cfg(test)]
 mod tests {
-    use bevy::{
-        audio::AudioPlugin,
-        ecs::system::{Command, SystemState},
-    };
-
-    use crate::{cli::CliArgs, game::ui::GameUiPlugin};
+    use bevy::ecs::system::Command;
 
     use super::*;
 
     mod utils {
+        use bevy::{audio::AudioPlugin, ecs::system::SystemState};
+
+        use crate::{cli::CliArgs, game::ui::GameUiPlugin};
+
         use super::*;
 
         pub fn build_app() -> App {
@@ -178,6 +177,7 @@ mod tests {
                 .add_plugins(AssetPlugin::default())
                 .add_plugins(ImagePlugin::default())
                 .add_plugins(AudioPlugin::default())
+                .init_asset::<Font>()
                 .add_state::<MenuState>()
                 .add_systems(Startup, |mut s: ResMut<NextState<_>>| s.set(MenuState::Game))
                 .init_resource::<CliArgs>()
