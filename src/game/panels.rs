@@ -19,6 +19,7 @@ pub struct UiPanelsPlugin;
 impl Plugin for UiPanelsPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
+            .init_resource::<CaptureState>()
             .add_systems(Startup, spawn_panels.after(spawn_ui))
             .add_systems(PostUpdate, captures_images_sizes.before(UiSystem::Layout))
             .noop();

@@ -8,7 +8,6 @@ use super::{
         board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
         spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState,
     },
-    captures::CaptureState,
     consts::{MIN_BOARD_SIZE, UI_GAP_VAL},
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,
@@ -25,7 +24,6 @@ impl Plugin for GameUiPlugin {
             .add_plugins(UiPanelsPlugin)
             // Resources
             .init_resource::<BoardState>()
-            .init_resource::<CaptureState>()
             // Systems
             .add_startup_tree(startup_tree! {
                 spawn_ui => {
