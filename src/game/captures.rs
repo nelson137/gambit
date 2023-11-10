@@ -197,16 +197,16 @@ impl Command for CapStateUpdate {
 
             // Get the image entity
             let image_entity = cap.image_entity;
-            let mut image_entity = world.entity_mut(image_entity);
+            if let Some(mut image_entity) = world.get_entity_mut(image_entity) {
+                // Update image handle
+                if let Some(mut image) = image_entity.get_mut::<UiImage>() {
+                    image.texture = handle;
+                }
 
-            // Update image handle
-            if let Some(mut image) = image_entity.get_mut::<UiImage>() {
-                image.texture = handle;
-            }
-
-            // Set display to not-none if the count was previously 0
-            if let Some(mut style) = image_entity.get_mut::<Style>() {
-                style.display = Display::Flex;
+                // Set display to not-none if the count was previously 0
+                if let Some(mut style) = image_entity.get_mut::<Style>() {
+                    style.display = Display::Flex;
+                }
             }
         }
     }
