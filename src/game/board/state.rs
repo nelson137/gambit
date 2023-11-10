@@ -61,7 +61,7 @@ pub struct BoardState {
 
 impl FromWorld for BoardState {
     fn from_world(world: &mut World) -> Self {
-        let board = match &world.resource::<CliArgs>().fen {
+        let board = match &world.get_resource::<CliArgs>().and_then(|cli| cli.fen.as_deref()) {
             Some(fen) => match Board::from_str(fen) {
                 Ok(board) => board,
                 Err(err) => {

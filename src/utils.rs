@@ -1,6 +1,16 @@
 use bevy::prelude::*;
 use bevy_egui::egui::{TextStyle, Ui};
 
+pub trait AppNoop {
+    fn noop(&mut self) -> &mut Self;
+}
+
+impl AppNoop for App {
+    fn noop(&mut self) -> &mut Self {
+        self
+    }
+}
+
 pub struct DebugBevyInspectorPlugin;
 
 impl Plugin for DebugBevyInspectorPlugin {

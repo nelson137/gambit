@@ -1,8 +1,7 @@
 #![allow(clippy::too_many_arguments, clippy::type_complexity)]
 
-use bevy::{log::LogPlugin, prelude::*, window::WindowResolution};
+use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-use clap::Parser;
 
 mod assets;
 mod cli;
@@ -10,9 +9,10 @@ mod game;
 mod utils;
 
 use self::{
-    cli::CliArgs,
+    cli::CliPlugin,
     game::{
-        consts::{COLOR_BG, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, LOG_FILTER, LOG_LEVEL},
+        consts::{COLOR_BG, LOG_FILTER, LOG_LEVEL},
+        core::{GameHeadPlugin, GameHeadlessPlugin},
         GameLogicPlugin,
     },
     utils::DebugBevyInspectorPlugin,
@@ -20,22 +20,11 @@ use self::{
 
 fn main() {
     App::new()
-        // Cli
-        .insert_resource(CliArgs::parse())
-        // Plugins
-        .add_plugins(
-            DefaultPlugins
-                .set(WindowPlugin {
-                    primary_window: Some(Window {
-                        title: "Gambit".into(),
-                        resolution: WindowResolution::new(INIT_WIN_WIDTH, INIT_WIN_HEIGHT),
-                        resizable: true,
-                        ..default()
-                    }),
-                    ..default()
-                })
-                .set(LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() }),
-        )
+        .add_plugins(bevy::log::LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() })
+        // App
+        .add_plugins((GameHeadlessPlugin, GameHeadPlugin))
+        // Game
+        .add_plugins(CliPlugin)
         .add_plugins(EguiPlugin)
         .add_plugins(GameLogicPlugin)
         .add_plugins(DebugBevyInspectorPlugin)

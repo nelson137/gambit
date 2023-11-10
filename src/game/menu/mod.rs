@@ -62,3 +62,23 @@ impl Plugin for GameMenuLogicPlugin {
             );
     }
 }
+
+#[cfg(test)]
+pub mod test {
+    use bevy::prelude::*;
+
+    use crate::utils::AppNoop;
+
+    use super::*;
+
+    pub struct TestMenuStateInGamePlugin;
+
+    impl Plugin for TestMenuStateInGamePlugin {
+        fn build(&self, app: &mut App) {
+            app.noop()
+                .add_state::<MenuState>()
+                .add_systems(PreStartup, |mut s: ResMut<NextState<_>>| s.set(MenuState::Game))
+                .noop();
+        }
+    }
+}

@@ -165,22 +165,20 @@ mod tests {
     use super::*;
 
     mod utils {
-        use bevy::{audio::AudioPlugin, ecs::system::SystemState};
+        use bevy::ecs::system::SystemState;
 
-        use crate::{cli::CliArgs, game::ui::GameUiPlugin};
+        use crate::game::{
+            core::{GameHeadlessPlugin, GameTestPlugin},
+            menu::test::TestMenuStateInGamePlugin,
+            ui::GameUiPlugin,
+        };
 
         use super::*;
 
         pub fn build_app() -> App {
             let mut app = App::new();
-            app.add_plugins(TaskPoolPlugin::default())
-                .add_plugins(AssetPlugin::default())
-                .add_plugins(ImagePlugin::default())
-                .add_plugins(AudioPlugin::default())
-                .init_asset::<Font>()
-                .add_state::<MenuState>()
-                .add_systems(Startup, |mut s: ResMut<NextState<_>>| s.set(MenuState::Game))
-                .init_resource::<CliArgs>()
+            app.add_plugins((GameHeadlessPlugin, GameTestPlugin))
+                .add_plugins(TestMenuStateInGamePlugin)
                 .init_resource::<BoardState>()
                 .add_plugins(GameUiPlugin)
                 .add_plugins(SelectionPlugin);
