@@ -10,6 +10,8 @@ use crate::{
     utils::AppNoop,
 };
 
+use super::utils::SortableChildrenPlugin;
+
 pub struct GameHeadlessPlugin;
 
 impl Plugin for GameHeadlessPlugin {
@@ -23,6 +25,7 @@ impl Plugin for GameHeadlessPlugin {
             .add_plugins(bevy::input::InputPlugin)
             .add_plugins(bevy::asset::AssetPlugin::default())
             .add_plugins(bevy::audio::AudioPlugin::default())
+            .add_plugins(SortableChildrenPlugin)
             .noop();
     }
 }

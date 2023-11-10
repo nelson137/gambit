@@ -11,6 +11,7 @@ pub mod load;
 pub mod menu;
 pub mod mouse;
 pub mod moves;
+pub mod panels;
 pub mod ui;
 pub mod utils;
 
