@@ -31,7 +31,7 @@ pub(super) fn mouse_handler(
 #[derive(Component)]
 pub struct DragContainer;
 
-pub fn spawn_drag_container(mut commands: Commands) {
+pub(super) fn spawn_drag_container(mut commands: Commands) {
     commands.spawn((
         DragContainer,
         debug_name!("Drag Container"),

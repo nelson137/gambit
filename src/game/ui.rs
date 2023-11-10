@@ -15,7 +15,7 @@ use super::{
     captures::CaptureState,
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, MIN_BOARD_SIZE, UI_GAP_VAL},
     menu::GameMenuUiPlugin,
-    mouse::spawn_drag_container,
+    mouse::MouseUiPlugin,
 };
 
 pub struct GameUiPlugin;
@@ -23,11 +23,11 @@ pub struct GameUiPlugin;
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(GameMenuUiPlugin)
+            .add_plugins(MouseUiPlugin)
             // Resources
             .init_resource::<BoardState>()
             .init_resource::<CaptureState>()
             // Systems
-            .add_systems(Startup, spawn_drag_container)
             .add_startup_tree(startup_tree! {
                 spawn_ui => {
                     spawn_board => {

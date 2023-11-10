@@ -8,6 +8,14 @@ mod position;
 #[allow(unused_imports)]
 pub use self::{handler::*, position::*};
 
+pub struct MouseUiPlugin;
+
+impl Plugin for MouseUiPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Startup, spawn_drag_container);
+    }
+}
+
 pub struct MouseLogicPlugin;
 
 impl Plugin for MouseLogicPlugin {
