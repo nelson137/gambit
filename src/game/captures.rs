@@ -152,6 +152,15 @@ impl Default for CapState {
     }
 }
 
+impl CapState {
+    fn patch(&mut self, diff: CapStateDiff) {
+        match diff {
+            CapStateDiff::Increment => self.count += 1,
+            CapStateDiff::Set(count) => self.count = count,
+        }
+    }
+}
+
 pub struct CapStateUpdate {
     color: PieceColor,
     typ: PieceType,
@@ -164,7 +173,7 @@ impl CapStateUpdate {
     }
 }
 
-#[derive(Debug)]
+#[derive(Clone, Copy, Debug)]
 pub enum CapStateDiff {
     Increment,
     Set(u8),
@@ -172,15 +181,13 @@ pub enum CapStateDiff {
 
 impl Command for CapStateUpdate {
     fn apply(self, world: &mut World) {
+        let CapStateUpdate { color, typ, diff } = self;
         trace!(side = ?self.color, typ = ?self.typ, action = ?self.diff, "Update capture state");
 
-        let cap = &mut world.resource_mut::<CaptureState>()[self.color][self.typ];
+        let cap = &mut world.resource_mut::<CaptureState>()[color][typ];
 
         // Update the capture count
-        match self.diff {
-            CapStateDiff::Increment => cap.count += 1,
-            CapStateDiff::Set(count) => cap.count = count,
-        }
+        cap.patch(diff);
         let count = cap.count;
 
         if count == 0 {
