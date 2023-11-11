@@ -18,7 +18,7 @@ opt-level = 2
 [dependencies]
 bevy = { version = "0.12", features = ["flac"] }
 bevy_egui = "0.23"
-bevy_startup_tree = "0.4"
+bevy_startup_tree = "0.4.1"
 bevy-inspector-egui = { version = "0.21", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }

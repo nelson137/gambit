@@ -1020,9 +1020,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_startup_tree"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "20315ea62e2aa82e99336f5360ddda3ce4e84b70bc495a9c267fdb9d83c4efbe"
+checksum = "8160a25e109a4fea94536aa6c9cf64bfbad5100c0124b519b9a65a4c0406c84d"
 dependencies = [
  "bevy_app",
  "bevy_ecs",
@@ -1033,9 +1033,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_startup_tree_macros"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f254f77862abc842f1ba69ada196ae041999651c28756c5d733dfae461c84ec7"
+checksum = "42eff45fd9619dbdab83f52b850c81e5e9a106b16a7c2192868a6518d9c9032e"
 dependencies = [
  "bevy_startup_tree_macros_core",
  "quote",
@@ -1044,9 +1044,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_startup_tree_macros_core"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "259fc6ba3083209d84f78cea468c6ac1d4df1466782132eac304336978380060"
+checksum = "c13862da01b1d41b1b163a56a017eca4035c2c3f5e03c05238c412112b5ac2e4"
 dependencies = [
  "proc-macro2",
  "quote",

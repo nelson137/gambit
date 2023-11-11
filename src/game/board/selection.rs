@@ -179,7 +179,6 @@ mod tests {
             let mut app = App::new();
             app.add_plugins((GameHeadlessPlugin, GameTestPlugin))
                 .add_plugins(TestMenuStateInGamePlugin)
-                .init_resource::<BoardState>()
                 .add_plugins(GameUiPlugin)
                 .add_plugins(SelectionPlugin);
             app

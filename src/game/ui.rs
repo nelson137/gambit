@@ -1,13 +1,9 @@
-use bevy::{prelude::*, ui::UiSystem};
-use bevy_startup_tree::{startup_tree, AddStartupTree};
+use bevy::prelude::*;
 
-use crate::debug_name;
+use crate::{debug_name, utils::AppNoop};
 
 use super::{
-    board::{
-        board_size, end_game_icon_size, spawn_board, spawn_end_game_icons, spawn_highlight_tiles,
-        spawn_hints, spawn_pieces, spawn_promoters, spawn_tiles, BoardState,
-    },
+    board::BoardPlugin,
     consts::{MIN_BOARD_SIZE, UI_GAP_VAL},
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,
@@ -19,26 +15,13 @@ pub struct GameUiPlugin;
 
 impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(GameMenuUiPlugin)
+        app.noop()
+            .add_plugins(GameMenuUiPlugin)
             .add_plugins(MouseUiPlugin)
+            .add_plugins(BoardPlugin)
             .add_plugins(UiPanelsPlugin)
-            // Resources
-            .init_resource::<BoardState>()
-            // Systems
-            .add_startup_tree(startup_tree! {
-                spawn_ui => {
-                    spawn_board => {
-                        spawn_tiles => {
-                            spawn_highlight_tiles,
-                            spawn_hints,
-                            spawn_pieces,
-                            spawn_promoters,
-                            spawn_end_game_icons,
-                        },
-                    },
-                }
-            })
-            .add_systems(PostUpdate, (board_size, end_game_icon_size).before(UiSystem::Layout));
+            .add_systems(Startup, spawn_ui)
+            .noop();
     }
 }
 

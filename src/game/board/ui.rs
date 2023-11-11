@@ -14,7 +14,7 @@ pub struct MoveHints {
     pub capture_entity: Entity,
 }
 
-pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<BoardContainer>>) {
+pub fn spawn_board(mut commands: Commands) {
     let entity = commands
         .spawn((
             UiBoard,
@@ -32,7 +32,10 @@ pub fn spawn_board(mut commands: Commands, q_container: Query<Entity, With<Board
             },
         ))
         .id();
-    commands.entity(q_container.single()).add_child(entity);
+    commands.add(move |world: &mut World| {
+        let parent = world.query_filtered::<Entity, With<BoardContainer>>().single(world);
+        world.entity_mut(parent).add_child(entity);
+    });
 }
 
 pub fn board_size(
