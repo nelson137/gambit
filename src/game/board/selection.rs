@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::game::{menu::MenuState, mouse::DragContainer};
+use crate::game::{menu::MenuState, mouse::DragContainer, moves::StartMove};
 
 use super::{BoardState, Square};
 
@@ -124,7 +124,8 @@ fn handle_selection_events(
                 *selection_state = SelectionState::Selected(square);
             }
             SelectionStateAction::Move(from_sq, to_sq) => {
-                commands.add(board_state.move_piece(from_sq, to_sq));
+                let piece = board_state.piece(from_sq);
+                commands.entity(piece).insert(StartMove::new(from_sq, to_sq));
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }

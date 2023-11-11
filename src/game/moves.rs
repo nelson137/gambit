@@ -3,45 +3,40 @@ use chess::File;
 
 use super::{
     audio::PlayGameAudio,
-    board::{BoardState, PieceColor, PieceType, Square, StartPromotion},
+    board::{BoardState, PieceColor, PieceType, Square, StartPromotion, UiPiece},
     captures::Captured,
     game_over::GameOver,
     utils::GameCommandList,
 };
 
+#[derive(Component)]
 pub struct StartMove {
-    entity: Entity,
-    color: PieceColor,
-    typ: PieceType,
     from_sq: Square,
     to_sq: Square,
 }
 
 impl StartMove {
-    pub fn new(
-        entity: Entity,
-        color: PieceColor,
-        typ: PieceType,
-        from_sq: Square,
-        to_sq: Square,
-    ) -> Self {
-        Self { entity, color, typ, from_sq, to_sq }
+    pub fn new(from_sq: Square, to_sq: Square) -> Self {
+        Self { from_sq, to_sq }
     }
 }
 
-impl Command for StartMove {
-    fn apply(self, world: &mut World) {
-        let Self { entity, color, typ, from_sq, to_sq } = self;
+pub fn start_move(
+    mut commands: Commands,
+    mut board_state: ResMut<BoardState>,
+    q_added: Query<(Entity, &UiPiece, &StartMove), Added<StartMove>>,
+) {
+    for (entity, &UiPiece { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
-        let mut board_state = world.resource_mut::<BoardState>();
+        commands.entity(entity).remove::<StartMove>();
 
-        board_state.unselect_square().apply(world);
+        commands.add(board_state.unselect_square());
 
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
-            StartPromotion::new(entity, color, from_sq, to_sq).apply(world);
+            commands.add(StartPromotion::new(entity, color, from_sq, to_sq));
         } else {
-            MovePiece::new(entity, color, typ, from_sq, to_sq, None).apply(world);
+            commands.add(MovePiece::new(entity, color, typ, from_sq, to_sq, None));
         }
     }
 }

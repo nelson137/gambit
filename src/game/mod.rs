@@ -1,10 +1,13 @@
 use bevy::prelude::*;
 
+use crate::utils::AppNoop;
+
 use self::{
     board::{BoardState, PromotionEvent, SelectionPlugin},
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     mouse::MouseLogicPlugin,
+    moves::start_move,
     ui::GameUiPlugin,
 };
 
@@ -27,7 +30,7 @@ pub struct GameLogicPlugin;
 
 impl Plugin for GameLogicPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.noop()
             // Plugins
             .add_plugins(GameUiPlugin)
             .add_plugins(MouseLogicPlugin)
@@ -36,6 +39,9 @@ impl Plugin for GameLogicPlugin {
             // Events
             .add_event::<PromotionEvent>()
             // Startup
-            .add_systems(Startup, setup_camera);
+            .add_systems(Startup, setup_camera)
+            // PostStartup
+            .add_systems(PostUpdate, start_move)
+            .noop();
     }
 }

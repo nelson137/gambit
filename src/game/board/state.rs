@@ -6,10 +6,7 @@ use std::{
 use bevy::{ecs::system::Command, prelude::*};
 use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPTY};
 
-use crate::{
-    cli::CliArgs,
-    game::{moves::StartMove, utils::GameCommandList},
-};
+use crate::{cli::CliArgs, game::utils::GameCommandList};
 
 use super::{
     HideHighlight, HideHints, MoveHints, PieceColor, PieceType, ShowHighlight, ShowHints, Square,
@@ -387,13 +384,5 @@ impl BoardState {
                 }
             },
         }
-    }
-
-    #[must_use]
-    pub fn move_piece(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
-        let entity = self.piece(from_sq);
-        let color = self.color_on(from_sq);
-        let typ = self.piece_on(from_sq);
-        StartMove::new(entity, color, typ, from_sq, to_sq)
     }
 }
