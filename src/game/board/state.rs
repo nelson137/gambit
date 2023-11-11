@@ -103,10 +103,6 @@ impl BoardState {
         self.board.side_to_move().into()
     }
 
-    pub fn is_colors_turn_at(&self, square: Square) -> bool {
-        self.color_on(square) == self.board.side_to_move()
-    }
-
     fn color_on(&self, square: Square) -> PieceColor {
         PieceColor(self.board.color_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
     }
@@ -296,10 +292,6 @@ impl BoardState {
 
     #[must_use]
     fn show_move_hints_for(&mut self, source: Square) -> impl Command {
-        if !self.is_colors_turn_at(source) {
-            return Default::default();
-        }
-
         let mut move_gen = MoveGen::new_legal(&self.board);
         let mut moves = Vec::with_capacity(move_gen.len());
 
