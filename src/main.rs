@@ -3,11 +3,6 @@
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 
-mod assets;
-mod cli;
-mod game;
-mod utils;
-
 use self::{
     cli::CliPlugin,
     game::{
@@ -17,6 +12,11 @@ use self::{
     },
     utils::DebugBevyInspectorPlugin,
 };
+
+mod assets;
+mod cli;
+mod game;
+mod utils;
 
 fn main() {
     App::new()

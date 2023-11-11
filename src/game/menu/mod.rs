@@ -6,12 +6,13 @@ use super::board::{
     promotion_ui_sizes,
 };
 
+use self::fen_popup::*;
+
+pub use self::{game_menu::*, state::*};
+
 mod fen_popup;
 mod game_menu;
 mod state;
-
-#[allow(unused_imports)]
-pub use self::{fen_popup::*, game_menu::*, state::*};
 
 pub struct GameMenuUiPlugin;
 

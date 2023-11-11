@@ -1,5 +1,13 @@
 use bevy::prelude::*;
 
+use self::{
+    board::{BoardState, PromotionEvent, SelectionPlugin},
+    camera::setup_camera,
+    menu::GameMenuLogicPlugin,
+    mouse::MouseLogicPlugin,
+    ui::GameUiPlugin,
+};
+
 pub mod audio;
 pub mod board;
 pub mod camera;
@@ -14,14 +22,6 @@ pub mod moves;
 pub mod panels;
 pub mod ui;
 pub mod utils;
-
-use self::{
-    board::{BoardState, PromotionEvent, SelectionPlugin},
-    camera::setup_camera,
-    menu::GameMenuLogicPlugin,
-    mouse::MouseLogicPlugin,
-    ui::GameUiPlugin,
-};
 
 pub struct GameLogicPlugin;
 

@@ -1,2 +1,3 @@
-mod pieces;
 pub use pieces::*;
+
+mod pieces;

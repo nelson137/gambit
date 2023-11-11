@@ -2,11 +2,10 @@ use bevy::prelude::*;
 
 use super::menu::MenuState;
 
+pub use self::{handler::*, position::*};
+
 mod handler;
 mod position;
-
-#[allow(unused_imports)]
-pub use self::{handler::*, position::*};
 
 pub struct MouseUiPlugin;
 
