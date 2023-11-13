@@ -3,7 +3,7 @@ use bevy_startup_tree::{startup_tree, AddStartupTree};
 
 use super::board::{
     is_promoting_piece, promotion_buttons, promotion_cancel_click_handler, promotion_event_handler,
-    promotion_ui_sizes,
+    promotion_ui_sizes, start_promotion,
 };
 
 use self::fen_popup::*;
@@ -51,6 +51,7 @@ impl Plugin for GameMenuLogicPlugin {
                 (game_menu_buttons, game_menu_elements_sizes).run_if(in_state(MenuState::Menu)),
             )
             .add_systems(Update, game_over.run_if(in_state(MenuState::DoGameOver)))
+            .add_systems(Update, start_promotion)
             .add_systems(
                 Update,
                 (
@@ -59,7 +60,7 @@ impl Plugin for GameMenuLogicPlugin {
                     promotion_cancel_click_handler.after(promotion_buttons),
                     promotion_event_handler.after(promotion_cancel_click_handler),
                 )
-                    .distributive_run_if(is_promoting_piece),
+                    .run_if(is_promoting_piece),
             );
     }
 }

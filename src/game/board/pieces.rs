@@ -1,6 +1,6 @@
 use std::{fmt, ops::Not};
 
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::prelude::*;
 use chess::{Piece, Rank};
 
 use crate::{assets::PieceColorAndTypeAssetPath, debug_name_f, game::consts::Z_PIECE};
@@ -160,31 +160,5 @@ pub fn spawn_pieces(
 
         commands.entity(board_state.tile(square)).add_child(piece_entity);
         board_state.set_piece(square, piece_entity);
-    }
-}
-
-pub struct PromoteUiPiece {
-    entity: Entity,
-    color: PieceColor,
-    typ: PieceType,
-}
-
-impl PromoteUiPiece {
-    pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
-        Self { entity, color, typ }
-    }
-}
-
-impl Command for PromoteUiPiece {
-    fn apply(self, world: &mut World) {
-        trace!(color = ?self.color, typ = ?self.typ, "Promote UI piece");
-
-        let new_asset_path = (self.color, self.typ).asset_path();
-        let new_asset = world.resource_mut::<AssetServer>().load(new_asset_path);
-
-        let mut e = world.entity_mut(self.entity);
-        if let Some(mut image) = e.get_mut::<UiImage>() {
-            image.texture = new_asset;
-        }
     }
 }

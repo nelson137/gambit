@@ -1,20 +1,15 @@
-use bevy::{
-    ecs::system::{Command, SystemState},
-    prelude::*,
-    ui::FocusPolicy,
-};
+use bevy::{prelude::*, ui::FocusPolicy};
 
 use crate::{
     assets::PieceColorAndTypeAssetPath,
     debug_name_f,
     game::{
-        board::PromoteUiPiece,
         consts::{FONT_PATH, Z_PROMOTER},
         moves::MovePiece,
     },
 };
 
-use super::{BoardState, PieceColor, PieceType, Square, Tile};
+use super::{BoardState, PieceColor, PieceType, Square, Tile, UiPiece};
 
 #[derive(Component)]
 pub struct PromotionUi(PieceColor);
@@ -141,103 +136,24 @@ pub fn spawn_promoters(
     }
 }
 
-fn set_promoter_visibility(world: &mut World, color: PieceColor, square: Option<Square>) {
-    let mut state = SystemState::<(
-        Commands,
-        Res<BoardState>,
-        Query<(Entity, &PromotionUi, &mut Visibility)>,
-    )>::new(world);
-    let (mut commands, board_state, mut q_promo_ui) = state.get_mut(world);
-
-    for (entity, &PromotionUi(ui_color), mut vis) in &mut q_promo_ui {
-        if ui_color == color {
-            match square {
-                Some(square) => {
-                    commands.entity(entity).set_parent(board_state.tile(square));
-                    *vis = Visibility::Visible;
-                }
-                None => *vis = Visibility::Hidden,
-            }
-            break;
-        }
-    }
-
-    state.apply(world);
-}
-
-pub struct StartPromotion {
-    entity: Entity,
-    color: PieceColor,
-    from_sq: Square,
-    to_sq: Square,
-}
-
-impl StartPromotion {
-    pub fn new(entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
-        Self { entity, color, from_sq, to_sq }
-    }
-}
-
-impl Command for StartPromotion {
-    fn apply(self, world: &mut World) {
-        let Self { entity, color, from_sq, to_sq } = self;
+pub fn start_promotion(
+    mut commands: Commands,
+    board_state: Res<BoardState>,
+    mut q_added: Query<
+        (&UiPiece, &PromotingPiece, &mut Visibility),
+        (Added<PromotingPiece>, Without<PromotionUi>),
+    >,
+    mut q_promoters: Query<(Entity, &PromotionUi, &mut Visibility), Without<PromotingPiece>>,
+) {
+    for (&UiPiece { color, .. }, &PromotingPiece { from_sq, to_sq }, mut vis) in &mut q_added {
         trace!(?color, %from_sq, %to_sq, "Start promotion");
 
-        // Hide the piece
-        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            *vis = Visibility::Hidden;
-        }
+        *vis = Visibility::Hidden;
 
-        set_promoter_visibility(world, color, Some(to_sq));
-
-        world.entity_mut(entity).insert(PromotingPiece::new(color, from_sq, to_sq));
-    }
-}
-
-pub struct FinishPromotion {
-    entity: Entity,
-    color: PieceColor,
-    from_sq: Square,
-    to_sq: Square,
-    event: PromotionEvent,
-}
-
-impl FinishPromotion {
-    pub fn new(
-        entity: Entity,
-        color: PieceColor,
-        from_sq: Square,
-        to_sq: Square,
-        event: PromotionEvent,
-    ) -> Self {
-        Self { entity, color, from_sq, to_sq, event }
-    }
-}
-
-impl Command for FinishPromotion {
-    fn apply(self, world: &mut World) {
-        let Self { entity, color, from_sq, to_sq, event } = self;
-        trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
-
-        set_promoter_visibility(world, color, None);
-
-        match event {
-            PromotionEvent::Promote(promo_typ) => {
-                MovePiece::new(entity, color, PieceType::PAWN, from_sq, to_sq, Some(promo_typ))
-                    .apply(world);
-                PromoteUiPiece::new(entity, color, promo_typ).apply(world);
-            }
-            PromotionEvent::Cancel => {
-                let from_sq_entity = world.resource_mut::<BoardState>().tile(from_sq);
-                world.entity_mut(from_sq_entity).push_children(&[entity]);
-            }
-        }
-
-        world.entity_mut(entity).remove::<PromotingPiece>();
-
-        // Show the piece
-        let mut e = world.entity_mut(entity);
-        if let Some(mut vis) = e.get_mut::<Visibility>() {
+        if let Some((entity, _, mut vis)) =
+            q_promoters.iter_mut().find(|(_, promo, _)| promo.0 == color)
+        {
+            commands.entity(entity).set_parent(board_state.tile(to_sq));
             *vis = Visibility::Visible;
         }
     }
@@ -245,14 +161,13 @@ impl Command for FinishPromotion {
 
 #[derive(Component)]
 pub struct PromotingPiece {
-    color: PieceColor,
     from_sq: Square,
     to_sq: Square,
 }
 
 impl PromotingPiece {
-    pub fn new(color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
-        Self { color, from_sq, to_sq }
+    pub fn new(from_sq: Square, to_sq: Square) -> Self {
+        Self { from_sq, to_sq }
     }
 }
 
@@ -309,8 +224,14 @@ pub fn promotion_cancel_click_handler(
 
 pub fn promotion_event_handler(
     mut commands: Commands,
+    board_state: Res<BoardState>,
+    asset_server: Res<AssetServer>,
     mut event_reader: EventReader<PromotionEvent>,
-    q_promo: Query<(Entity, &PromotingPiece)>,
+    mut q_promo: Query<
+        (Entity, &UiPiece, &PromotingPiece, &mut Visibility, &mut UiImage),
+        Without<PromotionUi>,
+    >,
+    mut q_promoters: Query<(&PromotionUi, &mut Visibility), Without<PromotingPiece>>,
 ) {
     let mut event_iter = event_reader.read();
     if let Some(event) = event_iter.next().copied() {
@@ -321,11 +242,43 @@ pub fn promotion_event_handler(
         // frame, there may be 2 events fired but only the first is used.
         event_iter.count();
 
-        let Ok((entity, &PromotingPiece { color, from_sq, to_sq })) = q_promo.get_single() else {
+        let Ok((
+            entity,
+            &UiPiece { color, .. },
+            &PromotingPiece { from_sq, to_sq },
+            mut vis,
+            mut image,
+        )) = q_promo.get_single_mut()
+        else {
             warn!("Ignoring received promotion event, not in promotion state");
             return;
         };
 
-        commands.add(FinishPromotion::new(entity, color, from_sq, to_sq, event));
+        trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
+
+        commands.entity(entity).remove::<PromotingPiece>();
+
+        // Hide the promoter UI
+        if let Some((_, mut vis)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
+            *vis = Visibility::Hidden;
+        }
+
+        match event {
+            PromotionEvent::Promote(promo_typ) => {
+                let new_asset_path = (color, promo_typ).asset_path();
+                image.texture = asset_server.load(new_asset_path);
+
+                let move_cmd =
+                    MovePiece::new(entity, color, PieceType::PAWN, from_sq, to_sq, Some(promo_typ));
+                commands.add(move_cmd);
+            }
+            PromotionEvent::Cancel => {
+                // Re-parent piece back to its original square
+                commands.entity(board_state.tile(from_sq)).push_children(&[entity]);
+            }
+        }
+
+        // Show the piece
+        *vis = Visibility::Visible;
     }
 }

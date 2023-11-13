@@ -5,7 +5,7 @@ use crate::game::utils::WorldExts;
 
 use super::{
     audio::PlayGameAudio,
-    board::{BoardState, PieceColor, PieceType, SelectionEvent, Square, StartPromotion, UiPiece},
+    board::{BoardState, PieceColor, PieceType, PromotingPiece, SelectionEvent, Square, UiPiece},
     captures::Captured,
     game_over::GameOver,
     utils::GameCommandList,
@@ -30,10 +30,11 @@ pub fn start_move(
     for (entity, &UiPiece { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
-        commands.entity(entity).remove::<StartMove>();
+        let mut entity_cmds = commands.entity(entity);
+        entity_cmds.remove::<StartMove>();
 
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
-            commands.add(StartPromotion::new(entity, color, from_sq, to_sq));
+            entity_cmds.insert(PromotingPiece::new(from_sq, to_sq));
         } else {
             commands.add(MovePiece::new(entity, color, typ, from_sq, to_sq, None));
         }
