@@ -9,7 +9,7 @@ use crate::{
 pub struct UiBoard;
 
 #[derive(Debug)]
-pub struct MoveHints {
+pub struct TileMoveHints {
     pub move_entity: Entity,
     pub capture_entity: Entity,
 }

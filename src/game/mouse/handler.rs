@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     debug_name,
     game::{
-        board::{SelectionEvent, Tile},
+        board::{MouseSelectionEvent, Tile},
         consts::Z_PIECE_SELECTED,
     },
 };
@@ -13,17 +13,17 @@ use super::position::{MouseBoardSquare, MouseWorldPosition};
 pub(super) fn mouse_handler(
     mouse_buttons: Res<Input<MouseButton>>,
     mouse_sq: Res<MouseBoardSquare>,
-    mut event_writer: EventWriter<SelectionEvent>,
+    mut event_writer: EventWriter<MouseSelectionEvent>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
         if let Some(square) = **mouse_sq {
-            event_writer.send(SelectionEvent::MouseDown(square));
+            event_writer.send(MouseSelectionEvent::MouseDown(square));
         }
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
         if let Some(square) = **mouse_sq {
-            event_writer.send(SelectionEvent::MouseUp(square));
+            event_writer.send(MouseSelectionEvent::MouseUp(square));
         }
     }
 }

@@ -2,7 +2,7 @@ use bevy::{ecs::system::Command, prelude::*};
 
 use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
-use super::{BoardState, MoveHints, Square};
+use super::{BoardState, Square, TileMoveHints};
 
 #[derive(Default)]
 pub struct ShowHints(pub Vec<Entity>);
@@ -97,7 +97,7 @@ pub fn spawn_hints(
             ))
             .id();
 
-        board_state.set_move_hints(square, MoveHints { capture_entity, move_entity });
+        board_state.set_move_hints(square, TileMoveHints { capture_entity, move_entity });
         commands.entity(board_state.tile(square)).push_children(&[move_entity, capture_entity]);
     }
 }

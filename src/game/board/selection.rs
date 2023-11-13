@@ -12,10 +12,10 @@ impl Plugin for SelectionPlugin {
             // Resources
             .init_resource::<SelectionState>()
             // Events
-            .add_event::<SelectionEvent>()
+            .add_event::<MouseSelectionEvent>()
             // Systems
             // TODO: handle_selection_events should run at the end of the set
-            .add_systems(Update, handle_selection_events.run_if(in_state(MenuState::Game)));
+            .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)));
     }
 }
 
@@ -40,33 +40,33 @@ pub enum SelectionStateAction {
 }
 
 #[derive(Clone, Copy, Debug, Event)]
-pub enum SelectionEvent {
+pub enum MouseSelectionEvent {
     MouseDown(Square),
     MouseUp(Square),
 }
 
-fn handle_selection_events(
+fn handle_mouse_selection_events(
     mut commands: Commands,
     mut selection_state: ResMut<SelectionState>,
     mut board_state: ResMut<BoardState>,
-    mut event_reader: EventReader<SelectionEvent>,
+    mut event_reader: EventReader<MouseSelectionEvent>,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
     for &event in event_reader.read() {
         let action = match *selection_state {
             SelectionState::Unselected => match event {
-                SelectionEvent::MouseDown(square) => {
+                MouseSelectionEvent::MouseDown(square) => {
                     if board_state.has_piece_at(square) {
                         SelectionStateAction::StartSelectingDragging(square)
                     } else {
                         SelectionStateAction::None
                     }
                 }
-                SelectionEvent::MouseUp(_) => SelectionStateAction::None,
+                MouseSelectionEvent::MouseUp(_) => SelectionStateAction::None,
             },
             SelectionState::SelectingDragging(selecting_sq) => match event {
-                SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
-                SelectionEvent::MouseUp(square) => {
+                MouseSelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
+                MouseSelectionEvent::MouseUp(square) => {
                     if board_state.move_is_valid(selecting_sq, square) {
                         SelectionStateAction::Move(selecting_sq, square)
                     } else {
@@ -75,7 +75,7 @@ fn handle_selection_events(
                 }
             },
             SelectionState::Selected(selected_sq) => match event {
-                SelectionEvent::MouseDown(square) => {
+                MouseSelectionEvent::MouseDown(square) => {
                     if square == selected_sq {
                         SelectionStateAction::StartSelectedDragging(selected_sq)
                     } else if board_state.move_is_valid(selected_sq, square) {
@@ -86,11 +86,11 @@ fn handle_selection_events(
                         SelectionStateAction::Unselect(selected_sq)
                     }
                 }
-                SelectionEvent::MouseUp(_) => SelectionStateAction::None,
+                MouseSelectionEvent::MouseUp(_) => SelectionStateAction::None,
             },
             SelectionState::SelectedDragging(selected_sq) => match event {
-                SelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
-                SelectionEvent::MouseUp(square) => {
+                MouseSelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
+                MouseSelectionEvent::MouseUp(square) => {
                     if square == selected_sq {
                         SelectionStateAction::Unselect(selected_sq)
                     } else if board_state.move_is_valid(selected_sq, square) {
@@ -233,7 +233,7 @@ mod tests {
     fn unselected_starts_dragging_on_mouse_down_on_piece() {
         let mut app = build_app();
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::D2));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         let board_state = app.world.resource::<BoardState>();
@@ -256,7 +256,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_down_when_not_on_piece() {
         let mut app = build_app();
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::D4));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         // The selection state is Selecting Dragging
@@ -267,7 +267,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_up() {
         let mut app = build_app();
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::A1));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         assert_eq!(get_state(&app), SelectionState::Unselected);
@@ -287,7 +287,7 @@ mod tests {
         // Re-parent the piece to the Drag Container
         AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::D4));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         // The selection state is Unselected
@@ -315,7 +315,7 @@ mod tests {
         // Re-parent the piece to the Drag Container
         AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::A8));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         // The selection state is Selected
@@ -334,7 +334,7 @@ mod tests {
         set_state(&mut app, SelectionState::Selected(Square::D2));
         app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::D2));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         let board_state = app.world.resource::<BoardState>();
@@ -364,7 +364,7 @@ mod tests {
         let expected_hl_1 = board_state.highlight(Square::D2);
         let expected_hl_2 = board_state.highlight(Square::D4);
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::D4));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         // The selection state is Unselected
@@ -383,7 +383,7 @@ mod tests {
         let mut app = build_app();
         set_state(&mut app, SelectionState::Selected(Square::D2));
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::D7));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D7));
         app.update();
 
         let board_state = app.world.resource::<BoardState>();
@@ -407,7 +407,7 @@ mod tests {
         let mut app = build_app();
         set_state(&mut app, SelectionState::Selected(Square::D2));
 
-        app.world.send_event(SelectionEvent::MouseDown(Square::E4));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::E4));
         app.update();
 
         assert_eq!(get_state(&app), SelectionState::Unselected);
@@ -418,7 +418,7 @@ mod tests {
         let mut app = build_app();
         set_state(&mut app, SelectionState::Selected(Square::D2));
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::A1));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         assert_eq!(get_state(&app), SelectionState::Selected(Square::D2));
@@ -438,7 +438,7 @@ mod tests {
         // Re-parent the piece to the Drag Container
         AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::D2));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D2));
         app.update();
 
         // The selection state is Selected
@@ -469,7 +469,7 @@ mod tests {
         // Re-parent the piece to the Drag Container
         AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::D4));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         // The selection state is Unselected
@@ -500,7 +500,7 @@ mod tests {
         // Re-parent the piece to the Drag Container
         AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
 
-        app.world.send_event(SelectionEvent::MouseUp(Square::A8));
+        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         // The selection state is Selected

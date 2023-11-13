@@ -9,7 +9,8 @@ use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPT
 use crate::{cli::CliArgs, game::utils::GameCommandList};
 
 use super::{
-    HideHighlight, HideHints, MoveHints, PieceColor, PieceType, ShowHighlight, ShowHints, Square,
+    HideHighlight, HideHints, PieceColor, PieceType, ShowHighlight, ShowHints, Square,
+    TileMoveHints,
 };
 
 /// The maximum possible valid moves that any piece could ever have in a game: 27.
@@ -49,7 +50,7 @@ pub struct BoardState {
     tiles: HashMap<Square, Entity>,
     pieces: HashMap<Square, Entity>,
     highlights: HashMap<Square, Entity>,
-    move_hints: HashMap<Square, MoveHints>,
+    move_hints: HashMap<Square, TileMoveHints>,
     board: Board,
     last_move_highlights: Option<(Entity, Entity)>,
     current_highlight: Option<Entity>,
@@ -203,11 +204,11 @@ impl BoardState {
     // Hints
     //------------------------------
 
-    pub fn move_hints(&self, square: Square) -> &MoveHints {
+    pub fn move_hints(&self, square: Square) -> &TileMoveHints {
         self.move_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
     }
 
-    pub fn set_move_hints(&mut self, square: Square, hints: MoveHints) {
+    pub fn set_move_hints(&mut self, square: Square, hints: TileMoveHints) {
         match self.move_hints.entry(square) {
             Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
             Entry::Vacant(e) => e.insert(hints),
