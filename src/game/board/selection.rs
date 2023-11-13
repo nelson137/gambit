@@ -1,21 +1,28 @@
 use bevy::prelude::*;
 
-use crate::game::{menu::MenuState, mouse::DragContainer, moves::StartMove};
+use crate::{
+    game::{menu::MenuState, mouse::DragContainer, moves::StartMove},
+    utils::AppNoop,
+};
 
-use super::{BoardState, Square};
+use super::{BoardState, HighlightTile, MoveHint, Square};
 
 pub struct SelectionPlugin;
 
 impl Plugin for SelectionPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.noop()
             // Resources
             .init_resource::<SelectionState>()
             // Events
             .add_event::<MouseSelectionEvent>()
+            .add_event::<SelectionEvent>()
             // Systems
             // TODO: handle_selection_events should run at the end of the set
-            .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)));
+            .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
+            .add_systems(PostUpdate, handle_selection_events.run_if(in_state(MenuState::Game)))
+            .add_systems(Last, update_indicators.run_if(in_state(MenuState::Game)))
+            .noop();
     }
 }
 
@@ -48,9 +55,10 @@ pub enum MouseSelectionEvent {
 fn handle_mouse_selection_events(
     mut commands: Commands,
     mut selection_state: ResMut<SelectionState>,
-    mut board_state: ResMut<BoardState>,
+    board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
     q_drag_container: Query<Entity, With<DragContainer>>,
+    mut selection_events: EventWriter<SelectionEvent>,
 ) {
     for &event in event_reader.read() {
         let action = match *selection_state {
@@ -105,13 +113,14 @@ fn handle_mouse_selection_events(
         match action {
             SelectionStateAction::None => {}
             SelectionStateAction::ChangeSelection(to_sq) => {
-                // Unselect square
-                commands.add(board_state.unselect_square());
                 // Re-parent piece to drag container
                 let piece = board_state.piece(to_sq);
                 commands.entity(piece).set_parent(q_drag_container.single());
-                // Select square
-                commands.add(board_state.select_square(to_sq));
+                // Update selection & hints
+                let hl_tile = board_state.highlight(to_sq);
+                let hints = board_state.calculate_valid_moves(to_sq);
+                selection_events
+                    .send(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(to_sq);
             }
@@ -140,8 +149,11 @@ fn handle_mouse_selection_events(
                 // Re-parent piece to drag container
                 let piece = board_state.piece(square);
                 commands.entity(piece).set_parent(q_drag_container.single());
-                // Select square
-                commands.add(board_state.select_square(square));
+                // Update selection & hints
+                let hl_tile = board_state.highlight(square);
+                let hints = board_state.calculate_valid_moves(square);
+                selection_events
+                    .send(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(square);
             }
@@ -150,13 +162,121 @@ fn handle_mouse_selection_events(
                 let piece = board_state.piece(square);
                 let tile = board_state.tile(square);
                 commands.entity(piece).set_parent(tile);
-                // Unselect square
-                commands.add(board_state.unselect_square());
+                // Unselect square & remove hints
+                selection_events.send(SelectionEvent::Unselect);
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
         };
     }
+}
+
+#[derive(Component)]
+pub struct Selected;
+
+#[derive(Component)]
+pub struct EnabledHint;
+
+#[derive(Component)]
+pub struct LastMove;
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SystemSet)]
+pub struct SelectionEventHandler;
+
+#[derive(Clone, Debug, Event)]
+#[allow(dead_code)]
+pub enum SelectionEvent {
+    UpdateSelection { highlight: Entity, hints: Vec<Entity> },
+    Unselect,
+    UpdateLastMove(Square, Square),
+    UnsetLastMove,
+    UnsetAll,
+}
+
+pub fn handle_selection_events(
+    mut commands: Commands,
+    board_state: Res<BoardState>,
+    mut event_reader: EventReader<SelectionEvent>,
+    q_selection: Query<Entity, (With<HighlightTile>, With<Selected>)>,
+    q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
+    q_selected_hints: Query<Entity, (With<MoveHint>, With<EnabledHint>)>,
+) {
+    let unset_selection = |commands: &mut Commands| {
+        for entity in &q_selection {
+            commands.entity(entity).remove::<Selected>().insert(HideIndicator);
+        }
+    };
+
+    let unset_last_move = |commands: &mut Commands| {
+        for entity in &q_last_move {
+            commands.entity(entity).remove::<LastMove>().insert(HideIndicator);
+        }
+    };
+
+    let unset_hints = |commands: &mut Commands| {
+        for entity in &q_selected_hints {
+            commands.entity(entity).remove::<EnabledHint>().insert(HideIndicator);
+        }
+    };
+
+    for event in event_reader.read() {
+        match event {
+            SelectionEvent::UpdateSelection { highlight, hints } => {
+                unset_selection(&mut commands);
+                unset_hints(&mut commands);
+                commands.entity(*highlight).insert((Selected, ShowIndicator));
+                for &entity in hints {
+                    commands.entity(entity).insert((EnabledHint, ShowIndicator));
+                }
+            }
+            SelectionEvent::Unselect => {
+                unset_selection(&mut commands);
+                unset_hints(&mut commands);
+            }
+            &SelectionEvent::UpdateLastMove(from_sq, to_sq) => {
+                unset_last_move(&mut commands);
+                let e1 = board_state.highlight(from_sq);
+                let e2 = board_state.highlight(to_sq);
+                commands.entity(e1).insert((LastMove, ShowIndicator));
+                commands.entity(e2).insert((LastMove, ShowIndicator));
+            }
+            SelectionEvent::UnsetLastMove => unset_last_move(&mut commands),
+            SelectionEvent::UnsetAll => {
+                unset_selection(&mut commands);
+                unset_hints(&mut commands);
+                unset_last_move(&mut commands);
+            }
+        }
+    }
+}
+
+#[derive(Component)]
+struct ShowIndicator;
+
+#[derive(Component)]
+struct HideIndicator;
+
+fn update_indicators(
+    mut commands: Commands,
+    mut q_show: Query<&mut Visibility, (With<ShowIndicator>, Without<HideIndicator>)>,
+    mut q_hide: Query<&mut Visibility, (With<HideIndicator>, Without<ShowIndicator>)>,
+) {
+    q_show.for_each_mut(|mut vis| *vis = Visibility::Visible);
+    q_hide.for_each_mut(|mut vis| *vis = Visibility::Hidden);
+
+    commands.add(|world: &mut World| {
+        let mut entities = Vec::with_capacity(8);
+
+        entities.extend(world.query_filtered::<Entity, With<ShowIndicator>>().iter(world));
+        for entity in entities.drain(..) {
+            world.entity_mut(entity).remove::<ShowIndicator>();
+        }
+
+        entities.extend(world.query_filtered::<Entity, With<HideIndicator>>().iter(world));
+        for entity in entities.drain(..) {
+            world.entity_mut(entity).remove::<HideIndicator>();
+        }
+    });
 }
 
 #[cfg(test)]
@@ -332,7 +452,8 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::Selected(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
+        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
+        app.world.entity_mut(hl_tile).insert(Selected);
 
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
@@ -429,7 +550,8 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
+        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
+        app.world.entity_mut(hl_tile).insert(Selected);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D2);
@@ -459,7 +581,8 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
+        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
+        app.world.entity_mut(hl_tile).insert(Selected);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D4);
@@ -491,7 +614,8 @@ mod tests {
         let mut app = build_app();
         app.update();
         set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        app.world.resource_mut::<BoardState>().select_square(Square::D2).apply(&mut app.world);
+        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
+        app.world.entity_mut(hl_tile).insert(Selected);
         let board_state = app.world.resource::<BoardState>();
         let dragging_piece = board_state.piece(Square::D2);
         let expected_piece_parent = board_state.tile(Square::D2);

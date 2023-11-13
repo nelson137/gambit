@@ -7,7 +7,7 @@ use crate::{assets::PieceColorAndTypeAssetPath, debug_name_f, game::consts::Z_PI
 
 use super::{square::Square, BoardState};
 
-#[derive(Component)]
+#[derive(Clone, Copy, Component)]
 pub struct UiPiece {
     pub color: PieceColor,
     pub typ: PieceType,

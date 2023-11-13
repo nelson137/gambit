@@ -1,9 +1,11 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::File;
 
+use crate::game::utils::WorldExts;
+
 use super::{
     audio::PlayGameAudio,
-    board::{BoardState, PieceColor, PieceType, Square, StartPromotion, UiPiece},
+    board::{BoardState, PieceColor, PieceType, SelectionEvent, Square, StartPromotion, UiPiece},
     captures::Captured,
     game_over::GameOver,
     utils::GameCommandList,
@@ -23,15 +25,12 @@ impl StartMove {
 
 pub fn start_move(
     mut commands: Commands,
-    mut board_state: ResMut<BoardState>,
     q_added: Query<(Entity, &UiPiece, &StartMove), Added<StartMove>>,
 ) {
     for (entity, &UiPiece { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
         commands.entity(entity).remove::<StartMove>();
-
-        commands.add(board_state.unselect_square());
 
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
             commands.add(StartPromotion::new(entity, color, from_sq, to_sq));
@@ -99,7 +98,8 @@ impl Command for MovePiece {
 
         // Update piece maps
         let captured_piece = board_state.update_piece(color, from_sq, to_sq);
-        if let Some((entity, color, typ)) = captured_piece {
+        if let Some(entity) = captured_piece {
+            let UiPiece { color, typ } = world.entity_piece_info(entity);
             cmd_list.add(Captured::new(entity, color, typ));
         }
 
@@ -117,8 +117,13 @@ impl Command for MovePiece {
             }
         });
 
-        // Update last move highlights
-        cmd_list.add(board_state.update_move_highlights(from_sq, to_sq));
+        // Clear selection & hints, update last move highlights
+        world.send_event_batch([
+            SelectionEvent::Unselect,
+            SelectionEvent::UpdateLastMove(from_sq, to_sq),
+        ]);
+
+        let mut board_state = world.resource_mut::<BoardState>();
 
         // Update `chess::Board`
         board_state.make_board_move(from_sq, to_sq, promotion);

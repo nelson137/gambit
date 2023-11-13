@@ -1,4 +1,4 @@
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::prelude::*;
 
 use crate::{debug_name_f, game::consts::Z_HIGHLIGHT_TILE};
 
@@ -9,29 +9,6 @@ pub struct HighlightTile;
 
 /// The color used to highlight tiles.
 pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
-
-#[derive(Deref, DerefMut)]
-pub struct ShowHighlight(pub Entity);
-
-impl Command for ShowHighlight {
-    fn apply(self, world: &mut World) {
-        if let Some(mut vis) = world.entity_mut(*self).get_mut::<Visibility>() {
-            *vis = Visibility::Visible;
-        }
-    }
-}
-
-#[derive(Deref, DerefMut)]
-pub struct HideHighlight(pub Option<Entity>);
-
-impl Command for HideHighlight {
-    fn apply(self, world: &mut World) {
-        let Some(entity) = *self else { return };
-        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            *vis = Visibility::Hidden;
-        }
-    }
-}
 
 pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<BoardState>) {
     let top = Val::Px(0.0);

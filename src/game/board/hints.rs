@@ -1,34 +1,11 @@
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::prelude::*;
 
 use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
 use super::{BoardState, Square, TileMoveHints};
 
-#[derive(Default)]
-pub struct ShowHints(pub Vec<Entity>);
-
-impl Command for ShowHints {
-    fn apply(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                *vis = Visibility::Visible;
-            }
-        }
-    }
-}
-
-#[derive(Default)]
-pub struct HideHints(pub Vec<Entity>);
-
-impl Command for HideHints {
-    fn apply(self, world: &mut World) {
-        for entity in self.0 {
-            if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-                *vis = Visibility::Hidden;
-            }
-        }
-    }
-}
+#[derive(Component)]
+pub struct MoveHint;
 
 pub fn spawn_hints(
     mut commands: Commands,
@@ -44,6 +21,7 @@ pub fn spawn_hints(
         // Move hint
         let move_entity = commands
             .spawn((
+                MoveHint,
                 debug_name_f!("Move Hint ({square})"),
                 square,
                 NodeBundle {
@@ -78,6 +56,7 @@ pub fn spawn_hints(
         // Capture hint
         let capture_entity = commands
             .spawn((
+                MoveHint,
                 debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageBundle {

@@ -3,47 +3,12 @@ use std::{
     str::FromStr,
 };
 
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::prelude::*;
 use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPTY};
 
-use crate::{cli::CliArgs, game::utils::GameCommandList};
+use crate::cli::CliArgs;
 
-use super::{
-    HideHighlight, HideHints, PieceColor, PieceType, ShowHighlight, ShowHints, Square,
-    TileMoveHints,
-};
-
-/// The maximum possible valid moves that any piece could ever have in a game: 27.
-///
-/// This is the number of valid moves that a queen can make when on one of the four middle squares
-/// of the board (d4, e4, d5, or e5), with no other pieces blocking any of the eight rays of
-/// possible movement.
-///
-/// Below is a diagram showing one of such configurations. When a queen is on, e.g., d4, she can
-/// move to any of the squares that contain an `x`.
-///
-/// ```text
-///   ┌───┬───┬───┬───┬───┬───┬───┬───┐
-/// 8 │   │   │   │ x │   │   │   │ x │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 7 │ x │   │   │ x │   │   │ x │   │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 6 │   │ x │   │ x │   │ x │   │   │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 5 │   │   │ x │ x │ x │   │   │   │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 4 │ x │ x │ x │ Q │ x │ x │ x │ x │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 3 │   │   │ x │ x │ x │   │   │   │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 2 │   │ x │   │ x │   │ x │   │   │
-///   ├───┼───┼───┼───┼───┼───┼───┼───┤
-/// 1 │ x │   │   │ x │   │   │ x │   │
-///   └───┴───┴───┴───┴───┴───┴───┴───┘
-///     a   b   c   d   e   f   g   h
-/// ```
-///
-const MAX_POSSIBLE_MOVES: usize = 27;
+use super::{PieceColor, PieceType, Square, TileMoveHints};
 
 #[derive(Resource)]
 pub struct BoardState {
@@ -52,9 +17,6 @@ pub struct BoardState {
     highlights: HashMap<Square, Entity>,
     move_hints: HashMap<Square, TileMoveHints>,
     board: Board,
-    last_move_highlights: Option<(Entity, Entity)>,
-    current_highlight: Option<Entity>,
-    showing_hints: Vec<Entity>,
 }
 
 impl FromWorld for BoardState {
@@ -77,9 +39,6 @@ impl FromWorld for BoardState {
             highlights: HashMap::with_capacity(64),
             move_hints: HashMap::with_capacity(64),
             board,
-            last_move_highlights: None,
-            current_highlight: None,
-            showing_hints: Vec::with_capacity(MAX_POSSIBLE_MOVES),
         }
     }
 }
@@ -99,14 +58,6 @@ impl BoardState {
 
     pub fn side_to_move(&self) -> PieceColor {
         self.board.side_to_move().into()
-    }
-
-    fn color_on(&self, square: Square) -> PieceColor {
-        PieceColor(self.board.color_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
-    }
-
-    fn piece_on(&self, square: Square) -> PieceType {
-        PieceType(self.board.piece_on(square.0).unwrap_or_else(|| panic!("no piece at {square}")))
     }
 
     pub fn get_piece_info_on(&self, square: Square) -> Option<(PieceColor, PieceType)> {
@@ -138,7 +89,6 @@ impl BoardState {
 
     pub fn reset(&mut self) {
         self.clear_pieces();
-        self.clear_showing_hints();
         self.board = Board::default();
     }
 
@@ -184,22 +134,6 @@ impl BoardState {
         };
     }
 
-    #[must_use]
-    pub fn update_move_highlights(&mut self, from_sq: Square, to_sq: Square) -> impl Command {
-        let mut cmd_list = GameCommandList::default();
-
-        let hl_1 = self.highlight(from_sq);
-        let hl_2 = self.highlight(to_sq);
-        if let Some((prev_hl_1, prev_hl_2)) = self.last_move_highlights.replace((hl_1, hl_2)) {
-            cmd_list.add(HideHighlight(Some(prev_hl_1)));
-            cmd_list.add(HideHighlight(Some(prev_hl_2)));
-        }
-        cmd_list.add(ShowHighlight(hl_1));
-        cmd_list.add(ShowHighlight(hl_2));
-
-        cmd_list
-    }
-
     //------------------------------
     // Hints
     //------------------------------
@@ -213,10 +147,6 @@ impl BoardState {
             Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
             Entry::Vacant(e) => e.insert(hints),
         };
-    }
-
-    pub fn clear_showing_hints(&mut self) {
-        self.showing_hints.clear();
     }
 
     //------------------------------
@@ -253,43 +183,11 @@ impl BoardState {
 
 impl BoardState {
     //------------------------------
-    // Select & unselect
+    // Move
     //------------------------------
 
     #[must_use]
-    pub fn select_square(&mut self, square: Square) -> impl Command {
-        let mut cmd_list = GameCommandList::default();
-        cmd_list.add(self.show_highlight_tile(square));
-        cmd_list.add(self.show_move_hints_for(square));
-        cmd_list
-    }
-
-    #[must_use]
-    pub fn unselect_square(&mut self) -> impl Command {
-        let mut cmd_list = GameCommandList::default();
-        match (self.last_move_highlights, self.current_highlight) {
-            (Some((last_src, last_dest)), Some(current))
-                if current == last_src || current == last_dest => {}
-            _ => cmd_list.add(self.hide_highlight_tile()),
-        }
-        cmd_list.add(self.hide_move_hints());
-        cmd_list
-    }
-
-    #[must_use]
-    fn show_highlight_tile(&mut self, square: Square) -> impl Command {
-        let entity = self.highlight(square);
-        self.current_highlight = Some(entity);
-        ShowHighlight(entity)
-    }
-
-    #[must_use]
-    fn hide_highlight_tile(&mut self) -> impl Command {
-        HideHighlight(self.current_highlight.take())
-    }
-
-    #[must_use]
-    fn show_move_hints_for(&mut self, source: Square) -> impl Command {
+    pub fn calculate_valid_moves(&self, source: Square) -> Vec<Entity> {
         let mut move_gen = MoveGen::new_legal(&self.board);
         let mut moves = Vec::with_capacity(move_gen.len());
 
@@ -310,32 +208,8 @@ impl BoardState {
             moves.push(self.move_hints(r#move.get_dest().into()).move_entity);
         }
 
-        if !moves.is_empty() {
-            self.showing_hints.extend(&moves);
-        }
-        ShowHints(moves)
+        moves
     }
-
-    #[must_use]
-    fn hide_move_hints(&mut self) -> impl Command {
-        HideHints(if self.showing_hints.is_empty() {
-            Vec::new()
-        } else {
-            self.showing_hints.drain(..).collect()
-        })
-    }
-
-    pub fn hide_last_move_highlights(&mut self) -> impl Command {
-        let mut cmd_list = GameCommandList::default();
-        let last_mv_hl = self.last_move_highlights.take();
-        cmd_list.add(HideHighlight(last_mv_hl.map(|(entity, _)| entity)));
-        cmd_list.add(HideHighlight(last_mv_hl.map(|(_, entity)| entity)));
-        cmd_list
-    }
-
-    //------------------------------
-    // Move
-    //------------------------------
 
     pub fn make_board_move(
         &mut self,
@@ -353,7 +227,7 @@ impl BoardState {
         color: PieceColor,
         from_sq: Square,
         to_sq: Square,
-    ) -> Option<(Entity, PieceColor, PieceType)> {
+    ) -> Option<Entity> {
         let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
             panic!("Failed to move board state piece: no piece found at source square {from_sq}")
         });
@@ -366,9 +240,7 @@ impl BoardState {
             // capturer).
             Some(ep_sq) if ep_sq.forward(color).map(|sq| sq == to_sq).unwrap_or(false) => {
                 self.pieces.insert(to_sq, piece);
-                self.pieces
-                    .remove(&ep_sq)
-                    .map(|entity| (entity, self.color_on(ep_sq), self.piece_on(ep_sq)))
+                self.pieces.remove(&ep_sq)
             }
             _ => match self.pieces.entry(to_sq) {
                 // Capture
@@ -376,7 +248,7 @@ impl BoardState {
                     let value = entry.get_mut();
                     let old_piece = *value;
                     *value = piece;
-                    Some((old_piece, self.color_on(to_sq), self.piece_on(to_sq)))
+                    Some(old_piece)
                 }
                 // Move
                 Entry::Vacant(entry) => {
