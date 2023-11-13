@@ -2,7 +2,7 @@ use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
     debug_name,
-    game::{consts::UI_GAP, panels::UiPanel, ui::BoardContainer},
+    game::{consts::UI_GAP, panels::UiPanel, ui::BoardContainer, utils::ReparentInTag},
 };
 
 #[derive(Component)]
@@ -32,10 +32,7 @@ pub fn spawn_board(mut commands: Commands) {
             },
         ))
         .id();
-    commands.add(move |world: &mut World| {
-        let parent = world.query_filtered::<Entity, With<BoardContainer>>().single(world);
-        world.entity_mut(parent).add_child(entity);
-    });
+    commands.reparent_in_tag::<BoardContainer>([entity]);
 }
 
 pub fn board_size(

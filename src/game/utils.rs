@@ -31,6 +31,28 @@ impl Command for GameCommandList {
     }
 }
 
+pub trait ReparentInTag {
+    fn reparent_in_tag<Tag: Component>(
+        &mut self,
+        entities: impl IntoIterator<Item = Entity> + Send + 'static,
+    );
+}
+
+impl ReparentInTag for Commands<'_, '_> {
+    fn reparent_in_tag<Tag: Component>(
+        &mut self,
+        entities: impl IntoIterator<Item = Entity> + Send + 'static,
+    ) {
+        self.add(move |world: &mut World| {
+            let parent = world.query_filtered::<Entity, With<Tag>>().single(world);
+            let mut parent = world.entity_mut(parent);
+            for entity in entities {
+                parent.add_child(entity);
+            }
+        });
+    }
+}
+
 pub struct SortableChildrenPlugin;
 
 impl Plugin for SortableChildrenPlugin {
