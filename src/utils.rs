@@ -14,18 +14,18 @@ impl AppNoop for App {
 pub struct DebugBevyInspectorPlugin;
 
 impl Plugin for DebugBevyInspectorPlugin {
-    #[cfg(feature = "bevy-inspector-egui")]
+    #[cfg(feature = "debug-inspector")]
     fn build(&self, app: &mut App) {
         app.add_plugins(bevy_inspector_egui::DefaultInspectorConfigPlugin)
             .add_systems(Update, Self::world_inspector_ui);
     }
 
-    #[cfg(not(feature = "bevy-inspector-egui"))]
+    #[cfg(not(feature = "debug-inspector"))]
     fn build(&self, _app: &mut App) {}
 }
 
 impl DebugBevyInspectorPlugin {
-    #[cfg(feature = "bevy-inspector-egui")]
+    #[cfg(feature = "debug-inspector")]
     fn world_inspector_ui(world: &mut World) {
         use bevy::ecs::system::SystemState;
         use bevy_inspector_egui::{
@@ -46,7 +46,7 @@ impl DebugBevyInspectorPlugin {
     }
 }
 
-#[cfg(feature = "bevy-inspector-egui")]
+#[cfg(feature = "debug")]
 #[macro_export]
 macro_rules! debug_name {
     ($name:literal) => {
@@ -57,7 +57,7 @@ macro_rules! debug_name {
     };
 }
 
-#[cfg(not(feature = "bevy-inspector-egui"))]
+#[cfg(not(feature = "debug"))]
 #[macro_export]
 macro_rules! debug_name {
     ($($args:tt),* $(,)?) => {
@@ -65,7 +65,7 @@ macro_rules! debug_name {
     };
 }
 
-#[cfg(feature = "bevy-inspector-egui")]
+#[cfg(feature = "debug")]
 #[macro_export]
 macro_rules! debug_name_f {
     ($name_fmt:literal $(, $name_args:expr)* $(,)?) => {
@@ -73,7 +73,7 @@ macro_rules! debug_name_f {
     };
 }
 
-#[cfg(not(feature = "bevy-inspector-egui"))]
+#[cfg(not(feature = "debug"))]
 #[macro_export]
 macro_rules! debug_name_f {
     ($($args:tt),* $(,)?) => {
