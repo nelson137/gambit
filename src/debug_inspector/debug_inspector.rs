@@ -12,6 +12,11 @@ use super::DebugInspectorPlugin;
 impl Plugin for DebugInspectorPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
+            .register_type::<bevy::pbr::AmbientLight>()
+            .register_type::<bevy::pbr::ClusterConfig>()
+            .register_type::<bevy::pbr::DirectionalLight>()
+            .register_type::<bevy::pbr::PointLight>()
+            .register_type::<bevy::pbr::StandardMaterial>()
             .add_plugins(DefaultInspectorConfigPlugin)
             .add_systems(Update, world_inspector_ui)
             .noop();
