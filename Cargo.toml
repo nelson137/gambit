@@ -11,6 +11,9 @@ debug-inspector = ["debug", "dep:bevy-inspector-egui"]
 trace_logs = []
 file_watcher = ["bevy/file_watcher"]
 
+[profile.release]
+opt-level = 2
+
 [profile.dev]
 opt-level = 0
 
