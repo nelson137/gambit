@@ -203,7 +203,11 @@ pub fn handle_selection_events(
 ) {
     let unset_selection = |commands: &mut Commands| {
         for entity in &q_selection {
-            commands.entity(entity).remove::<Selected>().insert(HideIndicator);
+            let mut entity_cmds = commands.entity(entity);
+            entity_cmds.remove::<Selected>();
+            if !q_last_move.contains(entity) {
+                entity_cmds.insert(HideIndicator);
+            }
         }
     };
 
