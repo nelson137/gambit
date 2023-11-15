@@ -41,7 +41,7 @@ impl Plugin for GameLogicPlugin {
             // Startup
             .add_systems(Startup, setup_camera)
             // PostStartup
-            .add_systems(PostUpdate, (start_move, move_piece).chain())
+            .add_systems(PostUpdate, (start_move, move_piece))
             .noop();
     }
 }

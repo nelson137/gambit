@@ -60,6 +60,8 @@ pub fn move_piece(
     for (entity, &UiPiece { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
+        commands.entity(entity).remove::<MovePiece>();
+
         // Move UI piece
         commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
 
