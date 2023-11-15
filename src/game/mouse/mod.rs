@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::menu::MenuState;
+use super::menu::{MenuState, PromoterSystem};
 
 pub use self::{handler::*, position::*};
 
@@ -26,10 +26,9 @@ impl Plugin for MouseLogicPlugin {
             // Systems
             .add_systems(
                 PreUpdate,
-                (
-                    mouse_screen_position_to_world,
-                    mouse_world_position_to_square.after(mouse_screen_position_to_world),
-                )
+                (mouse_screen_position_to_world, mouse_world_position_to_square)
+                    .chain()
+                    .after(PromoterSystem)
                     .run_if(in_state(MenuState::Game)),
             )
             .add_systems(

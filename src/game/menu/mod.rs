@@ -1,6 +1,8 @@
 use bevy::{prelude::*, ui::UiSystem};
 use bevy_startup_tree::{startup_tree, AddStartupTree};
 
+use crate::utils::AppNoop;
+
 use super::board::{
     is_promoting_piece, promotion_buttons, promotion_cancel_click_handler, promotion_event_handler,
     promotion_ui_sizes, start_promotion,
@@ -28,11 +30,14 @@ impl Plugin for GameMenuUiPlugin {
     }
 }
 
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SystemSet)]
+pub struct PromoterSystem;
+
 pub struct GameMenuLogicPlugin;
 
 impl Plugin for GameMenuLogicPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.noop()
             // Resources
             .init_resource::<FenPopupData>()
             .init_resource::<GameOverTimer>()
@@ -52,16 +57,16 @@ impl Plugin for GameMenuLogicPlugin {
             )
             .add_systems(Update, game_over.run_if(in_state(MenuState::DoGameOver)))
             .add_systems(Update, start_promotion)
+            .add_systems(Update, promotion_ui_sizes.run_if(is_promoting_piece))
             .add_systems(
-                Update,
-                (
-                    promotion_ui_sizes,
-                    promotion_buttons,
-                    promotion_cancel_click_handler.after(promotion_buttons),
-                    promotion_event_handler.after(promotion_cancel_click_handler),
-                )
-                    .run_if(is_promoting_piece),
-            );
+                PreUpdate,
+                (promotion_buttons, promotion_cancel_click_handler, promotion_event_handler)
+                    .chain()
+                    .in_set(PromoterSystem)
+                    .run_if(is_promoting_piece)
+                    .after(UiSystem::Focus),
+            )
+            .noop();
     }
 }
 

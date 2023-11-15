@@ -205,10 +205,12 @@ pub enum PromotionEvent {
 pub fn promotion_buttons(
     q_button: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
     mut event_writer: EventWriter<PromotionEvent>,
+    mut mouse_buttons: ResMut<Input<MouseButton>>,
 ) {
     for (button, interaction) in &q_button {
         if let Interaction::Pressed = interaction {
             event_writer.send(PromotionEvent::Promote(button.1));
+            mouse_buttons.reset_all();
         }
     }
 }
