@@ -26,7 +26,14 @@ pub const TITLE_FONT_PATH: &str = "fonts/montserrat-800.otf";
 // Sizes
 //==================================================
 
+#[cfg(not(feature = "debug"))]
 pub const INIT_WIN_WIDTH: f32 = 670.0;
+#[cfg(not(feature = "debug"))]
+pub const INIT_WIN_HEIGHT: f32 = 750.0;
+
+#[cfg(feature = "debug")]
+pub const INIT_WIN_WIDTH: f32 = 670.0 * 2.0;
+#[cfg(feature = "debug")]
 pub const INIT_WIN_HEIGHT: f32 = 750.0;
 
 pub const UI_GAP: f32 = 8.0;
