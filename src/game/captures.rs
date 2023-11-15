@@ -7,13 +7,17 @@ use bevy::{
 
 use crate::game::board::{PieceColor, PieceType};
 
-use super::board::UiPiece;
+use super::board::{BoardPlugin, UiPiece};
 
 #[derive(Debug)]
 pub struct CapturePlugin;
 
 impl Plugin for CapturePlugin {
     fn build(&self, app: &mut App) {
+        if !app.is_plugin_added::<BoardPlugin>() {
+            panic!("Attempted to add plugin without required dependency: {:?}", BoardPlugin);
+        }
+
         app.init_resource::<CaptureState>().add_systems(PostUpdate, captures);
     }
 }

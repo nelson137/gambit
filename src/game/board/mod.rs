@@ -21,6 +21,7 @@ mod state;
 mod tile;
 mod ui;
 
+#[derive(Debug)]
 pub struct BoardPlugin;
 
 impl Plugin for BoardPlugin {
