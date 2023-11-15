@@ -1,8 +1,4 @@
-use bevy::{
-    ecs::system::{Command, CommandQueue, SystemState},
-    prelude::*,
-    utils::HashSet,
-};
+use bevy::{ecs::system::SystemState, prelude::*, utils::HashSet};
 
 use super::board::UiPiece;
 
@@ -13,21 +9,6 @@ pub trait WorldExts {
 impl WorldExts for World {
     fn entity_piece_info(&mut self, entity: Entity) -> UiPiece {
         *SystemState::<Query<&UiPiece>>::new(self).get(self).component::<UiPiece>(entity)
-    }
-}
-
-#[derive(Default)]
-pub struct GameCommandList(CommandQueue);
-
-impl GameCommandList {
-    pub fn add<C: Command>(&mut self, command: C) {
-        self.0.push(command);
-    }
-}
-
-impl Command for GameCommandList {
-    fn apply(mut self, world: &mut World) {
-        self.0.apply(world);
     }
 }
 
