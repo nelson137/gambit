@@ -1,4 +1,7 @@
-use bevy::{prelude::*, ui::FocusPolicy};
+use bevy::{
+    prelude::*,
+    ui::{FocusPolicy, UiSystem},
+};
 
 use crate::{
     assets::PieceColorAndTypeAssetPath,
@@ -7,9 +10,32 @@ use crate::{
         consts::{FONT_PATH, Z_PROMOTER},
         moves::MovePiece,
     },
+    utils::AppNoop,
 };
 
 use super::{BoardState, PieceColor, PieceType, Square, Tile, UiPiece};
+
+pub struct PromotionPlugin;
+
+impl Plugin for PromotionPlugin {
+    fn build(&self, app: &mut App) {
+        app.noop()
+            .add_systems(Update, start_promotion)
+            .add_systems(Update, promotion_ui_sizes.run_if(is_promoting_piece))
+            .add_systems(
+                PreUpdate,
+                (promotion_buttons, promotion_cancel_click_handler, promotion_event_handler)
+                    .chain()
+                    .in_set(PromoterSystem)
+                    .run_if(is_promoting_piece)
+                    .after(UiSystem::Focus),
+            )
+            .noop();
+    }
+}
+
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SystemSet)]
+pub struct PromoterSystem;
 
 #[derive(Component)]
 pub struct PromotionUi(PieceColor);

@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::menu::{MenuState, PromoterSystem};
+use super::{board::PromoterSystem, menu::MenuState};
 
 pub use self::{handler::*, position::*};
 
