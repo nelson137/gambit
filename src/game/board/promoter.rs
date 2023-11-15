@@ -278,7 +278,7 @@ pub fn promotion_event_handler(
             mut image,
         )) = q_promo.get_single_mut()
         else {
-            warn!("Ignoring received promotion event, not in promotion state");
+            warn!("Ignoring promotion event as no piece is awaiting promotion");
             return;
         };
 
