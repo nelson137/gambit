@@ -284,7 +284,8 @@ pub fn promotion_event_handler(
 
         trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
 
-        commands.entity(entity).remove::<PromotingPiece>();
+        let mut entity_cmds = commands.entity(entity);
+        entity_cmds.remove::<PromotingPiece>();
 
         // Hide the promoter UI
         if let Some((_, mut vis)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
@@ -295,10 +296,7 @@ pub fn promotion_event_handler(
             PromotionEvent::Promote(promo_typ) => {
                 let new_asset_path = (color, promo_typ).asset_path();
                 image.texture = asset_server.load(new_asset_path);
-
-                let move_cmd =
-                    MovePiece::new(entity, color, PieceType::PAWN, from_sq, to_sq, Some(promo_typ));
-                commands.add(move_cmd);
+                entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ)));
             }
             PromotionEvent::Cancel => {
                 // Re-parent piece back to its original square

@@ -6,7 +6,6 @@ use super::{
     board::{BoardState, PieceColor, PieceType, PromotingPiece, SelectionEvent, Square, UiPiece},
     captures::Captured,
     game_over::GameOver,
-    utils::GameCommandList,
 };
 
 #[derive(Component)]
@@ -34,43 +33,36 @@ pub fn start_move(
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
             entity_cmds.insert(PromotingPiece::new(from_sq, to_sq));
         } else {
-            commands.add(MovePiece::new(entity, color, typ, from_sq, to_sq, None));
+            entity_cmds.insert(MovePiece::new(from_sq, to_sq, None));
         }
     }
 }
 
+#[derive(Component)]
 pub struct MovePiece {
-    entity: Entity,
-    color: PieceColor,
-    typ: PieceType,
     from_sq: Square,
     to_sq: Square,
     promotion: Option<PieceType>,
 }
 
 impl MovePiece {
-    pub fn new(
-        entity: Entity,
-        color: PieceColor,
-        typ: PieceType,
-        from_sq: Square,
-        to_sq: Square,
-        promotion: Option<PieceType>,
-    ) -> Self {
-        Self { entity, color, typ, from_sq, to_sq, promotion }
+    pub fn new(from_sq: Square, to_sq: Square, promotion: Option<PieceType>) -> Self {
+        Self { from_sq, to_sq, promotion }
     }
 }
 
-impl Command for MovePiece {
-    fn apply(self, world: &mut World) {
-        let Self { entity, color, typ, from_sq, to_sq, promotion } = self;
+pub fn move_piece(
+    mut commands: Commands,
+    mut board_state: ResMut<BoardState>,
+    mut selection_events: EventWriter<SelectionEvent>,
+    q_added: Query<(Entity, &UiPiece, &MovePiece), Added<MovePiece>>,
+    q_pieces: Query<Entity, With<UiPiece>>,
+) {
+    for (entity, &UiPiece { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
-        let mut board_state = world.resource_mut::<BoardState>();
-        let mut cmd_list = GameCommandList::default();
-
         // Move UI piece
-        cmd_list.add(MoveUiPiece::new(entity, to_sq));
+        commands.add(MoveUiPiece::new(entity, to_sq));
 
         let mut is_castle = false;
         if typ == PieceType::KING {
@@ -84,25 +76,25 @@ impl Command for MovePiece {
                 let from_sq = Square::from_coords(back_rank, File::H);
                 let to_sq = Square::from_coords(back_rank, File::F);
                 let entity = board_state.piece(from_sq);
-                cmd_list.add(MoveUiPiece::new(entity, to_sq));
+                commands.add(MoveUiPiece::new(entity, to_sq));
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let from_sq = Square::from_coords(back_rank, File::A);
                 let to_sq = Square::from_coords(back_rank, File::D);
                 let entity = board_state.piece(from_sq);
-                cmd_list.add(MoveUiPiece::new(entity, to_sq));
+                commands.add(MoveUiPiece::new(entity, to_sq));
                 is_castle = true;
             }
         }
 
         // Update piece maps
         let captured_piece = board_state.update_piece(color, from_sq, to_sq);
-        if let Some(entity) = captured_piece {
-            world.entity_mut(entity).insert(Captured);
+        if let Some(entity) = captured_piece.and_then(|entity| q_pieces.get(entity).ok()) {
+            commands.entity(entity).insert(Captured);
         }
 
         // Play audio
-        cmd_list.add(if promotion.is_some() {
+        commands.add(if promotion.is_some() {
             PlayGameAudio::Promote
         } else if captured_piece.is_some() {
             PlayGameAudio::Capture
@@ -116,21 +108,15 @@ impl Command for MovePiece {
         });
 
         // Clear selection & hints, update last move highlights
-        world.send_event_batch([
-            SelectionEvent::Unselect,
-            SelectionEvent::UpdateLastMove(from_sq, to_sq),
-        ]);
-
-        let mut board_state = world.resource_mut::<BoardState>();
+        selection_events
+            .send_batch([SelectionEvent::Unselect, SelectionEvent::UpdateLastMove(from_sq, to_sq)]);
 
         // Update `chess::Board`
         board_state.make_board_move(from_sq, to_sq, promotion);
 
         if board_state.is_game_over() {
-            cmd_list.add(GameOver);
+            commands.add(GameOver);
         }
-
-        cmd_list.apply(world);
     }
 }
 
