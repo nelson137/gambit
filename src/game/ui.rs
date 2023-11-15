@@ -4,6 +4,7 @@ use crate::{debug_name, utils::AppNoop};
 
 use super::{
     board::{BoardPlugin, PromotionPlugin},
+    captures::CapturePlugin,
     consts::{MIN_BOARD_SIZE, UI_GAP_VAL},
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,
@@ -19,6 +20,7 @@ impl Plugin for GameUiPlugin {
             .add_plugins(GameMenuUiPlugin)
             .add_plugins(MouseUiPlugin)
             .add_plugins(BoardPlugin)
+            .add_plugins(CapturePlugin)
             .add_plugins(UiPanelsPlugin)
             .add_plugins(PromotionPlugin)
             .add_systems(Startup, spawn_ui)

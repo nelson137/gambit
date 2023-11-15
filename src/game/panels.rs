@@ -8,7 +8,7 @@ use crate::{debug_name, utils::AppNoop};
 
 use super::{
     board::PieceColor,
-    captures::CaptureState,
+    captures::{CapturePlugin, CaptureState},
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, UI_GAP_VAL},
     ui::{spawn_ui, Ui},
     utils::{ReparentInTag, SortIndex},
@@ -18,8 +18,11 @@ pub struct UiPanelsPlugin;
 
 impl Plugin for UiPanelsPlugin {
     fn build(&self, app: &mut App) {
+        if !app.is_plugin_added::<CapturePlugin>() {
+            panic!("Attempted to add plugin without required dependency: {:?}", CapturePlugin);
+        }
+
         app.noop()
-            .init_resource::<CaptureState>()
             .add_systems(Startup, spawn_panels.after(spawn_ui))
             .add_systems(PostUpdate, captures_images_sizes.before(UiSystem::Layout))
             .noop();

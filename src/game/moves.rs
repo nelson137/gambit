@@ -1,8 +1,6 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::File;
 
-use crate::game::utils::WorldExts;
-
 use super::{
     audio::PlayGameAudio,
     board::{BoardState, PieceColor, PieceType, PromotingPiece, SelectionEvent, Square, UiPiece},
@@ -100,8 +98,7 @@ impl Command for MovePiece {
         // Update piece maps
         let captured_piece = board_state.update_piece(color, from_sq, to_sq);
         if let Some(entity) = captured_piece {
-            let UiPiece { color, typ } = world.entity_piece_info(entity);
-            cmd_list.add(Captured::new(entity, color, typ));
+            world.entity_mut(entity).insert(Captured);
         }
 
         // Play audio

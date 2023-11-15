@@ -7,6 +7,17 @@ use bevy::{
 
 use crate::game::board::{PieceColor, PieceType};
 
+use super::board::UiPiece;
+
+#[derive(Debug)]
+pub struct CapturePlugin;
+
+impl Plugin for CapturePlugin {
+    fn build(&self, app: &mut App) {
+        app.init_resource::<CaptureState>().add_systems(PostUpdate, captures);
+    }
+}
+
 #[derive(Deref, DerefMut, Resource)]
 pub struct CaptureState(GameCaptures<CapState>);
 
@@ -219,36 +230,25 @@ impl Command for CapStateUpdate {
     }
 }
 
-#[derive(Clone, Copy)]
-pub struct Captured {
-    entity: Entity,
-    color: PieceColor,
-    typ: PieceType,
-}
+#[derive(Component)]
+pub struct Captured;
 
-impl Captured {
-    pub fn new(entity: Entity, color: PieceColor, typ: PieceType) -> Self {
-        Self { entity, color, typ }
-    }
-}
-
-impl Command for Captured {
-    fn apply(self, world: &mut World) {
-        let Self { entity, mut color, typ } = self;
-
+pub fn captures(
+    mut commands: Commands,
+    mut q_added: Query<(Entity, &UiPiece, &mut Visibility), Added<Captured>>,
+) {
+    for (entity, &UiPiece { mut color, typ }, mut vis) in &mut q_added {
         trace!(?color, ?typ, "Capture piece");
+
+        commands.entity(entity).remove::<Captured>();
+
+        *vis = Visibility::Hidden;
 
         // The count and capture image need to be updated for the player who performed the capture,
         // i.e. the one whose color is the opposite of that of the captured piece.
         color = !color;
 
-        // Hide piece
-        if let Some(mut vis) = world.entity_mut(entity).get_mut::<Visibility>() {
-            *vis = Visibility::Hidden;
-        }
-
-        // Update count state & ui images
-        CapStateUpdate::new(color, typ, CapStateDiff::Increment).apply(world);
+        commands.add(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
     }
 }
 
