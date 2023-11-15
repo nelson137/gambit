@@ -92,6 +92,27 @@ impl BoardState {
         self.board = Board::default();
     }
 
+    #[allow(dead_code)]
+    pub fn log(&self) {
+        let pretty_board = self.board().to_pretty_string();
+        let pretty_state = {
+            let mut bb = chess::BoardBuilder::new();
+            for &Square(sq) in self.pieces.keys() {
+                let typ = self.board.piece_on(sq);
+                let color = self.board.color_on(sq);
+                if let (Some(typ), Some(color)) = (typ, color) {
+                    bb.piece(sq, typ, color);
+                } else {
+                    warn!(square = %sq, ?color, ?typ, "Failed to get piece info");
+                }
+            }
+            bb.to_pretty_string()
+        };
+        const SEP: &str = "    ";
+        info!("{:15}{SEP}{:15}", "chess::Board:", "Piece State:");
+        pretty_board.lines().zip(pretty_state.lines()).for_each(|(a, b)| info!("{a}{SEP}{b}"));
+    }
+
     //------------------------------
     // Board
     //------------------------------
@@ -257,5 +278,40 @@ impl BoardState {
                 }
             },
         }
+    }
+}
+
+pub trait ChessBoardExts {
+    fn log(&self) {
+        self.to_pretty_string().lines().for_each(|l| info!("{l}"));
+    }
+
+    fn to_pretty_string(&self) -> String;
+}
+
+impl ChessBoardExts for chess::Board {
+    fn to_pretty_string(&self) -> String {
+        Into::<chess::BoardBuilder>::into(self).to_pretty_string()
+    }
+}
+
+impl ChessBoardExts for chess::BoardBuilder {
+    fn to_pretty_string(&self) -> String {
+        let output = String::with_capacity(127);
+        chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
+            let sq_str = self[sq].map(|(p, c)| p.to_string(c)).unwrap_or_else(|| '.'.into());
+
+            if !acc.is_empty() && sq.to_int() % 8 == 0 {
+                acc.push('\n');
+            }
+
+            acc.push_str(&sq_str);
+
+            if (sq.to_int() + 1) % 8 > 0 {
+                acc.push(' ');
+            }
+
+            acc
+        })
     }
 }
