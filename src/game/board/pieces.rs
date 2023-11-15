@@ -125,6 +125,14 @@ impl PieceType {
     pub const ROOK: Self = Self(chess::Piece::Rook);
     pub const QUEEN: Self = Self(chess::Piece::Queen);
     pub const KING: Self = Self(chess::Piece::King);
+
+    pub fn num_pieces(self) -> u8 {
+        match self {
+            Self::PAWN => 8,
+            Self::KNIGHT | Self::BISHOP | Self::ROOK => 2,
+            Self::QUEEN | Self::KING => 1,
+        }
+    }
 }
 
 pub fn spawn_pieces(

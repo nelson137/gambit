@@ -5,9 +5,13 @@ use bevy::{
     prelude::*,
 };
 
-use crate::game::board::{PieceColor, PieceType};
+use crate::{
+    cli::CliArgs,
+    game::board::{PieceColor, PieceType},
+    utils::AppNoop,
+};
 
-use super::board::{BoardPlugin, UiPiece};
+use super::board::{BoardPlugin, BoardState, UiPiece};
 
 #[derive(Debug)]
 pub struct CapturePlugin;
@@ -18,7 +22,11 @@ impl Plugin for CapturePlugin {
             panic!("Attempted to add plugin without required dependency: {:?}", BoardPlugin);
         }
 
-        app.init_resource::<CaptureState>().add_systems(PostUpdate, captures);
+        app.noop()
+            .init_resource::<CaptureState>()
+            .add_systems(PostStartup, load_capture_state_on_startup)
+            .add_systems(PostUpdate, captures)
+            .noop();
     }
 }
 
@@ -114,6 +122,36 @@ impl CaptureState {
         info!("================== Capture Counts ==================");
         log("White", &self.0[PieceColor::WHITE]);
         log("Black", &self.0[PieceColor::BLACK]);
+    }
+}
+
+pub struct LoadCaptureState;
+
+impl Command for LoadCaptureState {
+    fn apply(self, world: &mut World) {
+        let board = *world.resource::<BoardState>().board();
+        let kings_bb = board.pieces(chess::Piece::King);
+
+        for color in chess::ALL_COLORS {
+            let color_pieces_bb = *board.color_combined(color) & !kings_bb;
+            let color = PieceColor(!color);
+
+            for typ in CAPTURABLE_PIECES {
+                let color_type_pieces = color_pieces_bb & *board.pieces(typ.into());
+                let captured_count = typ.num_pieces() - color_type_pieces.popcnt() as u8;
+                let diff = CapStateDiff::Set(captured_count);
+                CapStateUpdate::new(color, typ, diff).apply(world);
+            }
+        }
+    }
+}
+
+const CAPTURABLE_PIECES: [PieceType; chess::NUM_PIECES - 1] =
+    [PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN];
+
+fn load_capture_state_on_startup(mut commands: Commands, cli_args: Res<CliArgs>) {
+    if cli_args.fen.is_some() {
+        commands.add(LoadCaptureState);
     }
 }
 
