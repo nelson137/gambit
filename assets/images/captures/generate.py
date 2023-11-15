@@ -8,6 +8,8 @@ HERE = Path(__file__).parent
 
 EXT = '.png'
 
+Image.new('RGBA', (1, 1)).save(HERE / 'empty.png')
+
 # (min.x, min.y, max.x, max.y)
 # (left, top, right, bottom)
 sprite_boxes: dict[str, (int, int, int, int)] = {
@@ -22,15 +24,15 @@ sprite_boxes: dict[str, (int, int, int, int)] = {
 
     'black-bishops-2': (134, 0, 180, 36),
     'black-bishops-1': (134, 50, 164, 86),
-    
+
     'black-knights-2': (190, 0, 235, 36),
     'black-knights-1': (190, 50, 221, 86),
-    
+
     'black-rooks-2': (240, 0, 286, 36),
     'black-rooks-1': (240, 50, 271, 86),
-    
+
     'black-queen': (289, 0, 324, 36),
-    
+
     'white-pawns-8': (360, 0, 484, 36),
     'white-pawns-7': (360, 50, 470, 86),
     'white-pawns-6': (360, 100, 456, 136),

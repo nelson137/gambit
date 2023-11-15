@@ -30,57 +30,67 @@ impl FromWorld for CaptureState {
         let asset_server = world.resource::<AssetServer>();
         let mut captures = GameCaptures::<CapState>::default();
 
+        let empty = asset_server.load("images/captures/empty.png");
+
         captures[PieceColor::BLACK][PieceType::PAWN].image_handles.extend([
-            asset_server.load("images/captures/white-pawns-8.png"),
-            asset_server.load("images/captures/white-pawns-7.png"),
-            asset_server.load("images/captures/white-pawns-6.png"),
-            asset_server.load("images/captures/white-pawns-5.png"),
-            asset_server.load("images/captures/white-pawns-4.png"),
-            asset_server.load("images/captures/white-pawns-3.png"),
-            asset_server.load("images/captures/white-pawns-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/white-pawns-1.png"),
+            asset_server.load("images/captures/white-pawns-2.png"),
+            asset_server.load("images/captures/white-pawns-3.png"),
+            asset_server.load("images/captures/white-pawns-4.png"),
+            asset_server.load("images/captures/white-pawns-5.png"),
+            asset_server.load("images/captures/white-pawns-6.png"),
+            asset_server.load("images/captures/white-pawns-7.png"),
+            asset_server.load("images/captures/white-pawns-8.png"),
         ]);
         captures[PieceColor::BLACK][PieceType::BISHOP].image_handles.extend([
-            asset_server.load("images/captures/white-bishops-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/white-bishops-1.png"),
+            asset_server.load("images/captures/white-bishops-2.png"),
         ]);
         captures[PieceColor::BLACK][PieceType::KNIGHT].image_handles.extend([
-            asset_server.load("images/captures/white-knights-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/white-knights-1.png"),
+            asset_server.load("images/captures/white-knights-2.png"),
         ]);
         captures[PieceColor::BLACK][PieceType::ROOK].image_handles.extend([
-            asset_server.load("images/captures/white-rooks-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/white-rooks-1.png"),
+            asset_server.load("images/captures/white-rooks-2.png"),
         ]);
         captures[PieceColor::BLACK][PieceType::QUEEN]
             .image_handles
-            .push(asset_server.load("images/captures/white-queen.png"));
+            .extend([empty.clone(), asset_server.load("images/captures/white-queen.png")]);
 
         captures[PieceColor::WHITE][PieceType::PAWN].image_handles.extend([
-            asset_server.load("images/captures/black-pawns-8.png"),
-            asset_server.load("images/captures/black-pawns-7.png"),
-            asset_server.load("images/captures/black-pawns-6.png"),
-            asset_server.load("images/captures/black-pawns-5.png"),
-            asset_server.load("images/captures/black-pawns-4.png"),
-            asset_server.load("images/captures/black-pawns-3.png"),
-            asset_server.load("images/captures/black-pawns-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/black-pawns-1.png"),
+            asset_server.load("images/captures/black-pawns-2.png"),
+            asset_server.load("images/captures/black-pawns-3.png"),
+            asset_server.load("images/captures/black-pawns-4.png"),
+            asset_server.load("images/captures/black-pawns-5.png"),
+            asset_server.load("images/captures/black-pawns-6.png"),
+            asset_server.load("images/captures/black-pawns-7.png"),
+            asset_server.load("images/captures/black-pawns-8.png"),
         ]);
         captures[PieceColor::WHITE][PieceType::BISHOP].image_handles.extend([
-            asset_server.load("images/captures/black-bishops-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/black-bishops-1.png"),
+            asset_server.load("images/captures/black-bishops-2.png"),
         ]);
         captures[PieceColor::WHITE][PieceType::KNIGHT].image_handles.extend([
-            asset_server.load("images/captures/black-knights-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/black-knights-1.png"),
+            asset_server.load("images/captures/black-knights-2.png"),
         ]);
         captures[PieceColor::WHITE][PieceType::ROOK].image_handles.extend([
-            asset_server.load("images/captures/black-rooks-2.png"),
+            empty.clone(),
             asset_server.load("images/captures/black-rooks-1.png"),
+            asset_server.load("images/captures/black-rooks-2.png"),
         ]);
         captures[PieceColor::WHITE][PieceType::QUEEN]
             .image_handles
-            .push(asset_server.load("images/captures/black-queen.png"));
+            .extend([empty.clone(), asset_server.load("images/captures/black-queen.png")]);
 
         Self(captures)
     }
@@ -168,10 +178,21 @@ impl Default for CapState {
 }
 
 impl CapState {
-    fn patch(&mut self, diff: CapStateDiff) {
+    /// Apply the capture state diff. Return the image handle for the new
+    /// capture count.
+    fn patch(&mut self, diff: CapStateDiff) -> Handle<Image> {
+        let old_count = self.count as usize;
         match diff {
             CapStateDiff::Increment => self.count += 1,
             CapStateDiff::Set(count) => self.count = count,
+        }
+        let count = self.count as usize;
+
+        if count >= self.image_handles.len() {
+            warn!("Attempted to set capture count greater than the maximum: {count}");
+            self.image_handles[old_count].clone()
+        } else {
+            self.image_handles[count].clone()
         }
     }
 }
@@ -201,34 +222,19 @@ impl Command for CapStateUpdate {
 
         let cap = &mut world.resource_mut::<CaptureState>()[color][typ];
 
-        // Update the capture count
-        cap.patch(diff);
+        let handle = cap.patch(diff);
         let count = cap.count;
+        let image_entity = cap.image_entity;
 
-        if count == 0 {
-            let image_entity = cap.image_entity;
-            let mut image_entity = world.entity_mut(image_entity);
+        if let Some(mut image_entity) = world.get_entity_mut(image_entity) {
             if let Some(mut style) = image_entity.get_mut::<Style>() {
-                style.display = Display::None;
+                style.display = match count {
+                    0 => Display::None,
+                    _ => Display::Flex,
+                };
             }
-        } else {
-            // Images handles are ordered from most pieces to least. So for a count of 2 the index
-            // of the image handle is `len - 2`.
-            let index = cap.image_handles.len() - count as usize;
-            let handle = cap.image_handles[index].clone();
-
-            // Get the image entity
-            let image_entity = cap.image_entity;
-            if let Some(mut image_entity) = world.get_entity_mut(image_entity) {
-                // Update image handle
-                if let Some(mut image) = image_entity.get_mut::<UiImage>() {
-                    image.texture = handle;
-                }
-
-                // Set display to not-none if the count was previously 0
-                if let Some(mut style) = image_entity.get_mut::<Style>() {
-                    style.display = Display::Flex;
-                }
+            if let Some(mut image) = image_entity.get_mut::<UiImage>() {
+                image.texture = handle;
             }
         }
     }
