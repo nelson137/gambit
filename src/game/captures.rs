@@ -129,6 +129,11 @@ pub struct LoadCaptureState;
 
 impl Command for LoadCaptureState {
     fn apply(self, world: &mut World) {
+        // Don't load if no FEN was supplied on the CLI
+        if world.get_resource::<CliArgs>().and_then(|cli| cli.fen.as_deref()).is_none() {
+            return;
+        }
+
         let board = *world.resource::<BoardState>().board();
         let kings_bb = board.pieces(chess::Piece::King);
 
@@ -149,10 +154,8 @@ impl Command for LoadCaptureState {
 const CAPTURABLE_PIECES: [PieceType; chess::NUM_PIECES - 1] =
     [PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN];
 
-fn load_capture_state_on_startup(mut commands: Commands, cli_args: Res<CliArgs>) {
-    if cli_args.fen.is_some() {
-        commands.add(LoadCaptureState);
-    }
+fn load_capture_state_on_startup(mut commands: Commands) {
+    commands.add(LoadCaptureState);
 }
 
 #[derive(Clone, Copy, Default, Deref, DerefMut)]
