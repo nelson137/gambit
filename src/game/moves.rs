@@ -56,13 +56,14 @@ pub fn move_piece(
     mut board_state: ResMut<BoardState>,
     mut selection_events: EventWriter<SelectionEvent>,
     q_added: Query<(Entity, &UiPiece, &MovePiece), Added<MovePiece>>,
-    q_pieces: Query<Entity, With<UiPiece>>,
 ) {
     for (entity, &UiPiece { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
         // Move UI piece
-        commands.add(MoveUiPiece::new(entity, to_sq));
+        commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
+
+        let is_capture = board_state.has_piece_at(to_sq);
 
         let mut is_castle = false;
         if typ == PieceType::KING {
@@ -76,27 +77,21 @@ pub fn move_piece(
                 let from_sq = Square::from_coords(back_rank, File::H);
                 let to_sq = Square::from_coords(back_rank, File::F);
                 let entity = board_state.piece(from_sq);
-                commands.add(MoveUiPiece::new(entity, to_sq));
+                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let from_sq = Square::from_coords(back_rank, File::A);
                 let to_sq = Square::from_coords(back_rank, File::D);
                 let entity = board_state.piece(from_sq);
-                commands.add(MoveUiPiece::new(entity, to_sq));
+                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
                 is_castle = true;
             }
-        }
-
-        // Update piece maps
-        let captured_piece = board_state.update_piece(color, from_sq, to_sq);
-        if let Some(entity) = captured_piece.and_then(|entity| q_pieces.get(entity).ok()) {
-            commands.entity(entity).insert(Captured);
         }
 
         // Play audio
         commands.add(if promotion.is_some() {
             PlayGameAudio::Promote
-        } else if captured_piece.is_some() {
+        } else if is_capture {
             PlayGameAudio::Capture
         } else if is_castle {
             PlayGameAudio::Castle
@@ -122,26 +117,35 @@ pub fn move_piece(
 
 pub struct MoveUiPiece {
     entity: Entity,
+    color: PieceColor,
+    from_sq: Square,
     to_sq: Square,
 }
 
 impl MoveUiPiece {
-    pub fn new(entity: Entity, to_sq: Square) -> Self {
-        Self { entity, to_sq }
+    pub fn new(entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
+        Self { entity, color, from_sq, to_sq }
     }
 }
 
 impl Command for MoveUiPiece {
     fn apply(self, world: &mut World) {
-        trace!(to_sq = %self.to_sq, "Move UI piece");
+        let Self { entity, color, from_sq, to_sq } = self;
+        trace!(to_sq = %to_sq, "Move UI piece");
 
-        if let Some(mut square) = world.entity_mut(self.entity).get_mut::<Square>() {
-            square.move_to(self.to_sq);
+        if let Some(mut square) = world.entity_mut(entity).get_mut::<Square>() {
+            square.move_to(to_sq);
         }
 
-        let board_state = world.resource_mut::<BoardState>();
-        let to_tile_entity = board_state.tile(self.to_sq);
+        let mut board_state = world.resource_mut::<BoardState>();
 
-        world.entity_mut(to_tile_entity).push_children(&[self.entity]);
+        let to_tile_entity = board_state.tile(to_sq);
+
+        // Update piece maps
+        if let Some(captured_piece) = board_state.update_piece(color, from_sq, to_sq) {
+            world.entity_mut(captured_piece).insert(Captured);
+        }
+
+        world.entity_mut(to_tile_entity).push_children(&[entity]);
     }
 }
