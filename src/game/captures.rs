@@ -31,16 +31,16 @@ impl Plugin for CapturePlugin {
 }
 
 #[derive(Deref, DerefMut, Resource)]
-pub struct CaptureState(GameCaptures<CapState>);
+pub struct CaptureState([ColorCaptures; 2]);
 
 impl FromWorld for CaptureState {
     fn from_world(world: &mut World) -> Self {
         let asset_server = world.resource::<AssetServer>();
-        let mut captures = GameCaptures::<CapState>::default();
+        let mut state = CaptureState::new();
 
         let empty = asset_server.load("images/captures/empty.png");
 
-        captures[PieceColor::BLACK][PieceType::PAWN].image_handles.extend([
+        state[PieceColor::BLACK][PieceType::PAWN].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/white-pawns-1.png"),
             asset_server.load("images/captures/white-pawns-2.png"),
@@ -51,26 +51,26 @@ impl FromWorld for CaptureState {
             asset_server.load("images/captures/white-pawns-7.png"),
             asset_server.load("images/captures/white-pawns-8.png"),
         ]);
-        captures[PieceColor::BLACK][PieceType::BISHOP].image_handles.extend([
+        state[PieceColor::BLACK][PieceType::BISHOP].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/white-bishops-1.png"),
             asset_server.load("images/captures/white-bishops-2.png"),
         ]);
-        captures[PieceColor::BLACK][PieceType::KNIGHT].image_handles.extend([
+        state[PieceColor::BLACK][PieceType::KNIGHT].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/white-knights-1.png"),
             asset_server.load("images/captures/white-knights-2.png"),
         ]);
-        captures[PieceColor::BLACK][PieceType::ROOK].image_handles.extend([
+        state[PieceColor::BLACK][PieceType::ROOK].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/white-rooks-1.png"),
             asset_server.load("images/captures/white-rooks-2.png"),
         ]);
-        captures[PieceColor::BLACK][PieceType::QUEEN]
+        state[PieceColor::BLACK][PieceType::QUEEN]
             .image_handles
             .extend([empty.clone(), asset_server.load("images/captures/white-queen.png")]);
 
-        captures[PieceColor::WHITE][PieceType::PAWN].image_handles.extend([
+        state[PieceColor::WHITE][PieceType::PAWN].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/black-pawns-1.png"),
             asset_server.load("images/captures/black-pawns-2.png"),
@@ -81,34 +81,38 @@ impl FromWorld for CaptureState {
             asset_server.load("images/captures/black-pawns-7.png"),
             asset_server.load("images/captures/black-pawns-8.png"),
         ]);
-        captures[PieceColor::WHITE][PieceType::BISHOP].image_handles.extend([
+        state[PieceColor::WHITE][PieceType::BISHOP].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/black-bishops-1.png"),
             asset_server.load("images/captures/black-bishops-2.png"),
         ]);
-        captures[PieceColor::WHITE][PieceType::KNIGHT].image_handles.extend([
+        state[PieceColor::WHITE][PieceType::KNIGHT].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/black-knights-1.png"),
             asset_server.load("images/captures/black-knights-2.png"),
         ]);
-        captures[PieceColor::WHITE][PieceType::ROOK].image_handles.extend([
+        state[PieceColor::WHITE][PieceType::ROOK].image_handles.extend([
             empty.clone(),
             asset_server.load("images/captures/black-rooks-1.png"),
             asset_server.load("images/captures/black-rooks-2.png"),
         ]);
-        captures[PieceColor::WHITE][PieceType::QUEEN]
+        state[PieceColor::WHITE][PieceType::QUEEN]
             .image_handles
             .extend([empty.clone(), asset_server.load("images/captures/black-queen.png")]);
 
-        Self(captures)
+        state
     }
 }
 
 impl CaptureState {
+    pub fn new() -> Self {
+        Self(default())
+    }
+
     #[cfg(debug_assertions)]
     #[allow(dead_code)]
     pub fn log_counts(&self) {
-        fn log(color: &str, caps: &ColorCaptures<CapState>) {
+        fn log(color: &str, caps: &ColorCaptures) {
             info!(
                 pawns = caps[PieceType::PAWN].count,
                 bishops = caps[PieceType::BISHOP].count,
@@ -120,8 +124,86 @@ impl CaptureState {
         }
         info!("");
         info!("================== Capture Counts ==================");
-        log("White", &self.0[PieceColor::WHITE]);
-        log("Black", &self.0[PieceColor::BLACK]);
+        log("White", &self[PieceColor::WHITE]);
+        log("Black", &self[PieceColor::BLACK]);
+    }
+}
+
+impl Index<PieceColor> for CaptureState {
+    type Output = ColorCaptures;
+
+    fn index(&self, index: PieceColor) -> &Self::Output {
+        self.0.index(index.0 as usize)
+    }
+}
+
+impl IndexMut<PieceColor> for CaptureState {
+    fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
+        self.0.index_mut(index.0 as usize)
+    }
+}
+
+#[derive(Clone, Default, Deref, DerefMut)]
+pub struct ColorCaptures(pub [CapState; 5]);
+
+impl Index<usize> for ColorCaptures {
+    type Output = CapState;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        self.0.index(index)
+    }
+}
+
+impl IndexMut<usize> for ColorCaptures {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        self.0.index_mut(index)
+    }
+}
+
+impl Index<PieceType> for ColorCaptures {
+    type Output = CapState;
+
+    fn index(&self, index: PieceType) -> &Self::Output {
+        self.0.index(index.0 as usize)
+    }
+}
+
+impl IndexMut<PieceType> for ColorCaptures {
+    fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
+        self.0.index_mut(index.0 as usize)
+    }
+}
+
+#[derive(Clone)]
+pub struct CapState {
+    pub image_handles: Vec<Handle<Image>>,
+    pub image_entity: Entity,
+    pub count: u8,
+}
+
+impl Default for CapState {
+    fn default() -> Self {
+        Self { image_handles: Vec::new(), image_entity: Entity::from_raw(u32::MAX), count: 0 }
+    }
+}
+
+impl CapState {
+    /// Apply the capture state diff. Return the image handle for the new
+    /// capture count.
+    fn patch(&mut self, diff: CapStateDiff) -> Handle<Image> {
+        let old_count = self.count as usize;
+        match diff {
+            CapStateDiff::Increment => self.count += 1,
+            CapStateDiff::Set(count) => self.count = count,
+        }
+        let count = self.count as usize;
+
+        if count >= self.image_handles.len() {
+            warn!("Attempted to set capture count greater than the maximum: {count}");
+            self.image_handles[old_count].clone()
+        } else {
+            self.image_handles[count].clone()
+        }
     }
 }
 
@@ -156,86 +238,6 @@ const CAPTURABLE_PIECES: [PieceType; chess::NUM_PIECES - 1] =
 
 fn load_capture_state_on_startup(mut commands: Commands) {
     commands.add(LoadCaptureState);
-}
-
-#[derive(Clone, Copy, Default, Deref, DerefMut)]
-pub struct GameCaptures<C>(pub [ColorCaptures<C>; 2]);
-
-impl<C> Index<PieceColor> for GameCaptures<C> {
-    type Output = ColorCaptures<C>;
-
-    fn index(&self, index: PieceColor) -> &Self::Output {
-        self.0.index(index.0 as usize)
-    }
-}
-
-impl<C> IndexMut<PieceColor> for GameCaptures<C> {
-    fn index_mut(&mut self, index: PieceColor) -> &mut Self::Output {
-        self.0.index_mut(index.0 as usize)
-    }
-}
-
-#[derive(Clone, Copy, Default, Deref, DerefMut)]
-pub struct ColorCaptures<C>(pub [C; 5]);
-
-impl<C> Index<usize> for ColorCaptures<C> {
-    type Output = C;
-
-    fn index(&self, index: usize) -> &Self::Output {
-        self.0.index(index)
-    }
-}
-
-impl<C> IndexMut<usize> for ColorCaptures<C> {
-    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.0.index_mut(index)
-    }
-}
-
-impl<C> Index<PieceType> for ColorCaptures<C> {
-    type Output = C;
-
-    fn index(&self, index: PieceType) -> &Self::Output {
-        self.0.index(index.0 as usize)
-    }
-}
-
-impl<C> IndexMut<PieceType> for ColorCaptures<C> {
-    fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        self.0.index_mut(index.0 as usize)
-    }
-}
-
-pub struct CapState {
-    pub image_handles: Vec<Handle<Image>>,
-    pub image_entity: Entity,
-    pub count: u8,
-}
-
-impl Default for CapState {
-    fn default() -> Self {
-        Self { image_handles: Vec::new(), image_entity: Entity::from_raw(u32::MAX), count: 0 }
-    }
-}
-
-impl CapState {
-    /// Apply the capture state diff. Return the image handle for the new
-    /// capture count.
-    fn patch(&mut self, diff: CapStateDiff) -> Handle<Image> {
-        let old_count = self.count as usize;
-        match diff {
-            CapStateDiff::Increment => self.count += 1,
-            CapStateDiff::Set(count) => self.count = count,
-        }
-        let count = self.count as usize;
-
-        if count >= self.image_handles.len() {
-            warn!("Attempted to set capture count greater than the maximum: {count}");
-            self.image_handles[old_count].clone()
-        } else {
-            self.image_handles[count].clone()
-        }
-    }
 }
 
 pub struct CapStateUpdate {
