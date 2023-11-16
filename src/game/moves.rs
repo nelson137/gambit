@@ -8,7 +8,7 @@ use super::{
     game_over::GameOver,
 };
 
-#[derive(Component)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Component)]
 pub struct StartMove {
     from_sq: Square,
     to_sq: Square,

@@ -290,7 +290,7 @@ mod tests {
     use super::*;
 
     mod utils {
-        use bevy::ecs::system::SystemState;
+        use bevy::utils::HashSet;
 
         use crate::game::{
             core::{GameHeadlessPlugin, GameTestPlugin},
@@ -306,42 +306,120 @@ mod tests {
                 .add_plugins(TestMenuStateInGamePlugin)
                 .add_plugins(GameUiPlugin)
                 .add_plugins(SelectionPlugin);
+            app.update();
             app
-        }
-
-        pub fn get_state(app: &App) -> SelectionState {
-            *app.world.resource::<SelectionState>()
-        }
-
-        pub fn set_state(app: &mut App, state: SelectionState) {
-            *app.world.resource_mut::<SelectionState>() = state;
         }
 
         pub fn get_tagged_entity<Tag: Component>(app: &mut App) -> Entity {
             app.world.query_filtered::<Entity, With<Tag>>().single(&app.world)
         }
 
-        pub fn view_tag_descendants<Tag: Component>(
-            app: &mut App,
-            f: impl FnOnce(DescendantIter<'_, '_, &Children, With<Tag>>),
-        ) {
-            let entity = get_tagged_entity::<Tag>(app);
+        pub trait TestAppExts {
+            fn board_state(&self) -> &BoardState;
+            fn board_state_mut(&mut self) -> Mut<'_, BoardState>;
 
-            let mut q_state = SystemState::<Query<&Children, With<Tag>>>::new(&mut app.world);
-            let q = q_state.get(&app.world);
-            f(q.iter_descendants(entity));
+            fn set_state(&mut self, state: SelectionState);
+            fn set_selected(&mut self, square: Square);
+            fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>);
+            fn set_piece_to_drag_container(&mut self, square: Square);
+
+            fn assert_state(&self, expected: SelectionState);
+            fn assert_piece_in_drag_container(&mut self, expected: Square);
+            fn assert_piece_move_marker(&self, piece: Square, expected: StartMove);
+            fn assert_selected(&mut self, expected: Option<Square>);
+            fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
+            fn assert_piece_on_tile(&self, piece: Square, tile: Square);
         }
 
-        pub fn get_entity_parent(app: &App, entity: Entity) -> Option<Entity> {
-            app.world.entity(entity).get::<Parent>().map(Parent::get)
-        }
+        impl TestAppExts for App {
+            fn board_state(&self) -> &BoardState {
+                self.world.resource::<BoardState>()
+            }
 
-        pub fn entity_is_visible(app: &App, entity: Entity) -> bool {
-            app.world
-                .entity(entity)
-                .get::<Visibility>()
-                .map(|vis| *vis == Visibility::Visible)
-                .unwrap_or(false)
+            fn board_state_mut(&mut self) -> Mut<'_, BoardState> {
+                self.world.resource_mut::<BoardState>()
+            }
+
+            fn set_state(&mut self, state: SelectionState) {
+                *self.world.resource_mut::<SelectionState>() = state;
+            }
+
+            fn set_selected(&mut self, square: Square) {
+                let entity = self.board_state().highlight(square);
+                self.world.entity_mut(entity).insert(Selected);
+            }
+
+            fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>) {
+                for sq in squares.into_iter() {
+                    // Test assertions don't differentiate between move hints and capture hints
+                    let entity = self.board_state().move_hints(sq).move_entity;
+                    self.world.entity_mut(entity).insert(EnabledHint);
+                }
+            }
+
+            fn set_piece_to_drag_container(&mut self, square: Square) {
+                let parent = get_tagged_entity::<DragContainer>(self);
+                let child = self.board_state().piece(square);
+                AddChild { parent, child }.apply(&mut self.world);
+            }
+
+            fn assert_state(&self, expected: SelectionState) {
+                let actual = *self.world.resource::<SelectionState>();
+                assert_eq!(actual, expected);
+            }
+
+            fn assert_piece_in_drag_container(&mut self, piece: Square) {
+                let piece = self.board_state().piece(piece);
+                let expected = Some(HashSet::from_iter([piece]));
+
+                let drag_container = get_tagged_entity::<DragContainer>(self);
+                let children = self.world.entity(drag_container).get::<Children>();
+                let actual = children.map(|c| HashSet::from_iter(c.iter().copied()));
+
+                assert_eq!(actual, expected);
+            }
+
+            fn assert_piece_move_marker(&self, piece: Square, expected: StartMove) {
+                let entity = self.board_state().piece(piece);
+                let actual = self.world.entity(entity).get::<StartMove>().copied();
+                assert_eq!(actual, Some(expected), "start move marker on piece");
+            }
+
+            fn assert_selected(&mut self, expected: Option<Square>) {
+                if let Some(expected) = expected {
+                    let entity = self.board_state().highlight(expected);
+                    let is_selected = self.world.entity(entity).contains::<Selected>();
+                    assert!(is_selected, "selected highlight tile entitiy");
+                } else {
+                    let mut q =
+                        self.world.query_filtered::<(), (With<HighlightTile>, With<Selected>)>();
+                    let actual_count = q.iter(&self.world).count();
+                    assert_eq!(actual_count, 0, "count of selected highlight tile entities");
+                }
+            }
+
+            fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>) {
+                let board_state = self.board_state();
+
+                let expected = expected
+                    .into_iter()
+                    .map(|sq| board_state.move_hints(sq).move_entity)
+                    .collect::<HashSet<_>>();
+
+                let mut q =
+                    self.world.query_filtered::<Entity, (With<MoveHint>, With<EnabledHint>)>();
+                let actual = q.iter(&self.world).collect::<HashSet<_>>();
+
+                assert_eq!(actual, expected, "enabled hint entities");
+            }
+
+            fn assert_piece_on_tile(&self, piece: Square, tile: Square) {
+                let board_state = self.board_state();
+                let piece = board_state.piece(piece);
+                let tile = board_state.tile(tile);
+                let piece_parent = self.world.entity(piece).get::<Parent>().map(Parent::get);
+                assert_eq!(piece_parent, Some(tile));
+            }
         }
     }
     use utils::*;
@@ -350,7 +428,7 @@ mod tests {
     fn unselected_is_initial_state() {
         let app = build_app();
 
-        assert_eq!(get_state(&app), SelectionState::Unselected);
+        app.assert_state(SelectionState::Unselected);
     }
 
     #[test]
@@ -360,20 +438,10 @@ mod tests {
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
-        let board_state = app.world.resource::<BoardState>();
-        let expected_hl = board_state.highlight(Square::D2);
-        let expected_piece = board_state.piece(Square::D2);
-
-        // The selection state is Selecting Dragging
-        assert_eq!(get_state(&app), SelectionState::SelectingDragging(Square::D2));
-
-        // The piece being dragged is a child of Drag Container
-        view_tag_descendants::<DragContainer>(&mut app, |mut descendants| {
-            assert!(descendants.any(|d| { d == expected_piece }));
-        });
-
-        // The tile under the piece being dragged is highlighted
-        assert!(entity_is_visible(&app, expected_hl));
+        app.assert_state(SelectionState::SelectingDragging(Square::D2));
+        app.assert_piece_in_drag_container(Square::D2);
+        app.assert_selected(Some(Square::D2));
+        app.assert_hints([Square::D3, Square::D4]);
     }
 
     #[test]
@@ -383,8 +451,9 @@ mod tests {
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
-        // The selection state is Selecting Dragging
-        assert_eq!(get_state(&app), SelectionState::Unselected);
+        app.assert_state(SelectionState::Unselected);
+        app.assert_selected(None);
+        app.assert_hints([]);
     }
 
     #[test]
@@ -394,253 +463,166 @@ mod tests {
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
-        assert_eq!(get_state(&app), SelectionState::Unselected);
+        app.assert_state(SelectionState::Unselected);
+        app.assert_selected(None);
+        app.assert_hints([]);
     }
 
     #[test]
     fn selecting_dragging_makes_move_on_mouse_up_when_on_valid_move() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::SelectingDragging(Square::D2));
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let expected_piece_parent = board_state.tile(Square::D4);
-        let expected_hl_1 = board_state.highlight(Square::D2);
-        let expected_hl_2 = board_state.highlight(Square::D4);
-        let drag_container = get_tagged_entity::<DragContainer>(&mut app);
-        // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
+        app.set_state(SelectionState::SelectingDragging(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
+        app.set_piece_to_drag_container(Square::D2);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
-        // The selection state is Unselected
-        assert_eq!(get_state(&app), SelectionState::Unselected);
-
-        // The piece is re-parented to the mouse up tile
-        view_tag_descendants::<DragContainer>(&mut app, |descendants| {
-            assert_eq!(descendants.count(), 0, "drag container has unexpected children");
-        });
-        assert_eq!(get_entity_parent(&app, dragging_piece), Some(expected_piece_parent));
-
-        // Last move highlights are visible
-        assert!(entity_is_visible(&app, expected_hl_1));
-        assert!(entity_is_visible(&app, expected_hl_2));
+        app.assert_state(SelectionState::Unselected);
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
     }
 
     #[test]
     fn selecting_dragging_selects_on_mouse_up_when_not_a_move() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::SelectingDragging(Square::D2));
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let drag_container = get_tagged_entity::<DragContainer>(&mut app);
-        // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
+        app.set_state(SelectionState::SelectingDragging(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
+        app.set_piece_to_drag_container(Square::D2);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
-        // The selection state is Selected
-        assert_eq!(get_state(&app), SelectionState::Selected(Square::D2));
-
-        // The Drag Container has no children
-        view_tag_descendants::<DragContainer>(&mut app, |descendants| {
-            assert_eq!(descendants.count(), 0, "drag container has unexpected children");
-        });
+        app.assert_state(SelectionState::Selected(Square::D2));
+        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_selected(Some(Square::D2));
+        app.assert_hints([Square::D3, Square::D4]);
     }
 
     #[test]
     fn selected_starts_dragging_on_mouse_down_on_selected_tile() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::Selected(Square::D2));
-        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
-        app.world.entity_mut(hl_tile).insert(Selected);
+        app.set_state(SelectionState::Selected(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
 
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
-        let board_state = app.world.resource::<BoardState>();
-        let expected_hl = board_state.highlight(Square::D2);
-        let expected_piece = board_state.piece(Square::D2);
-
-        // The selection state is Selecting Dragging
-        assert_eq!(get_state(&app), SelectionState::SelectedDragging(Square::D2));
-
-        // The piece being dragged is a child of Drag Container
-        view_tag_descendants::<DragContainer>(&mut app, |mut descendants| {
-            assert!(descendants.any(|d| { d == expected_piece }));
-        });
-
-        // The tile under the piece being dragged is *still* highlighted
-        assert!(entity_is_visible(&app, expected_hl));
+        app.assert_state(SelectionState::SelectedDragging(Square::D2));
+        app.assert_piece_in_drag_container(Square::D2);
+        app.assert_selected(Some(Square::D2));
+        app.assert_hints([Square::D3, Square::D4]);
     }
 
     #[test]
     fn selected_makes_move_on_mouse_down_when_on_valid_move() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::Selected(Square::D2));
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let expected_piece_parent = board_state.tile(Square::D4);
-        let expected_hl_1 = board_state.highlight(Square::D2);
-        let expected_hl_2 = board_state.highlight(Square::D4);
+        app.set_state(SelectionState::Selected(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
 
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
-        // The selection state is Unselected
-        assert_eq!(get_state(&app), SelectionState::Unselected);
-
-        // The piece is re-parented to the mouse down square
-        assert_eq!(get_entity_parent(&app, dragging_piece), Some(expected_piece_parent));
-
-        // Last move highlights are visible
-        assert!(entity_is_visible(&app, expected_hl_1));
-        assert!(entity_is_visible(&app, expected_hl_2));
+        app.assert_state(SelectionState::Unselected);
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
     }
 
     #[test]
     fn selected_starts_dragging_on_mouse_down_on_different_piece() {
         let mut app = build_app();
-        set_state(&mut app, SelectionState::Selected(Square::D2));
+        app.set_state(SelectionState::Selected(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D7));
+        app.world.send_event(MouseSelectionEvent::MouseDown(Square::H2));
         app.update();
 
-        let board_state = app.world.resource::<BoardState>();
-        let expected_hl = board_state.highlight(Square::D7);
-        let expected_piece = board_state.piece(Square::D7);
-
-        // The selection state is Selecting Dragging
-        assert_eq!(get_state(&app), SelectionState::SelectingDragging(Square::D7));
-
-        // The piece being dragged is a child of Drag Container
-        view_tag_descendants::<DragContainer>(&mut app, |mut descendants| {
-            assert!(descendants.any(|d| { d == expected_piece }));
-        });
-
-        // The tile under the piece being dragged is highlighted
-        assert!(entity_is_visible(&app, expected_hl));
+        app.assert_state(SelectionState::SelectingDragging(Square::H2));
+        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_piece_in_drag_container(Square::H2);
+        app.assert_selected(Some(Square::H2));
+        app.assert_hints([Square::H3, Square::H4]);
     }
 
     #[test]
     fn selected_unselects_on_mouse_down_when_not_on_a_piece() {
         let mut app = build_app();
-        set_state(&mut app, SelectionState::Selected(Square::D2));
+        app.set_state(SelectionState::Selected(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
 
         app.world.send_event(MouseSelectionEvent::MouseDown(Square::E4));
         app.update();
 
-        assert_eq!(get_state(&app), SelectionState::Unselected);
+        app.assert_state(SelectionState::Unselected);
+        app.assert_selected(None);
+        app.assert_hints([]);
     }
 
     #[test]
     fn selected_does_nothing_on_mouse_up() {
         let mut app = build_app();
-        set_state(&mut app, SelectionState::Selected(Square::D2));
+        app.set_state(SelectionState::Selected(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
-        assert_eq!(get_state(&app), SelectionState::Selected(Square::D2));
+        app.assert_state(SelectionState::Selected(Square::D2));
+        app.assert_selected(Some(Square::D2));
+        app.assert_hints([Square::D3, Square::D4]);
     }
 
     #[test]
     fn selected_dragging_unselects_on_mouse_up_on_selected_tile() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
-        app.world.entity_mut(hl_tile).insert(Selected);
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let expected_piece_parent = board_state.tile(Square::D2);
-        let unexpected_hl = board_state.highlight(Square::D2);
-        let drag_container = get_tagged_entity::<DragContainer>(&mut app);
-        // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
+        app.set_state(SelectionState::SelectedDragging(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
+        app.set_piece_to_drag_container(Square::D2);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::D2));
         app.update();
 
-        // The selection state is Selected
-        assert_eq!(get_state(&app), SelectionState::Unselected);
-
-        // The piece is re-parented to its original tile
-        view_tag_descendants::<DragContainer>(&mut app, |descendants| {
-            assert_eq!(descendants.count(), 0, "drag container has unexpected children");
-        });
-        assert_eq!(get_entity_parent(&app, dragging_piece), Some(expected_piece_parent));
-
-        // The original tile of the piece is un-highlighted
-        assert!(!entity_is_visible(&app, unexpected_hl));
+        app.assert_state(SelectionState::Unselected);
+        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_selected(None);
+        app.assert_hints([]);
     }
 
     #[test]
     fn selected_dragging_makes_move_on_mouse_up_when_on_valid_move() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
-        app.world.entity_mut(hl_tile).insert(Selected);
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let expected_piece_parent = board_state.tile(Square::D4);
-        let expected_hl_1 = board_state.highlight(Square::D2);
-        let expected_hl_2 = board_state.highlight(Square::D4);
-        let drag_container = get_tagged_entity::<DragContainer>(&mut app);
-        // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
+        app.set_state(SelectionState::SelectedDragging(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
+        app.set_piece_to_drag_container(Square::D2);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
-        // The selection state is Unselected
-        assert_eq!(get_state(&app), SelectionState::Unselected);
-
-        // The piece is re-parented to the mouse up tile
-        view_tag_descendants::<DragContainer>(&mut app, |descendants| {
-            assert_eq!(descendants.count(), 0, "drag container has unexpected children");
-        });
-        assert_eq!(get_entity_parent(&app, dragging_piece), Some(expected_piece_parent));
-
-        // Last move highlights are visible
-        assert!(entity_is_visible(&app, expected_hl_1));
-        assert!(entity_is_visible(&app, expected_hl_2));
+        app.assert_state(SelectionState::Unselected);
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
     }
 
     #[test]
     fn selected_dragging_reselects_on_mouse_up_when_not_a_move() {
         let mut app = build_app();
-        app.update();
-        set_state(&mut app, SelectionState::SelectedDragging(Square::D2));
-        let hl_tile = app.world.resource::<BoardState>().highlight(Square::D2);
-        app.world.entity_mut(hl_tile).insert(Selected);
-        let board_state = app.world.resource::<BoardState>();
-        let dragging_piece = board_state.piece(Square::D2);
-        let expected_piece_parent = board_state.tile(Square::D2);
-        let expected_hl = board_state.highlight(Square::D2);
-        let drag_container = get_tagged_entity::<DragContainer>(&mut app);
-        // Re-parent the piece to the Drag Container
-        AddChild { parent: drag_container, child: dragging_piece }.apply(&mut app.world);
+        app.set_state(SelectionState::SelectedDragging(Square::D2));
+        app.set_selected(Square::D2);
+        app.set_hints([Square::D3, Square::D4]);
+        app.set_piece_to_drag_container(Square::D2);
 
         app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
-        // The selection state is Selected
-        assert_eq!(get_state(&app), SelectionState::Selected(Square::D2));
-
-        // The Drag Container has no children
-        view_tag_descendants::<DragContainer>(&mut app, |descendants| {
-            assert_eq!(descendants.count(), 0, "drag container has unexpected children");
-        });
-        assert_eq!(get_entity_parent(&app, dragging_piece), Some(expected_piece_parent));
-
-        // The tile under the piece being dragged is *still* highlighted
-        assert!(entity_is_visible(&app, expected_hl));
+        app.assert_state(SelectionState::Selected(Square::D2));
+        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_selected(Some(Square::D2));
+        app.assert_hints([Square::D3, Square::D4]);
     }
 }
