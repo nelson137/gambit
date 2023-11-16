@@ -3,8 +3,7 @@ use bevy::prelude::*;
 use crate::{debug_name, utils::AppNoop};
 
 use super::{
-    board::{BoardPlugin, PromotionPlugin},
-    captures::CapturePlugin,
+    board::{BoardPlugin, CapturePlugin, PromotionPlugin},
     consts::{MIN_BOARD_SIZE, UI_GAP_VAL},
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,

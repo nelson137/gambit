@@ -6,8 +6,7 @@ use bevy::{
 use crate::game::menu::MenuState;
 
 use super::{
-    board::{spawn_pieces, PieceMeta},
-    captures::LoadCaptureState,
+    board::{spawn_pieces, LoadCaptureState, PieceMeta},
     BoardState,
 };
 

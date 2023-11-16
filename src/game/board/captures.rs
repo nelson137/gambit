@@ -11,7 +11,7 @@ use crate::{
     utils::AppNoop,
 };
 
-use super::board::{BoardPlugin, BoardState, PieceMeta};
+use super::{BoardPlugin, BoardState, PieceMeta};
 
 #[derive(Debug)]
 pub struct CapturePlugin;

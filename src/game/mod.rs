@@ -14,7 +14,6 @@ use self::{
 pub mod audio;
 pub mod board;
 pub mod camera;
-pub mod captures;
 pub mod consts;
 pub mod core;
 pub mod game_over;

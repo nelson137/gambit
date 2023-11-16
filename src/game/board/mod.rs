@@ -4,12 +4,13 @@ use bevy_startup_tree::{startup_tree, AddStartupTree};
 use crate::utils::AppNoop;
 
 pub use self::{
-    highlight_tile::*, hints::*, icons::*, pieces::*, promoter::*, selection::*, square::*,
-    state::*, tile::*, ui::*,
+    captures::*, highlight_tile::*, hints::*, icons::*, pieces::*, promoter::*, selection::*,
+    square::*, state::*, tile::*, ui::*,
 };
 
 use super::ui::spawn_ui;
 
+mod captures;
 mod highlight_tile;
 mod hints;
 mod icons;

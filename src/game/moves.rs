@@ -3,8 +3,10 @@ use chess::File;
 
 use super::{
     audio::PlayGameAudio,
-    board::{BoardState, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square},
-    captures::Captured,
+    board::{
+        BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent,
+        Square,
+    },
     game_over::GameOver,
 };
 

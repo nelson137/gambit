@@ -5,8 +5,7 @@ use bevy::prelude::*;
 use crate::{
     cli::CliArgs,
     game::{
-        board::{spawn_pieces, BoardState, EndGameIcon, SelectionEvent},
-        captures::ResetCapturesUi,
+        board::{spawn_pieces, BoardState, EndGameIcon, ResetCapturesUi, SelectionEvent},
         load::DespawnPieces,
     },
 };
