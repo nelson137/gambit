@@ -2,10 +2,16 @@ use bevy::prelude::*;
 
 use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
-use super::{BoardState, Square, TileMoveHints};
+use super::{BoardState, Square};
 
 #[derive(Component)]
 pub struct MoveHint;
+
+#[derive(Debug)]
+pub struct TileMoveHints {
+    pub move_entity: Entity,
+    pub capture_entity: Entity,
+}
 
 pub fn spawn_hints(
     mut commands: Commands,
