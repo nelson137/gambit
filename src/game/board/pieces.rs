@@ -3,9 +3,15 @@ use std::{fmt, ops::Not};
 use bevy::prelude::*;
 use chess::{Piece, Rank};
 
-use crate::{assets::PieceColorAndTypeAssetPath, debug_name_f, game::consts::Z_PIECE};
+use crate::{debug_name_f, game::consts::Z_PIECE};
 
 use super::{square::Square, BoardState};
+
+macro_rules! asset_path {
+    ($color:literal, $type:literal) => {
+        concat!("images/pieces/", $color, "-", $type, ".png")
+    };
+}
 
 #[derive(Clone, Copy, Component)]
 pub struct UiPiece {
@@ -16,6 +22,23 @@ pub struct UiPiece {
 impl UiPiece {
     pub fn new(color: PieceColor, typ: PieceType) -> Self {
         Self { color, typ }
+    }
+
+    pub fn asset_path(self) -> &'static str {
+        match (self.color, self.typ) {
+            (PieceColor::BLACK, PieceType::BISHOP) => asset_path!("black", "bishop"),
+            (PieceColor::BLACK, PieceType::KING) => asset_path!("black", "king"),
+            (PieceColor::BLACK, PieceType::KNIGHT) => asset_path!("black", "knight"),
+            (PieceColor::BLACK, PieceType::PAWN) => asset_path!("black", "pawn"),
+            (PieceColor::BLACK, PieceType::QUEEN) => asset_path!("black", "queen"),
+            (PieceColor::BLACK, PieceType::ROOK) => asset_path!("black", "rook"),
+            (PieceColor::WHITE, PieceType::BISHOP) => asset_path!("white", "bishop"),
+            (PieceColor::WHITE, PieceType::KING) => asset_path!("white", "king"),
+            (PieceColor::WHITE, PieceType::KNIGHT) => asset_path!("white", "knight"),
+            (PieceColor::WHITE, PieceType::PAWN) => asset_path!("white", "pawn"),
+            (PieceColor::WHITE, PieceType::QUEEN) => asset_path!("white", "queen"),
+            (PieceColor::WHITE, PieceType::ROOK) => asset_path!("white", "rook"),
+        }
     }
 }
 
@@ -143,12 +166,11 @@ pub fn spawn_pieces(
     for square in chess::ALL_SQUARES.map(Square::new) {
         let Some(info) = board_state.get_piece_info_on(square) else { continue };
         let image_path = info.asset_path();
-        let (piece_color, piece_type) = info;
 
         let piece_entity = commands
             .spawn((
-                UiPiece::new(piece_color, piece_type),
-                debug_name_f!("Piece ({piece_color} {piece_type}) ({square})"),
+                info,
+                debug_name_f!("Piece ({} {}) ({square})", info.color, info.typ),
                 square,
                 ImageBundle {
                     image: UiImage::new(asset_server.load(image_path)),

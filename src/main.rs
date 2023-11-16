@@ -13,7 +13,6 @@ use self::{
     },
 };
 
-mod assets;
 mod cli;
 mod debug_inspector;
 mod game;

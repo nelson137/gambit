@@ -41,7 +41,7 @@ macro_rules! debug_name_f {
 #[cfg(not(feature = "debug"))]
 #[macro_export]
 macro_rules! debug_name_f {
-    ($($args:tt),* $(,)?) => {
+    ($name_fmt:literal $(, $args:expr)* $(,)?) => {
         ()
     };
 }

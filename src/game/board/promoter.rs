@@ -4,7 +4,6 @@ use bevy::{
 };
 
 use crate::{
-    assets::PieceColorAndTypeAssetPath,
     debug_name_f,
     game::{
         consts::{FONT_PATH, Z_PROMOTER},
@@ -83,7 +82,7 @@ pub fn spawn_promoters(
 
                 for typ in [PieceType::QUEEN, PieceType::KNIGHT, PieceType::ROOK, PieceType::BISHOP]
                 {
-                    let asset_path = (color, typ).asset_path();
+                    let asset_path = UiPiece::new(color, typ).asset_path();
 
                     cmds.spawn((
                         debug_name_f!("Promotion Button ({color}) ({typ})"),
@@ -294,7 +293,7 @@ pub fn promotion_event_handler(
 
         match event {
             PromotionEvent::Promote(promo_typ) => {
-                let new_asset_path = (color, promo_typ).asset_path();
+                let new_asset_path = UiPiece::new(color, promo_typ).asset_path();
                 image.texture = asset_server.load(new_asset_path);
                 entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ)));
             }
