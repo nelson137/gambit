@@ -1,13 +1,10 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::File;
 
+use crate::game::{audio::PlayGameAudio, game_over::GameOver};
+
 use super::{
-    audio::PlayGameAudio,
-    board::{
-        BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent,
-        Square,
-    },
-    game_over::GameOver,
+    BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square,
 };
 
 #[derive(Debug)]

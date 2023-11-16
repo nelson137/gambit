@@ -3,11 +3,10 @@ use bevy::prelude::*;
 use crate::utils::AppNoop;
 
 use self::{
-    board::{BoardState, PromotionEvent, SelectionPlugin},
+    board::{BoardState, MovePlugin, PromotionEvent, SelectionPlugin},
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     mouse::MouseLogicPlugin,
-    moves::MovePlugin,
     ui::GameUiPlugin,
 };
 
@@ -20,7 +19,6 @@ pub mod game_over;
 pub mod load;
 pub mod menu;
 pub mod mouse;
-pub mod moves;
 pub mod panels;
 pub mod ui;
 pub mod utils;

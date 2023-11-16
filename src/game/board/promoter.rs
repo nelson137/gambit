@@ -6,8 +6,8 @@ use bevy::{
 use crate::{
     debug_name_f,
     game::{
+        board::MovePiece,
         consts::{FONT_PATH, Z_PROMOTER},
-        moves::MovePiece,
     },
     utils::AppNoop,
 };

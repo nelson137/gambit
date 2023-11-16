@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    game::{menu::MenuState, mouse::DragContainer, moves::StartMove},
+    game::{board::StartMove, menu::MenuState, mouse::DragContainer},
     utils::AppNoop,
 };
 
