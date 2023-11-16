@@ -1,9 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use bevy::{
-    ecs::system::{Command, SystemState},
-    prelude::*,
-};
+use bevy::{ecs::system::Command, prelude::*};
 
 use crate::{
     cli::CliArgs,
@@ -313,8 +310,7 @@ pub struct ResetCapturesUi;
 
 impl Command for ResetCapturesUi {
     fn apply(self, world: &mut World) {
-        let mut state = SystemState::<ResMut<CaptureState>>::new(world);
-        let mut capture_state = state.get_mut(world);
+        let mut capture_state = world.resource_mut::<CaptureState>();
 
         let image_entities: Vec<Entity> = capture_state
             .iter_mut()
@@ -330,7 +326,5 @@ impl Command for ResetCapturesUi {
                 style.display = Display::None;
             }
         }
-
-        state.apply(world);
     }
 }
