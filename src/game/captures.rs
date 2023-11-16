@@ -4,7 +4,10 @@ use bevy::{ecs::system::Command, prelude::*};
 
 use crate::{
     cli::CliArgs,
-    game::board::{PieceColor, PieceType},
+    game::{
+        board::{PieceColor, PieceType},
+        panels::MaterialAdvantageLabel,
+    },
     utils::AppNoop,
 };
 
@@ -109,10 +112,24 @@ impl CaptureState {
         Self(default())
     }
 
+    pub fn get_advantage(&self) -> Option<(PieceColor, u8)> {
+        match (self[PieceColor::BLACK].score, self[PieceColor::WHITE].score) {
+            (black_score, white_score) if black_score > white_score => {
+                Some((PieceColor::BLACK, black_score - white_score))
+            }
+            (black_score, white_score) if white_score > black_score => {
+                Some((PieceColor::WHITE, white_score - black_score))
+            }
+            _ => None,
+        }
+    }
+
     pub fn patch(&mut self, update: CapStateUpdate) -> &CapState {
-        let cap = &mut self[update.color][update.typ];
-        cap.patch(update.diff);
-        cap
+        let color_caps = &mut self[update.color];
+        color_caps[update.typ].patch(update.diff);
+        color_caps.score =
+            CAPTURABLE_PIECES.into_iter().map(|typ| typ.value() * color_caps[typ].count).sum();
+        &color_caps[update.typ]
     }
 
     #[cfg(debug_assertions)]
@@ -150,19 +167,23 @@ impl IndexMut<PieceColor> for CaptureState {
 }
 
 #[derive(Clone, Default, Deref, DerefMut)]
-pub struct ColorCaptures(pub [CapState; 5]);
+pub struct ColorCaptures {
+    #[deref]
+    piece_captures: [CapState; 5],
+    score: u8,
+}
 
 impl Index<usize> for ColorCaptures {
     type Output = CapState;
 
     fn index(&self, index: usize) -> &Self::Output {
-        self.0.index(index)
+        self.piece_captures.index(index)
     }
 }
 
 impl IndexMut<usize> for ColorCaptures {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        self.0.index_mut(index)
+        self.piece_captures.index_mut(index)
     }
 }
 
@@ -170,13 +191,13 @@ impl Index<PieceType> for ColorCaptures {
     type Output = CapState;
 
     fn index(&self, index: PieceType) -> &Self::Output {
-        self.0.index(index.0 as usize)
+        self.piece_captures.index(index.0 as usize)
     }
 }
 
 impl IndexMut<PieceType> for ColorCaptures {
     fn index_mut(&mut self, index: PieceType) -> &mut Self::Output {
-        self.0.index_mut(index.0 as usize)
+        self.piece_captures.index_mut(index.0 as usize)
     }
 }
 
@@ -281,6 +302,22 @@ impl Command for CapStateUpdate {
                 image.texture = handle;
             }
         }
+
+        if let Some((color_with_adv, adv)) = world.resource::<CaptureState>().get_advantage() {
+            let mut q = world.query::<(&MaterialAdvantageLabel, &mut Visibility, &mut Text)>();
+            for (label, mut vis, mut text) in q.iter_mut(world) {
+                if **label == color_with_adv {
+                    *vis = Visibility::Visible;
+                    text.sections[0].value = format!("+{adv}");
+                } else {
+                    *vis = Visibility::Hidden;
+                }
+            }
+        } else {
+            world
+                .query_filtered::<&mut Visibility, With<MaterialAdvantageLabel>>()
+                .for_each_mut(world, |mut vis| *vis = Visibility::Hidden);
+        }
     }
 }
 
@@ -326,5 +363,9 @@ impl Command for ResetCapturesUi {
                 style.display = Display::None;
             }
         }
+
+        world
+            .query_filtered::<&mut Visibility, With<MaterialAdvantageLabel>>()
+            .for_each_mut(world, |mut vis| *vis = Visibility::Hidden);
     }
 }

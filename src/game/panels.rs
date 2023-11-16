@@ -151,11 +151,12 @@ impl Command for PanelBuilderCmd {
                 },
             ))
             .with_children(|cmds| {
-                let text_style = TextStyle { color: Color::WHITE, font, font_size: 14.0 };
+                let label_style =
+                    TextStyle { color: Color::WHITE, font: font.clone(), font_size: 14.0 };
                 cmds.spawn((
                     debug_name!("Profile Label"),
                     TextBundle {
-                        text: Text::from_section(self.data.profile_label, text_style),
+                        text: Text::from_section(self.data.profile_label, label_style),
                         ..default()
                     },
                 ));
@@ -171,12 +172,12 @@ impl Command for PanelBuilderCmd {
                 })
                 .with_children(|cmds| {
                     for cap_state in capture_state[color].iter_mut() {
-                        let handles = &cap_state.image_handles;
+                        let handle = cap_state.image_handles[0].clone();
                         cap_state.image_entity = cmds
                             .spawn((
                                 CapturesImage,
                                 ImageBundle {
-                                    image: UiImage::new(handles[0].clone()),
+                                    image: UiImage::new(handle),
                                     style: Style {
                                         display: Display::None,
                                         margin: UiRect::right(UI_GAP_VAL),
@@ -187,6 +188,17 @@ impl Command for PanelBuilderCmd {
                             ))
                             .id();
                     }
+
+                    let adv_color = Color::rgba(1.0, 1.0, 1.0, 0.5);
+                    let adv_style = TextStyle { color: adv_color, font, font_size: 12.0 };
+                    cmds.spawn((
+                        MaterialAdvantageLabel(color),
+                        TextBundle {
+                            text: Text::from_section("+6", adv_style),
+                            visibility: Visibility::Hidden,
+                            ..default()
+                        },
+                    ));
                 });
             });
         });
@@ -194,6 +206,9 @@ impl Command for PanelBuilderCmd {
         state.apply(world);
     }
 }
+
+#[derive(Deref, Component)]
+pub struct MaterialAdvantageLabel(PieceColor);
 
 fn captures_images_sizes(
     image_assets: Res<Assets<Image>>,

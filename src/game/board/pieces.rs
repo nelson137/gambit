@@ -156,6 +156,16 @@ impl PieceType {
             Self::QUEEN | Self::KING => 1,
         }
     }
+
+    pub fn value(self) -> u8 {
+        match self {
+            Self::PAWN => 1,
+            Self::KNIGHT | Self::BISHOP => 3,
+            Self::ROOK => 5,
+            Self::QUEEN => 9,
+            Self::KING => panic!("King has no value as it cannot be captured"),
+        }
+    }
 }
 
 pub fn spawn_pieces(
