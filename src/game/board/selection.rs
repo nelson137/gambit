@@ -20,10 +20,14 @@ impl Plugin for SelectionPlugin {
             // Systems
             // TODO: handle_selection_events should run at the end of the set
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
-            .add_systems(PostUpdate, handle_selection_events.run_if(in_state(MenuState::Game)))
-            .add_systems(Last, update_indicators.run_if(in_state(MenuState::Game)))
+            .add_systems(PostUpdate, handle_selection_events.run_if(in_game_or_game_over))
+            .add_systems(Last, update_indicators.run_if(in_game_or_game_over))
             .noop();
     }
+}
+
+fn in_game_or_game_over(state: Res<State<MenuState>>) -> bool {
+    matches!(*state.get(), MenuState::Game | MenuState::DoGameOver)
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Resource)]
@@ -224,6 +228,7 @@ pub fn handle_selection_events(
     };
 
     for event in event_reader.read() {
+        trace!(?event, "Selection event");
         match event {
             SelectionEvent::UpdateSelection { highlight, hints } => {
                 unset_selection(&mut commands);
