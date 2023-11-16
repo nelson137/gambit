@@ -8,7 +8,7 @@ use super::{BoardState, Square};
 pub struct Hint;
 
 #[derive(Debug)]
-pub struct TileMoveHints {
+pub struct TileHints {
     pub move_entity: Entity,
     pub capture_entity: Entity,
 }
@@ -82,7 +82,7 @@ pub fn spawn_hints(
             ))
             .id();
 
-        board_state.set_move_hints(square, TileMoveHints { capture_entity, move_entity });
+        board_state.set_tile_hints(square, TileHints { capture_entity, move_entity });
         commands.entity(board_state.tile(square)).push_children(&[move_entity, capture_entity]);
     }
 }

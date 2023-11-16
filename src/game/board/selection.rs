@@ -364,7 +364,7 @@ mod tests {
             fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>) {
                 for sq in squares.into_iter() {
                     // Test assertions don't differentiate between move hints and capture hints
-                    let entity = self.board_state().move_hints(sq).move_entity;
+                    let entity = self.board_state().tile_hints(sq).move_entity;
                     self.world.entity_mut(entity).insert(EnabledHint);
                 }
             }
@@ -415,7 +415,7 @@ mod tests {
 
                 let expected = expected
                     .into_iter()
-                    .map(|sq| board_state.move_hints(sq).move_entity)
+                    .map(|sq| board_state.tile_hints(sq).move_entity)
                     .collect::<HashSet<_>>();
 
                 let mut q = self.world.query_filtered::<Entity, (With<Hint>, With<EnabledHint>)>();

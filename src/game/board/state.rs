@@ -8,14 +8,14 @@ use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPT
 
 use crate::cli::CliArgs;
 
-use super::{PieceColor, PieceMeta, PieceType, Square, TileMoveHints};
+use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
 
 #[derive(Resource)]
 pub struct BoardState {
     tiles: HashMap<Square, Entity>,
     pieces: HashMap<Square, Entity>,
     highlights: HashMap<Square, Entity>,
-    move_hints: HashMap<Square, TileMoveHints>,
+    tile_hints: HashMap<Square, TileHints>,
     board: Board,
 }
 
@@ -37,7 +37,7 @@ impl FromWorld for BoardState {
             tiles: HashMap::with_capacity(64),
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
-            move_hints: HashMap::with_capacity(64),
+            tile_hints: HashMap::with_capacity(64),
             board,
         }
     }
@@ -161,12 +161,12 @@ impl BoardState {
     // Hints
     //------------------------------
 
-    pub fn move_hints(&self, square: Square) -> &TileMoveHints {
-        self.move_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
+    pub fn tile_hints(&self, square: Square) -> &TileHints {
+        self.tile_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
     }
 
-    pub fn set_move_hints(&mut self, square: Square, hints: TileMoveHints) {
-        match self.move_hints.entry(square) {
+    pub fn set_tile_hints(&mut self, square: Square, hints: TileHints) {
+        match self.tile_hints.entry(square) {
             Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
             Entry::Vacant(e) => e.insert(hints),
         };
@@ -220,7 +220,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.move_hints(r#move.get_dest().into()).capture_entity);
+            moves.push(self.tile_hints(r#move.get_dest().into()).capture_entity);
         }
 
         move_gen.set_iterator_mask(!EMPTY);
@@ -228,7 +228,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.move_hints(r#move.get_dest().into()).move_entity);
+            moves.push(self.tile_hints(r#move.get_dest().into()).move_entity);
         }
 
         moves
