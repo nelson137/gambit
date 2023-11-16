@@ -30,6 +30,9 @@ impl Plugin for CapturePlugin {
     }
 }
 
+const CAPTURABLE_PIECES: [PieceType; chess::NUM_PIECES - 1] =
+    [PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN];
+
 #[derive(Deref, DerefMut, Resource)]
 pub struct CaptureState([ColorCaptures; 2]);
 
@@ -107,6 +110,12 @@ impl FromWorld for CaptureState {
 impl CaptureState {
     pub fn new() -> Self {
         Self(default())
+    }
+
+    pub fn patch(&mut self, update: CapStateUpdate) -> &CapState {
+        let cap = &mut self[update.color][update.typ];
+        cap.patch(update.diff);
+        cap
     }
 
     #[cfg(debug_assertions)]
@@ -188,21 +197,19 @@ impl Default for CapState {
 }
 
 impl CapState {
+    /// Return the image handle for the current capture count.
+    fn handle(&self) -> Handle<Image> {
+        self.image_handles[self.count as usize].clone()
+    }
+
     /// Apply the capture state diff. Return the image handle for the new
     /// capture count.
-    fn patch(&mut self, diff: CapStateDiff) -> Handle<Image> {
-        let old_count = self.count as usize;
+    fn patch(&mut self, diff: CapStateDiff) {
         match diff {
-            CapStateDiff::Increment => self.count += 1,
+            CapStateDiff::Increment => {
+                self.count = (self.count + 1) % self.image_handles.len() as u8
+            }
             CapStateDiff::Set(count) => self.count = count,
-        }
-        let count = self.count as usize;
-
-        if count >= self.image_handles.len() {
-            warn!("Attempted to set capture count greater than the maximum: {count}");
-            self.image_handles[old_count].clone()
-        } else {
-            self.image_handles[count].clone()
         }
     }
 }
@@ -233,13 +240,11 @@ impl Command for LoadCaptureState {
     }
 }
 
-const CAPTURABLE_PIECES: [PieceType; chess::NUM_PIECES - 1] =
-    [PieceType::PAWN, PieceType::KNIGHT, PieceType::BISHOP, PieceType::ROOK, PieceType::QUEEN];
-
 fn load_capture_state_on_startup(mut commands: Commands) {
     commands.add(LoadCaptureState);
 }
 
+#[derive(Clone, Copy)]
 pub struct CapStateUpdate {
     color: PieceColor,
     typ: PieceType,
@@ -260,14 +265,13 @@ pub enum CapStateDiff {
 
 impl Command for CapStateUpdate {
     fn apply(self, world: &mut World) {
-        let CapStateUpdate { color, typ, diff } = self;
         trace!(side = ?self.color, typ = ?self.typ, action = ?self.diff, "Update capture state");
 
-        let cap = &mut world.resource_mut::<CaptureState>()[color][typ];
-
-        let handle = cap.patch(diff);
+        let mut state = world.resource_mut::<CaptureState>();
+        let cap = state.patch(self);
         let count = cap.count;
         let image_entity = cap.image_entity;
+        let handle = cap.handle();
 
         if let Some(mut image_entity) = world.get_entity_mut(image_entity) {
             if let Some(mut style) = image_entity.get_mut::<Style>() {
