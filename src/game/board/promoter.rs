@@ -12,7 +12,7 @@ use crate::{
     utils::AppNoop,
 };
 
-use super::{BoardState, PieceColor, PieceType, Square, Tile, UiPiece};
+use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};
 
 pub struct PromotionPlugin;
 
@@ -82,7 +82,7 @@ pub fn spawn_promoters(
 
                 for typ in [PieceType::QUEEN, PieceType::KNIGHT, PieceType::ROOK, PieceType::BISHOP]
                 {
-                    let asset_path = UiPiece::new(color, typ).asset_path();
+                    let asset_path = PieceMeta::new(color, typ).asset_path();
 
                     cmds.spawn((
                         debug_name_f!("Promotion Button ({color}) ({typ})"),
@@ -165,12 +165,12 @@ pub fn start_promotion(
     mut commands: Commands,
     board_state: Res<BoardState>,
     mut q_added: Query<
-        (&UiPiece, &PromotingPiece, &mut Visibility),
+        (&PieceMeta, &PromotingPiece, &mut Visibility),
         (Added<PromotingPiece>, Without<PromotionUi>),
     >,
     mut q_promoters: Query<(Entity, &PromotionUi, &mut Visibility), Without<PromotingPiece>>,
 ) {
-    for (&UiPiece { color, .. }, &PromotingPiece { from_sq, to_sq }, mut vis) in &mut q_added {
+    for (&PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq }, mut vis) in &mut q_added {
         trace!(?color, %from_sq, %to_sq, "Start promotion");
 
         *vis = Visibility::Hidden;
@@ -255,7 +255,7 @@ pub fn promotion_event_handler(
     asset_server: Res<AssetServer>,
     mut event_reader: EventReader<PromotionEvent>,
     mut q_promo: Query<
-        (Entity, &UiPiece, &PromotingPiece, &mut Visibility, &mut UiImage),
+        (Entity, &PieceMeta, &PromotingPiece, &mut Visibility, &mut UiImage),
         Without<PromotionUi>,
     >,
     mut q_promoters: Query<(&PromotionUi, &mut Visibility), Without<PromotingPiece>>,
@@ -271,7 +271,7 @@ pub fn promotion_event_handler(
 
         let Ok((
             entity,
-            &UiPiece { color, .. },
+            &PieceMeta { color, .. },
             &PromotingPiece { from_sq, to_sq },
             mut vis,
             mut image,
@@ -293,7 +293,7 @@ pub fn promotion_event_handler(
 
         match event {
             PromotionEvent::Promote(promo_typ) => {
-                let new_asset_path = UiPiece::new(color, promo_typ).asset_path();
+                let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
                 image.texture = asset_server.load(new_asset_path);
                 entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ)));
             }

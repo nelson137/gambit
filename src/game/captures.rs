@@ -11,7 +11,7 @@ use crate::{
     utils::AppNoop,
 };
 
-use super::board::{BoardPlugin, BoardState, UiPiece};
+use super::board::{BoardPlugin, BoardState, PieceMeta};
 
 #[derive(Debug)]
 pub struct CapturePlugin;
@@ -286,9 +286,9 @@ pub struct Captured;
 
 pub fn captures(
     mut commands: Commands,
-    mut q_added: Query<(Entity, &UiPiece, &mut Visibility), Added<Captured>>,
+    mut q_added: Query<(Entity, &PieceMeta, &mut Visibility), Added<Captured>>,
 ) {
-    for (entity, &UiPiece { mut color, typ }, mut vis) in &mut q_added {
+    for (entity, &PieceMeta { mut color, typ }, mut vis) in &mut q_added {
         trace!(?color, ?typ, "Capture piece");
 
         commands.entity(entity).remove::<Captured>();

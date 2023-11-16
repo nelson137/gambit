@@ -14,12 +14,12 @@ macro_rules! asset_path {
 }
 
 #[derive(Clone, Copy, Component)]
-pub struct UiPiece {
+pub struct PieceMeta {
     pub color: PieceColor,
     pub typ: PieceType,
 }
 
-impl UiPiece {
+impl PieceMeta {
     pub fn new(color: PieceColor, typ: PieceType) -> Self {
         Self { color, typ }
     }
@@ -164,7 +164,7 @@ pub fn spawn_pieces(
     mut board_state: ResMut<BoardState>,
 ) {
     for square in chess::ALL_SQUARES.map(Square::new) {
-        let Some(info) = board_state.get_piece_info_on(square) else { continue };
+        let Some(info) = board_state.get_piece_meta(square) else { continue };
         let image_path = info.asset_path();
 
         let piece_entity = commands

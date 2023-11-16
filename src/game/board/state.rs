@@ -8,7 +8,7 @@ use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPT
 
 use crate::cli::CliArgs;
 
-use super::{PieceColor, PieceType, Square, TileMoveHints, UiPiece};
+use super::{PieceColor, PieceMeta, PieceType, Square, TileMoveHints};
 
 #[derive(Resource)]
 pub struct BoardState {
@@ -60,11 +60,11 @@ impl BoardState {
         self.board.side_to_move().into()
     }
 
-    pub fn get_piece_info_on(&self, square: Square) -> Option<UiPiece> {
+    pub fn get_piece_meta(&self, square: Square) -> Option<PieceMeta> {
         let color = self.board.color_on(square.0).map(PieceColor);
         let typ = self.board.piece_on(square.0).map(PieceType);
         match (color, typ) {
-            (Some(color), Some(typ)) => Some(UiPiece::new(color, typ)),
+            (Some(color), Some(typ)) => Some(PieceMeta::new(color, typ)),
             _ => None,
         }
     }

@@ -1,14 +1,14 @@
 use bevy::{ecs::system::SystemState, prelude::*, utils::HashSet};
 
-use super::board::UiPiece;
+use super::board::PieceMeta;
 
 pub trait WorldExts {
-    fn entity_piece_info(&mut self, entity: Entity) -> UiPiece;
+    fn entity_piece_info(&mut self, entity: Entity) -> PieceMeta;
 }
 
 impl WorldExts for World {
-    fn entity_piece_info(&mut self, entity: Entity) -> UiPiece {
-        *SystemState::<Query<&UiPiece>>::new(self).get(self).component::<UiPiece>(entity)
+    fn entity_piece_info(&mut self, entity: Entity) -> PieceMeta {
+        *SystemState::<Query<&PieceMeta>>::new(self).get(self).component::<PieceMeta>(entity)
     }
 }
 

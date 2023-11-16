@@ -3,7 +3,7 @@ use chess::File;
 
 use super::{
     audio::PlayGameAudio,
-    board::{BoardState, PieceColor, PieceType, PromotingPiece, SelectionEvent, Square, UiPiece},
+    board::{BoardState, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square},
     captures::Captured,
     game_over::GameOver,
 };
@@ -31,9 +31,9 @@ impl StartMove {
 
 pub fn start_move(
     mut commands: Commands,
-    q_added: Query<(Entity, &UiPiece, &StartMove), Added<StartMove>>,
+    q_added: Query<(Entity, &PieceMeta, &StartMove), Added<StartMove>>,
 ) {
-    for (entity, &UiPiece { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
+    for (entity, &PieceMeta { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
         let mut entity_cmds = commands.entity(entity);
@@ -64,9 +64,9 @@ pub fn move_piece(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
     mut selection_events: EventWriter<SelectionEvent>,
-    q_added: Query<(Entity, &UiPiece, &MovePiece), Added<MovePiece>>,
+    q_added: Query<(Entity, &PieceMeta, &MovePiece), Added<MovePiece>>,
 ) {
-    for (entity, &UiPiece { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
+    for (entity, &PieceMeta { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
         commands.entity(entity).remove::<MovePiece>();
