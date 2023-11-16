@@ -5,7 +5,7 @@ use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 use super::{BoardState, Square};
 
 #[derive(Component)]
-pub struct MoveHint;
+pub struct Hint;
 
 #[derive(Debug)]
 pub struct TileMoveHints {
@@ -27,7 +27,7 @@ pub fn spawn_hints(
         // Move hint
         let move_entity = commands
             .spawn((
-                MoveHint,
+                Hint,
                 debug_name_f!("Move Hint ({square})"),
                 square,
                 NodeBundle {
@@ -62,7 +62,7 @@ pub fn spawn_hints(
         // Capture hint
         let capture_entity = commands
             .spawn((
-                MoveHint,
+                Hint,
                 debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageBundle {

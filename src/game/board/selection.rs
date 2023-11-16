@@ -5,7 +5,7 @@ use crate::{
     utils::AppNoop,
 };
 
-use super::{BoardState, HighlightTile, MoveHint, Square};
+use super::{BoardState, HighlightTile, Hint, Square};
 
 pub struct SelectionPlugin;
 
@@ -210,7 +210,7 @@ pub fn handle_selection_events(
     mut event_reader: EventReader<SelectionEvent>,
     q_selection: Query<Entity, (With<HighlightTile>, With<Selected>)>,
     q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
-    q_selected_hints: Query<Entity, (With<MoveHint>, With<EnabledHint>)>,
+    q_selected_hints: Query<Entity, (With<Hint>, With<EnabledHint>)>,
 ) {
     let unset_selection = |commands: &mut Commands| {
         for entity in &q_selection {
@@ -418,8 +418,7 @@ mod tests {
                     .map(|sq| board_state.move_hints(sq).move_entity)
                     .collect::<HashSet<_>>();
 
-                let mut q =
-                    self.world.query_filtered::<Entity, (With<MoveHint>, With<EnabledHint>)>();
+                let mut q = self.world.query_filtered::<Entity, (With<Hint>, With<EnabledHint>)>();
                 let actual = q.iter(&self.world).collect::<HashSet<_>>();
 
                 assert_eq!(actual, expected, "enabled hint entities");
