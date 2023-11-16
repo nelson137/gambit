@@ -20,8 +20,13 @@ impl Plugin for SelectionPlugin {
             // Systems
             // TODO: handle_selection_events should run at the end of the set
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
-            .add_systems(PostUpdate, handle_selection_events.run_if(in_game_or_game_over))
-            .add_systems(Last, update_indicators.run_if(in_game_or_game_over))
+            .add_systems(
+                Update,
+                (handle_selection_events, update_indicators)
+                    .chain()
+                    .run_if(in_game_or_game_over)
+                    .after(handle_mouse_selection_events),
+            )
             .noop();
     }
 }
@@ -65,6 +70,7 @@ fn handle_mouse_selection_events(
     mut selection_events: EventWriter<SelectionEvent>,
 ) {
     for &event in event_reader.read() {
+        trace!(?event, "Mouse selection event");
         let action = match *selection_state {
             SelectionState::Unselected => match event {
                 MouseSelectionEvent::MouseDown(square) => {
@@ -114,6 +120,7 @@ fn handle_mouse_selection_events(
             },
         };
 
+        trace!(?action, "Selection action");
         match action {
             SelectionStateAction::None => {}
             SelectionStateAction::ChangeSelection(to_sq) => {
@@ -267,25 +274,25 @@ struct HideIndicator;
 
 fn update_indicators(
     mut commands: Commands,
-    mut q_show: Query<&mut Visibility, (With<ShowIndicator>, Without<HideIndicator>)>,
-    mut q_hide: Query<&mut Visibility, (With<HideIndicator>, Without<ShowIndicator>)>,
+    mut q_show: Query<(Entity, &mut Visibility), (With<ShowIndicator>, Without<HideIndicator>)>,
+    mut q_hide: Query<(Entity, &mut Visibility), (With<HideIndicator>, Without<ShowIndicator>)>,
+    q_both: Query<Entity, (With<ShowIndicator>, With<HideIndicator>)>,
 ) {
-    q_show.for_each_mut(|mut vis| *vis = Visibility::Visible);
-    q_hide.for_each_mut(|mut vis| *vis = Visibility::Hidden);
+    for (entity, mut vis) in &mut q_show {
+        trace!(?entity, "show");
+        *vis = Visibility::Visible;
+        commands.entity(entity).remove::<ShowIndicator>();
+    }
 
-    commands.add(|world: &mut World| {
-        let mut entities = Vec::with_capacity(8);
+    for (entity, mut vis) in &mut q_hide {
+        trace!(?entity, "hide");
+        *vis = Visibility::Hidden;
+        commands.entity(entity).remove::<HideIndicator>();
+    }
 
-        entities.extend(world.query_filtered::<Entity, With<ShowIndicator>>().iter(world));
-        for entity in entities.drain(..) {
-            world.entity_mut(entity).remove::<ShowIndicator>();
-        }
-
-        entities.extend(world.query_filtered::<Entity, With<HideIndicator>>().iter(world));
-        for entity in entities.drain(..) {
-            world.entity_mut(entity).remove::<HideIndicator>();
-        }
-    });
+    for entity in &q_both {
+        commands.entity(entity).remove::<(ShowIndicator, HideIndicator)>();
+    }
 }
 
 #[cfg(test)]

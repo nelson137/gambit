@@ -32,7 +32,7 @@ impl Plugin for MouseLogicPlugin {
                     .run_if(in_state(MenuState::Game)),
             )
             .add_systems(
-                Update,
+                PreUpdate,
                 (mouse_handler, update_drag_container).run_if(in_state(MenuState::Game)),
             );
     }
