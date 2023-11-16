@@ -21,7 +21,6 @@ pub mod menu;
 pub mod mouse;
 pub mod panels;
 pub mod ui;
-pub mod utils;
 
 pub struct GameLogicPlugin;
 

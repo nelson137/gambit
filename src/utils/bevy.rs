@@ -1,5 +1,15 @@
 use bevy::{prelude::*, utils::HashSet};
 
+pub trait AppNoop {
+    fn noop(&mut self) -> &mut Self;
+}
+
+impl AppNoop for App {
+    fn noop(&mut self) -> &mut Self {
+        self
+    }
+}
+
 pub trait ReparentInTag {
     fn reparent_in_tag<Tag: Component>(
         &mut self,

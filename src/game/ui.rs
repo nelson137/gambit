@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use crate::{debug_name, utils::AppNoop};
+use crate::{
+    debug_name,
+    utils::{AppNoop, SortIndex},
+};
 
 use super::{
     board::{BoardPlugin, CapturePlugin, PromotionPlugin},
@@ -8,7 +11,6 @@ use super::{
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,
     panels::UiPanelsPlugin,
-    utils::SortIndex,
 };
 
 pub struct GameUiPlugin;

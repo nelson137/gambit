@@ -2,7 +2,8 @@ use bevy::{prelude::*, window::PrimaryWindow};
 
 use crate::{
     debug_name,
-    game::{consts::UI_GAP, panels::UiPanel, ui::BoardContainer, utils::ReparentInTag},
+    game::{consts::UI_GAP, panels::UiPanel, ui::BoardContainer},
+    utils::ReparentInTag,
 };
 
 #[derive(Component)]

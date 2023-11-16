@@ -4,13 +4,15 @@ use bevy::{
     ui::UiSystem,
 };
 
-use crate::{debug_name, utils::AppNoop};
+use crate::{
+    debug_name,
+    utils::{AppNoop, ReparentInTag, SortIndex},
+};
 
 use super::{
     board::{CapturePlugin, CaptureState, PieceColor},
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, UI_GAP_VAL},
     ui::{spawn_ui, Ui},
-    utils::{ReparentInTag, SortIndex},
 };
 
 pub struct UiPanelsPlugin;

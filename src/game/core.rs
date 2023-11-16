@@ -8,9 +8,8 @@ use bevy::{
 use crate::{
     game::consts::{INIT_WIN_HEIGHT, INIT_WIN_WIDTH},
     utils::AppNoop,
+    utils::SortableChildrenPlugin,
 };
-
-use super::utils::SortableChildrenPlugin;
 
 pub struct GameHeadlessPlugin;
 

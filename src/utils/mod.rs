@@ -1,15 +1,7 @@
-use bevy::prelude::*;
-use bevy_egui::egui::{TextStyle, Ui};
+pub use self::{bevy::*, egui::*};
 
-pub trait AppNoop {
-    fn noop(&mut self) -> &mut Self;
-}
-
-impl AppNoop for App {
-    fn noop(&mut self) -> &mut Self {
-        self
-    }
-}
+mod bevy;
+mod egui;
 
 #[cfg(feature = "debug")]
 #[macro_export]
@@ -44,18 +36,6 @@ macro_rules! debug_name_f {
     ($name_fmt:literal $(, $args:expr)* $(,)?) => {
         ()
     };
-}
-
-pub trait UiSetTextStyleSize {
-    fn set_text_style_size(&mut self, style: &TextStyle, size: f32);
-}
-
-impl UiSetTextStyleSize for &mut Ui {
-    fn set_text_style_size(&mut self, style: &TextStyle, size: f32) {
-        if let Some(text_id) = self.style_mut().text_styles.get_mut(style) {
-            text_id.size = size;
-        }
-    }
 }
 
 pub trait RoundToNearest {
