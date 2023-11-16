@@ -8,6 +8,15 @@ use super::{
     game_over::GameOver,
 };
 
+#[derive(Debug)]
+pub struct MovePlugin;
+
+impl Plugin for MovePlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(PostUpdate, (start_move, move_piece));
+    }
+}
+
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Component)]
 pub struct StartMove {
     from_sq: Square,

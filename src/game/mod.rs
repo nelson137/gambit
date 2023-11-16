@@ -7,7 +7,7 @@ use self::{
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     mouse::MouseLogicPlugin,
-    moves::{move_piece, start_move},
+    moves::MovePlugin,
     ui::GameUiPlugin,
 };
 
@@ -36,12 +36,12 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(MouseLogicPlugin)
             .add_plugins(GameMenuLogicPlugin)
             .add_plugins(SelectionPlugin)
+            .add_plugins(MovePlugin)
             // Events
             .add_event::<PromotionEvent>()
             // Startup
             .add_systems(Startup, setup_camera)
             // PostStartup
-            .add_systems(PostUpdate, (start_move, move_piece))
             .noop();
     }
 }
