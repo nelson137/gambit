@@ -295,7 +295,7 @@ pub fn promotion_event_handler(
             PromotionEvent::Promote(promo_typ) => {
                 let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
                 image.texture = asset_server.load(new_asset_path);
-                entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ)));
+                entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
             }
             PromotionEvent::Cancel => {
                 // Re-parent piece back to its original square

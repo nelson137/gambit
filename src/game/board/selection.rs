@@ -48,7 +48,7 @@ pub enum SelectionState {
 pub enum SelectionStateAction {
     ChangeSelection(Square),
     DropSelect(Square),
-    Move(Square, Square),
+    Move { from_sq: Square, to_sq: Square, animate: bool },
     None,
     StartSelectedDragging(Square),
     StartSelectingDragging(Square),
@@ -86,7 +86,11 @@ fn handle_mouse_selection_events(
                 MouseSelectionEvent::MouseDown(_) => todo!("reset previous drag target"), // TODO
                 MouseSelectionEvent::MouseUp(square) => {
                     if board_state.move_is_valid(selecting_sq, square) {
-                        SelectionStateAction::Move(selecting_sq, square)
+                        SelectionStateAction::Move {
+                            from_sq: selecting_sq,
+                            to_sq: square,
+                            animate: false,
+                        }
                     } else {
                         SelectionStateAction::DropSelect(selecting_sq)
                     }
@@ -97,7 +101,11 @@ fn handle_mouse_selection_events(
                     if square == selected_sq {
                         SelectionStateAction::StartSelectedDragging(selected_sq)
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        SelectionStateAction::Move(selected_sq, square)
+                        SelectionStateAction::Move {
+                            from_sq: selected_sq,
+                            to_sq: square,
+                            animate: true,
+                        }
                     } else if board_state.has_piece_at(square) {
                         SelectionStateAction::ChangeSelection(square)
                     } else {
@@ -112,7 +120,11 @@ fn handle_mouse_selection_events(
                     if square == selected_sq {
                         SelectionStateAction::Unselect(selected_sq)
                     } else if board_state.move_is_valid(selected_sq, square) {
-                        SelectionStateAction::Move(selected_sq, square)
+                        SelectionStateAction::Move {
+                            from_sq: selected_sq,
+                            to_sq: square,
+                            animate: false,
+                        }
                     } else {
                         SelectionStateAction::DropSelect(selected_sq)
                     }
@@ -143,9 +155,9 @@ fn handle_mouse_selection_events(
                 // Set state to Selected
                 *selection_state = SelectionState::Selected(square);
             }
-            SelectionStateAction::Move(from_sq, to_sq) => {
+            SelectionStateAction::Move { from_sq, to_sq, animate } => {
                 let piece = board_state.piece(from_sq);
-                commands.entity(piece).insert(StartMove::new(from_sq, to_sq));
+                commands.entity(piece).insert(StartMove::new(from_sq, to_sq, animate));
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
@@ -491,7 +503,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, false));
     }
 
     #[test]
@@ -538,7 +550,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, true));
     }
 
     #[test]
@@ -617,7 +629,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4));
+        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, false));
     }
 
     #[test]

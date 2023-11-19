@@ -1,7 +1,7 @@
 use bevy::{ecs::system::Command, prelude::*};
 use chess::File;
 
-use crate::game::{audio::PlayGameAudio, game_over::GameOver};
+use crate::game::{audio::PlayGameAudio, board::StartPieceAnimation, game_over::GameOver};
 
 use super::{
     BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square,
@@ -20,11 +20,12 @@ impl Plugin for MovePlugin {
 pub struct StartMove {
     from_sq: Square,
     to_sq: Square,
+    animate: bool,
 }
 
 impl StartMove {
-    pub fn new(from_sq: Square, to_sq: Square) -> Self {
-        Self { from_sq, to_sq }
+    pub fn new(from_sq: Square, to_sq: Square, animate: bool) -> Self {
+        Self { from_sq, to_sq, animate }
     }
 }
 
@@ -32,7 +33,7 @@ pub fn start_move(
     mut commands: Commands,
     q_added: Query<(Entity, &PieceMeta, &StartMove), Added<StartMove>>,
 ) {
-    for (entity, &PieceMeta { color, typ }, &StartMove { from_sq, to_sq }) in &q_added {
+    for (entity, &PieceMeta { color, typ }, &StartMove { from_sq, to_sq, animate }) in &q_added {
         trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
 
         let mut entity_cmds = commands.entity(entity);
@@ -41,7 +42,7 @@ pub fn start_move(
         if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
             entity_cmds.insert(PromotingPiece::new(from_sq, to_sq));
         } else {
-            entity_cmds.insert(MovePiece::new(from_sq, to_sq, None));
+            entity_cmds.insert(MovePiece::new(from_sq, to_sq, None, animate));
         }
     }
 }
@@ -51,11 +52,17 @@ pub struct MovePiece {
     from_sq: Square,
     to_sq: Square,
     promotion: Option<PieceType>,
+    animate: bool,
 }
 
 impl MovePiece {
-    pub fn new(from_sq: Square, to_sq: Square, promotion: Option<PieceType>) -> Self {
-        Self { from_sq, to_sq, promotion }
+    pub fn new(
+        from_sq: Square,
+        to_sq: Square,
+        promotion: Option<PieceType>,
+        animate: bool,
+    ) -> Self {
+        Self { from_sq, to_sq, promotion, animate }
     }
 }
 
@@ -65,13 +72,15 @@ pub fn move_piece(
     mut selection_events: EventWriter<SelectionEvent>,
     q_added: Query<(Entity, &PieceMeta, &MovePiece), Added<MovePiece>>,
 ) {
-    for (entity, &PieceMeta { color, typ }, &MovePiece { from_sq, to_sq, promotion }) in &q_added {
+    for (entity, &PieceMeta { color, typ }, &MovePiece { from_sq, to_sq, promotion, animate }) in
+        &q_added
+    {
         trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
         commands.entity(entity).remove::<MovePiece>();
 
         // Move UI piece
-        commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
+        commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq, animate));
 
         let is_capture = board_state.has_piece_at(to_sq);
 
@@ -87,13 +96,13 @@ pub fn move_piece(
                 let from_sq = Square::from_coords(back_rank, File::H);
                 let to_sq = Square::from_coords(back_rank, File::F);
                 let entity = board_state.piece(from_sq);
-                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
+                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq, true));
                 is_castle = true;
             } else if castle_rights.has_queenside() && to_sq == queenside_sq {
                 let from_sq = Square::from_coords(back_rank, File::A);
                 let to_sq = Square::from_coords(back_rank, File::D);
                 let entity = board_state.piece(from_sq);
-                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq));
+                commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq, true));
                 is_castle = true;
             }
         }
@@ -130,17 +139,24 @@ pub struct MoveUiPiece {
     color: PieceColor,
     from_sq: Square,
     to_sq: Square,
+    animate: bool,
 }
 
 impl MoveUiPiece {
-    pub fn new(entity: Entity, color: PieceColor, from_sq: Square, to_sq: Square) -> Self {
-        Self { entity, color, from_sq, to_sq }
+    pub fn new(
+        entity: Entity,
+        color: PieceColor,
+        from_sq: Square,
+        to_sq: Square,
+        animate: bool,
+    ) -> Self {
+        Self { entity, color, from_sq, to_sq, animate }
     }
 }
 
 impl Command for MoveUiPiece {
     fn apply(self, world: &mut World) {
-        let Self { entity, color, from_sq, to_sq } = self;
+        let Self { entity, color, from_sq, to_sq, animate } = self;
         trace!(to_sq = %to_sq, "Move UI piece");
 
         if let Some(mut square) = world.entity_mut(entity).get_mut::<Square>() {
@@ -156,6 +172,10 @@ impl Command for MoveUiPiece {
             world.entity_mut(captured_piece).insert(Captured);
         }
 
-        world.entity_mut(to_tile_entity).push_children(&[entity]);
+        if animate {
+            StartPieceAnimation::new(entity, from_sq, to_sq).apply(world);
+        } else {
+            world.entity_mut(to_tile_entity).push_children(&[entity]);
+        }
     }
 }

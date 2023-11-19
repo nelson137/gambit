@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::utils::AppNoop;
 
 use self::{
-    board::{BoardState, MovePlugin, PromotionEvent, SelectionPlugin},
+    board::{BoardState, MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     mouse::MouseLogicPlugin,
@@ -33,6 +33,7 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(GameMenuLogicPlugin)
             .add_plugins(SelectionPlugin)
             .add_plugins(MovePlugin)
+            .add_plugins(PieceAnimationPlugin)
             // Events
             .add_event::<PromotionEvent>()
             // Startup

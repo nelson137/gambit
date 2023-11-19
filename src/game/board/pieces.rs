@@ -1,9 +1,13 @@
 use std::{fmt, ops::Not};
 
-use bevy::prelude::*;
+use bevy::{ecs::system::Command, prelude::*};
 use chess::{Piece, Rank};
 
-use crate::{debug_name_f, game::consts::Z_PIECE};
+use crate::{
+    debug_name_f,
+    game::consts::{Z_PIECE, Z_PIECE_SELECTED},
+    utils::AppNoop,
+};
 
 use super::{square::Square, BoardState};
 
@@ -200,5 +204,165 @@ pub fn spawn_pieces(
 
         commands.entity(board_state.tile(square)).add_child(piece_entity);
         board_state.set_piece(square, piece_entity);
+    }
+}
+
+pub struct PieceAnimationPlugin;
+
+impl Plugin for PieceAnimationPlugin {
+    fn build(&self, app: &mut App) {
+        app.noop()
+            .init_resource::<IsPieceAnimationPluginAdded>()
+            .add_systems(Startup, spawn_animation_layer)
+            .add_systems(Update, animate_pieces)
+            .noop();
+    }
+}
+
+#[derive(Default, Resource)]
+struct IsPieceAnimationPluginAdded;
+
+#[derive(Component)]
+struct AnimationLayer;
+
+fn spawn_animation_layer(mut commands: Commands) {
+    commands.spawn((
+        Name::new("Animation Layer"),
+        AnimationLayer,
+        NodeBundle {
+            style: Style {
+                top: Val::Px(0.0),
+                left: Val::Px(0.0),
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                ..default()
+            },
+            z_index: ZIndex::Global(Z_PIECE_SELECTED),
+            ..default()
+        },
+    ));
+}
+
+/// Setup `entity` (the piece) for animation.
+///
+/// If the `PieceAnimationPlugin` is not added to the app then this is a noop.
+pub struct StartPieceAnimation {
+    pub entity: Entity,
+    pub from: Square,
+    pub to: Square,
+}
+
+impl StartPieceAnimation {
+    pub fn new(entity: Entity, from: Square, to: Square) -> Self {
+        Self { entity, from, to }
+    }
+}
+
+impl Command for StartPieceAnimation {
+    fn apply(self, world: &mut World) {
+        let Self { entity, from, to } = self;
+
+        if world.get_resource::<IsPieceAnimationPluginAdded>().is_none() {
+            warn!(%from, %to, ?entity, "PieceAnimationPlugin is not loaded, skipping animation");
+            return;
+        }
+
+        let to_entity = world.resource::<BoardState>().tile(self.to);
+        let to_transl = if let Ok(transf) = world.query::<&GlobalTransform>().get(world, to_entity)
+        {
+            transf.translation().truncate()
+        } else {
+            return;
+        };
+
+        let animation_layer = world.query_filtered::<Entity, With<AnimationLayer>>().single(world);
+
+        let mut entity = world.entity_mut(self.entity);
+
+        entity.set_parent(animation_layer);
+
+        let size = entity.get::<Node>().unwrap().size();
+        let ui_world_offset = size / 2.0;
+
+        let transl = entity.get::<GlobalTransform>().unwrap().translation();
+        let from_pos = transl.truncate() - ui_world_offset;
+        let to_pos = to_transl - ui_world_offset;
+
+        let mut style = entity.get_mut::<Style>().unwrap();
+        style.left = Val::Px(from_pos.x);
+        style.top = Val::Px(from_pos.y);
+        style.width = Val::Px(size.x);
+        style.height = Val::Px(size.y);
+
+        entity.insert(Animating::new(from_pos, to_pos, to_entity));
+    }
+}
+
+#[derive(Clone, Component)]
+struct Animating {
+    timer: Timer,
+    /// The cubic bezier function that drives the animation.
+    ///
+    /// See [the CSS easing function specification][1] for more info.
+    ///
+    /// [1]: https://www.w3.org/TR/css-easing-1/#cubic-bezier-easing-functions
+    interpolater: CubicSegment<Vec2>,
+    from: Vec2,
+    to: Vec2,
+    to_entity: Entity,
+}
+
+impl Animating {
+    fn new(from: Vec2, to: Vec2, to_entity: Entity) -> Self {
+        Self {
+            timer: Timer::from_seconds(0.07, TimerMode::Once),
+            interpolater: CubicSegment::new_bezier((0.42, 0.0), (0.58, 1.0)),
+            from,
+            to,
+            to_entity,
+        }
+    }
+}
+
+fn animate_pieces(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut q_animating: Query<(Entity, &mut Animating, &mut Style)>,
+) {
+    for (entity, mut animating, mut style) in &mut q_animating {
+        if animating.timer.finished() {
+            continue;
+        }
+
+        animating.timer.tick(time.delta());
+
+        if animating.timer.just_finished() {
+            commands.entity(entity).remove::<Animating>();
+            commands.add(FinishPieceAnimation { target: entity, parent: animating.to_entity });
+        }
+
+        let t = animating.interpolater.ease(animating.timer.percent());
+        let Vec2 { x, y } = animating.from.lerp(animating.to, t);
+        style.left = Val::Px(x);
+        style.top = Val::Px(y);
+    }
+}
+
+struct FinishPieceAnimation {
+    target: Entity,
+    parent: Entity,
+}
+
+impl Command for FinishPieceAnimation {
+    fn apply(self, world: &mut World) {
+        let mut entity = world.entity_mut(self.target);
+
+        entity.set_parent(self.parent);
+
+        let mut style = entity.get_mut::<Style>().unwrap();
+        style.left = Val::Px(0.0);
+        style.top = Val::Px(0.0);
+        style.width = Val::Percent(100.0);
+        style.height = Val::Percent(100.0);
     }
 }
