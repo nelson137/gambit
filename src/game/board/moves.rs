@@ -128,6 +128,16 @@ pub fn move_piece(
         // Update `chess::Board`
         board_state.make_board_move(from_sq, to_sq, promotion);
 
+        if typ == PieceType::PAWN || is_capture {
+            board_state.reset_half_move_clock();
+        } else {
+            board_state.inc_half_move_clock();
+        }
+
+        if color == PieceColor::BLACK {
+            board_state.inc_full_move_count();
+        }
+
         if board_state.is_game_over() {
             commands.add(GameOver);
         }

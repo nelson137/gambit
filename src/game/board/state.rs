@@ -17,20 +17,23 @@ pub struct BoardState {
     highlights: HashMap<Square, Entity>,
     tile_hints: HashMap<Square, TileHints>,
     board: Board,
+    half_move_clock: u8,
+    full_move_count: u16,
 }
 
 impl FromWorld for BoardState {
     fn from_world(world: &mut World) -> Self {
-        let board = match &world.get_resource::<CliArgs>().and_then(|cli| cli.fen.as_deref()) {
-            Some(fen) => match Board::from_str(fen) {
-                Ok(board) => board,
+        let fen = world.get_resource::<CliArgs>().and_then(|cli| cli.fen.as_deref());
+        let (board, half_move_clock, full_move_count) = match fen {
+            Some(fen) => match parse_fen(fen) {
+                Ok(data) => data,
                 Err(err) => {
                     warn!("{err}");
                     warn!("Using default board");
-                    Board::default()
+                    (Board::default(), 0, 0)
                 }
             },
-            _ => Board::default(),
+            _ => (Board::default(), 0, 0),
         };
 
         Self {
@@ -39,7 +42,24 @@ impl FromWorld for BoardState {
             highlights: HashMap::with_capacity(64),
             tile_hints: HashMap::with_capacity(64),
             board,
+            half_move_clock,
+            full_move_count,
         }
+    }
+}
+
+fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
+    let board = Board::from_str(fen)?;
+    let invalid_fen = || chess::Error::InvalidFen { fen: fen.to_string() };
+
+    let mut fen_iter = fen.split(' ').skip(4);
+    match (fen_iter.next(), fen_iter.next()) {
+        (Some(half_move_raw), Some(full_move_raw)) => Ok((
+            board,
+            half_move_raw.parse().map_err(|_| invalid_fen())?,
+            full_move_raw.parse().map_err(|_| invalid_fen())?,
+        )),
+        _ => Err(invalid_fen()),
     }
 }
 
@@ -242,6 +262,18 @@ impl BoardState {
     ) {
         let r#move = ChessMove::new(from_sq.0, to_sq.0, promotion.map(|p| p.0));
         self.board = self.board.make_move_new(r#move);
+    }
+
+    pub fn inc_half_move_clock(&mut self) {
+        self.half_move_clock += 1;
+    }
+
+    pub fn reset_half_move_clock(&mut self) {
+        self.half_move_clock = 0;
+    }
+
+    pub fn inc_full_move_count(&mut self) {
+        self.full_move_count += 1;
     }
 
     #[must_use]
