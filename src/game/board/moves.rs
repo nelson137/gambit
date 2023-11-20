@@ -138,6 +138,8 @@ pub fn move_piece(
             board_state.inc_full_move_count();
         }
 
+        board_state.sync_status();
+
         if board_state.is_game_over() {
             commands.add(GameOver);
         }

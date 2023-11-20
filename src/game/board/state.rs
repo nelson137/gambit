@@ -12,6 +12,7 @@ use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
 
 #[derive(Resource)]
 pub struct BoardState {
+    status: GameStatus,
     tiles: HashMap<Square, Entity>,
     pieces: HashMap<Square, Entity>,
     highlights: HashMap<Square, Entity>,
@@ -37,6 +38,7 @@ impl FromWorld for BoardState {
         };
 
         Self {
+            status: GameStatus::Ongoing,
             tiles: HashMap::with_capacity(64),
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
@@ -72,13 +74,17 @@ impl BoardState {
     // State
     //------------------------------
 
-    pub fn is_game_over(&self) -> bool {
-        matches!(self.board.status(), BoardStatus::Checkmate | BoardStatus::Stalemate)
-            || self.is_50_move_game_over()
+    pub fn status(&self) -> GameStatus {
+        self.status
     }
 
-    pub fn is_50_move_game_over(&self) -> bool {
-        self.half_move_clock >= 100
+    pub fn is_game_over(&self) -> bool {
+        matches!(
+            self.status,
+            GameStatus::GameOverCheckmate
+                | GameStatus::GameOverStalemate
+                | GameStatus::GameOver50Moves
+        )
     }
 
     pub fn side_to_move(&self) -> PieceColor {
@@ -231,6 +237,24 @@ impl BoardState {
 
 impl BoardState {
     //------------------------------
+    // Status
+    //------------------------------
+
+    pub fn sync_status(&mut self) {
+        self.status = match self.board.status() {
+            BoardStatus::Checkmate => GameStatus::GameOverCheckmate,
+            BoardStatus::Stalemate => GameStatus::GameOverStalemate,
+            BoardStatus::Ongoing if self.is_game_over_50_moves() => GameStatus::GameOver50Moves,
+            BoardStatus::Ongoing => GameStatus::Ongoing,
+        };
+    }
+
+    /// Internal helper. **Only to be used by `Self::sync_status`**.
+    fn is_game_over_50_moves(&self) -> bool {
+        self.half_move_clock >= 100
+    }
+
+    //------------------------------
     // Move
     //------------------------------
 
@@ -318,6 +342,14 @@ impl BoardState {
             },
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum GameStatus {
+    Ongoing,
+    GameOverCheckmate,
+    GameOverStalemate,
+    GameOver50Moves,
 }
 
 pub trait ChessBoardExts {
