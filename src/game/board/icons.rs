@@ -131,9 +131,9 @@ impl Command for ShowCheckmateIcons {
     }
 }
 
-pub struct ShowStalemateIcons;
+pub struct ShowDrawIcons;
 
-impl Command for ShowStalemateIcons {
+impl Command for ShowDrawIcons {
     fn apply(self, world: &mut World) {
         let board_state = world.resource::<BoardState>();
 
@@ -143,7 +143,7 @@ impl Command for ShowStalemateIcons {
         let white_square = board_state.king_square(PieceColor::WHITE);
         let white_tile_entity = board_state.tile(white_square);
 
-        trace!(%white_square, %black_square, "Show stalemate icons");
+        trace!(%white_square, %black_square, "Show draw icons");
 
         set_end_game_icon::<DrawIconBlack>(world, black_tile_entity, black_square);
 
