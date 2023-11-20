@@ -74,6 +74,11 @@ impl BoardState {
 
     pub fn is_game_over(&self) -> bool {
         matches!(self.board.status(), BoardStatus::Checkmate | BoardStatus::Stalemate)
+            || self.is_50_move_game_over()
+    }
+
+    pub fn is_50_move_game_over(&self) -> bool {
+        self.half_move_clock >= 100
     }
 
     pub fn side_to_move(&self) -> PieceColor {
