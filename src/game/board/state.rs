@@ -20,6 +20,7 @@ pub struct BoardState {
     board: Board,
     half_move_clock: u8,
     full_move_count: u16,
+    piece_state_counters: HashMap<u64, u8>,
 }
 
 impl FromWorld for BoardState {
@@ -37,6 +38,9 @@ impl FromWorld for BoardState {
             _ => (Board::default(), 0, 0),
         };
 
+        let mut piece_state_counters = HashMap::with_capacity(300);
+        *piece_state_counters.entry(board.get_hash()).or_default() = 1;
+
         Self {
             status: GameStatus::Ongoing,
             tiles: HashMap::with_capacity(64),
@@ -46,6 +50,7 @@ impl FromWorld for BoardState {
             board,
             half_move_clock,
             full_move_count,
+            piece_state_counters,
         }
     }
 }
@@ -83,6 +88,7 @@ impl BoardState {
             self.status,
             GameStatus::GameOverCheckmate
                 | GameStatus::GameOverStalemate
+                | GameStatus::GameOverRepetition
                 | GameStatus::GameOver50Moves
         )
     }
@@ -245,6 +251,9 @@ impl BoardState {
             BoardStatus::Checkmate => GameStatus::GameOverCheckmate,
             BoardStatus::Stalemate => GameStatus::GameOverStalemate,
             BoardStatus::Ongoing if self.is_game_over_50_moves() => GameStatus::GameOver50Moves,
+            BoardStatus::Ongoing if self.is_game_over_repetition() => {
+                GameStatus::GameOverRepetition
+            }
             BoardStatus::Ongoing => GameStatus::Ongoing,
         };
     }
@@ -252,6 +261,11 @@ impl BoardState {
     /// Internal helper. **Only to be used by `Self::sync_status`**.
     fn is_game_over_50_moves(&self) -> bool {
         self.half_move_clock >= 100
+    }
+
+    /// Internal helper. **Only to be used by `Self::sync_status`**.
+    fn is_game_over_repetition(&self) -> bool {
+        self.piece_state_counters.values().copied().any(|count| count >= 3)
     }
 
     //------------------------------
@@ -291,6 +305,9 @@ impl BoardState {
     ) {
         let r#move = ChessMove::new(from_sq.0, to_sq.0, promotion.map(|p| p.0));
         self.board = self.board.make_move_new(r#move);
+
+        let hash = self.board.get_hash();
+        *self.piece_state_counters.entry(hash).or_default() += 1;
     }
 
     pub fn inc_half_move_clock(&mut self) {
@@ -350,6 +367,7 @@ pub enum GameStatus {
     GameOverCheckmate,
     GameOverStalemate,
     GameOver50Moves,
+    GameOverRepetition,
 }
 
 pub trait ChessBoardExts {

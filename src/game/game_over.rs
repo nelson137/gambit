@@ -13,9 +13,9 @@ impl Command for GameOver {
 
         match world.resource::<BoardState>().status() {
             GameStatus::GameOverCheckmate => ShowCheckmateIcons.apply(world),
-            GameStatus::GameOverStalemate | GameStatus::GameOver50Moves => {
-                ShowStalemateIcons.apply(world)
-            }
+            GameStatus::GameOverStalemate
+            | GameStatus::GameOver50Moves
+            | GameStatus::GameOverRepetition => ShowStalemateIcons.apply(world),
             GameStatus::Ongoing => {
                 warn!("Running game over sequence when the game is still ongoing")
             }
