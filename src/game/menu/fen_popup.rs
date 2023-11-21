@@ -1,5 +1,6 @@
 use std::{
     collections::hash_map::DefaultHasher,
+    fmt::Write,
     hash::{Hash, Hasher},
     ops::{Deref, DerefMut},
     str::FromStr,
@@ -92,6 +93,16 @@ impl FenPopupData {
                     None => self.has_en_passant_target = false,
                 }
 
+                let mut fen_iter = self.fen.split(' ').skip(4);
+                let half_move = fen_iter.next().and_then(|s| s.parse().ok());
+                let full_move = fen_iter.next().and_then(|s| s.parse().ok());
+                if let Some(half_move) = half_move {
+                    self.halfmove_clock = half_move;
+                }
+                if let Some(full_move) = full_move {
+                    self.fullmove_count = full_move;
+                }
+
                 controls_hash = compute_hash(&self.controls);
             }
         } else if controls_hash != self.controls_hash {
@@ -116,6 +127,13 @@ impl FenPopupData {
                 board.en_passant(en_passant);
 
                 self.fen = board.to_string();
+
+                self.fen.truncate(self.fen.len() - 3);
+                let half_move = self.halfmove_clock;
+                let full_move = self.fullmove_count;
+                write!(&mut self.fen, "{half_move} {full_move}")
+                    .expect("Write halfmove clock & fullmove count to FEN");
+
                 fen_hash = compute_hash(&self.fen);
             }
         }
@@ -154,6 +172,8 @@ pub(super) struct FenPopupDataControls {
     castle_rights_black_queenside: bool,
     has_en_passant_target: bool,
     en_passant_target_file: chess::File,
+    halfmove_clock: u8,
+    fullmove_count: u16,
 }
 
 impl Default for FenPopupDataControls {
@@ -166,6 +186,8 @@ impl Default for FenPopupDataControls {
             castle_rights_black_queenside: true,
             has_en_passant_target: false,
             en_passant_target_file: chess::File::A,
+            halfmove_clock: 0,
+            fullmove_count: 1,
         }
     }
 }
@@ -215,9 +237,9 @@ pub(super) fn fen_menu(
 
 mod egui {
     use bevy_egui::egui::{
-        lerp, pos2, vec2, Align, Align2, Button, Color32, ComboBox, Context, Frame, Key, Layout,
-        Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2, WidgetInfo,
-        WidgetType, Window,
+        lerp, pos2, vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, Frame, Key,
+        Layout, Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2,
+        WidgetInfo, WidgetType, Window,
     };
     use egui_extras::{Size, StripBuilder};
 
@@ -289,6 +311,18 @@ mod egui {
                         ui.horizontal(|ui| {
                             ui.label(RichText::new("En Passant Target:").underline());
                             en_passant_target(ui, data);
+                        });
+
+                        ui.add_space(SPACING);
+
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Halfmove Clock:").underline());
+                            halfmove_clock(ui, data);
+                        });
+
+                        ui.horizontal(|ui| {
+                            ui.label(RichText::new("Fullmove Count:").underline());
+                            fullmove_count(ui, data);
                         });
 
                         ui.add_space(SPACING);
@@ -403,6 +437,14 @@ mod egui {
             });
             output.response
         });
+    }
+
+    fn halfmove_clock(ui: &mut Ui, data: &mut FenPopupData) {
+        ui.add(DragValue::new(&mut data.halfmove_clock).clamp_range(0..=99));
+    }
+
+    fn fullmove_count(ui: &mut Ui, data: &mut FenPopupData) {
+        ui.add(DragValue::new(&mut data.fullmove_count).clamp_range(0..=u16::MAX));
     }
 
     fn cancel_button(ui: &mut Ui) -> Response {
