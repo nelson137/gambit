@@ -48,6 +48,10 @@ impl Default for FenPopupData {
 impl FenPopupData {
     pub fn reset(&mut self) {
         self.fen.clear();
+        self.fen_hash = compute_hash(&self.fen);
+        self.controls = default();
+        self.controls_hash = compute_hash(&self.controls);
+        self.invalid_fen = false;
     }
 }
 
