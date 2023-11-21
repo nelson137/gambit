@@ -45,13 +45,10 @@ impl Default for FenPopupData {
     }
 }
 
-const EN_PASSANT_LABELS: &[&str] = &[
-    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
-];
-
-fn en_passant_label(black_to_move: bool, file: chess::File) -> &'static str {
-    let rank = if black_to_move { 0b0000 } else { 0b1000 };
-    EN_PASSANT_LABELS[file.to_index() | rank]
+impl FenPopupData {
+    pub fn reset(&mut self) {
+        self.fen.clear();
+    }
 }
 
 impl FenPopupData {
@@ -143,6 +140,15 @@ impl FenPopupData {
     }
 }
 
+const EN_PASSANT_LABELS: &[&str] = &[
+    "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
+];
+
+fn en_passant_label(black_to_move: bool, file: chess::File) -> &'static str {
+    let rank = if black_to_move { 0b0000 } else { 0b1000 };
+    EN_PASSANT_LABELS[file.to_index() | rank]
+}
+
 impl Deref for FenPopupData {
     type Target = FenPopupDataControls;
 
@@ -154,12 +160,6 @@ impl Deref for FenPopupData {
 impl DerefMut for FenPopupData {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.controls
-    }
-}
-
-impl FenPopupData {
-    pub fn reset(&mut self) {
-        self.fen.clear();
     }
 }
 
