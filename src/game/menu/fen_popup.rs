@@ -26,6 +26,7 @@ fn compute_hash<T: Hash>(value: &T) -> u64 {
 pub(super) struct FenPopupData {
     fen: String,
     fen_hash: u64,
+    focus_fen: bool,
     controls: FenPopupDataControls,
     controls_hash: u64,
     invalid_fen: bool,
@@ -40,6 +41,7 @@ impl Default for FenPopupData {
             controls,
             fen_hash: compute_hash(&fen),
             fen,
+            focus_fen: true,
             invalid_fen: false,
         }
     }
@@ -49,6 +51,7 @@ impl FenPopupData {
     pub fn reset(&mut self) {
         self.fen.clear();
         self.fen_hash = compute_hash(&self.fen);
+        self.focus_fen = true;
         self.controls = default();
         self.controls_hash = compute_hash(&self.controls);
         self.invalid_fen = false;
@@ -290,6 +293,14 @@ mod egui {
                             ui.label(RichText::new("FEN:").underline());
 
                             let response = fen_text_edit(ui, &mut data.fen);
+
+                            if data.focus_fen {
+                                data.focus_fen = false;
+                                ui.memory_mut(move |mem| {
+                                    mem.request_focus(response.id);
+                                });
+                            }
+
                             if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
                                 interaction = FenPopupInteraction::Submit;
                             }
