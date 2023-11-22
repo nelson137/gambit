@@ -244,9 +244,11 @@ pub(super) fn fen_menu(
 
 mod egui {
     use bevy_egui::egui::{
-        lerp, pos2, vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, Frame, Key,
-        Layout, Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2,
-        WidgetInfo, WidgetType, Window,
+        lerp, pos2,
+        text::{CCursor, CCursorRange},
+        vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, Frame, Key, Layout,
+        Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2, WidgetInfo,
+        WidgetType, Window,
     };
     use egui_extras::{Size, StripBuilder};
 
@@ -372,9 +374,23 @@ mod egui {
     }
 
     fn fen_text_edit(ui: &mut Ui, model: &mut dyn TextBuffer) -> Response {
-        ui.add(
-            TextEdit::singleline(model).hint_text(DEFAULT_BOARD_FEN).desired_width(f32::INFINITY),
-        )
+        let mut output = TextEdit::singleline(model)
+            .hint_text(DEFAULT_BOARD_FEN)
+            .desired_width(f32::INFINITY)
+            .show(ui);
+
+        if output.response.clicked() {
+            let text_len = model.as_str().len();
+            if text_len > 0 {
+                output.state.set_ccursor_range(Some(CCursorRange::two(
+                    CCursor::default(),
+                    CCursor::new(text_len),
+                )));
+                output.state.store(ui.ctx(), output.response.id);
+            }
+        }
+
+        output.response
     }
 
     fn players_turn_label_white(ui: &mut Ui, black_to_move: bool) {
