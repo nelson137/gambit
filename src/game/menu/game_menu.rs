@@ -109,7 +109,7 @@ pub struct GameMenuButtonsContainer;
 #[derive(Component)]
 pub struct GameMenuButtonsText;
 
-#[derive(Component)]
+#[derive(Clone, Copy, Debug, Component)]
 pub(super) enum GameMenuButton {
     Start,
     LoadFen,
@@ -255,21 +255,43 @@ pub(super) fn game_menu_elements_sizes(
     q_text.p1().for_each_mut(set_text_font_size_impl(scale * INIT_MENU_BUTTON_TEXT_SIZE));
 }
 
-pub(super) fn game_menu_buttons(
-    mut q_button: Query<
-        (&GameMenuButton, &Interaction, &mut BackgroundColor),
-        Changed<Interaction>,
-    >,
-    mut next_menu_state: ResMut<NextState<MenuState>>,
+pub(super) fn game_menu_buttons_hover(
+    mut q_button: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
 ) {
-    if let Ok((button, interaction, mut bg_color)) = q_button.get_single_mut() {
+    for (&interaction, mut bg_color) in &mut q_button {
         match interaction {
             Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
-            Interaction::Pressed => match *button {
-                GameMenuButton::Start => next_menu_state.set(MenuState::Game),
-                GameMenuButton::LoadFen => next_menu_state.set(MenuState::FenInput),
-            },
             Interaction::None => bg_color.0 = BUTTON_COLOR_DEFAULT,
+            _ => {}
         }
+    }
+}
+
+pub(super) fn game_menu_buttons(
+    mut pressed_button: Local<Option<(GameMenuButton, Rect)>>,
+    q_button: Query<(&GameMenuButton, &Interaction, &Node, &GlobalTransform), Changed<Interaction>>,
+    q_window: Query<&Window, With<PrimaryWindow>>,
+    mouse_buttons: Res<Input<MouseButton>>,
+    mut next_menu_state: ResMut<NextState<MenuState>>,
+) {
+    for (&button, &interaction, node, global_transf) in &q_button {
+        if let Interaction::Pressed = interaction {
+            let size = node.size();
+            let pos = global_transf.translation().truncate() - size / 2.0;
+            let button_area = Rect { min: pos, max: pos + size };
+            *pressed_button = Some((button, button_area));
+        }
+    }
+
+    let Ok(win) = q_window.get_single() else { return };
+    let Some(mouse_pos) = win.cursor_position() else { return };
+    let true = mouse_buttons.just_released(MouseButton::Left) else { return };
+    let Some((pressed_button, pressed_button_area)) = pressed_button.take() else { return };
+
+    if pressed_button_area.contains(mouse_pos) {
+        next_menu_state.set(match pressed_button {
+            GameMenuButton::Start => MenuState::Game,
+            GameMenuButton::LoadFen => MenuState::FenInput,
+        });
     }
 }
