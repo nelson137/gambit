@@ -1,7 +1,6 @@
-pub use self::{bevy::*, egui::*};
+pub use self::bevy::*;
 
 mod bevy;
-mod egui;
 
 #[cfg(feature = "debug")]
 #[macro_export]

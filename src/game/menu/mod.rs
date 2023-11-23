@@ -37,6 +37,7 @@ impl Plugin for GameMenuLogicPlugin {
             .add_state::<MenuState>()
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
+            .add_systems(Startup, fen_menu_style)
             .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
             .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state)
             .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state)

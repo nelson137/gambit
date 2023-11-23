@@ -4,10 +4,14 @@ use std::{
     hash::{Hash, Hasher},
     ops::{Deref, DerefMut},
     str::FromStr,
+    sync::Arc,
 };
 
 use bevy::prelude::*;
-use bevy_egui::{egui::Ui, EguiContexts};
+use bevy_egui::{
+    egui::{FontId, RichText, Ui},
+    EguiContexts,
+};
 use chess::{Board, BoardBuilder, CastleRights};
 
 use crate::game::{board::PieceColor, load::LoadGame};
@@ -30,6 +34,7 @@ pub(super) struct FenPopupData {
     controls: FenPopupDataControls,
     controls_hash: u64,
     invalid_fen: bool,
+    fonts: FenPopupFonts,
 }
 
 impl Default for FenPopupData {
@@ -43,6 +48,7 @@ impl Default for FenPopupData {
             fen,
             focus_fen: true,
             invalid_fen: false,
+            fonts: FenPopupFonts::default(),
         }
     }
 }
@@ -59,12 +65,12 @@ impl FenPopupData {
 }
 
 impl FenPopupData {
-    fn en_passant_label(&self) -> &'static str {
-        en_passant_label(self.black_to_move, self.en_passant_target_file)
+    fn en_passant_label(&self) -> RichText {
+        en_passant_label(self.black_to_move, self.en_passant_target_file, self.fonts.sublabel())
     }
 
     fn en_passant_selectable(&mut self, ui: &mut Ui, file: chess::File) {
-        let label = en_passant_label(self.black_to_move, file);
+        let label = en_passant_label(self.black_to_move, file, self.fonts.sublabel());
         ui.selectable_value(&mut self.en_passant_target_file, file, label);
     }
 
@@ -151,9 +157,10 @@ const EN_PASSANT_LABELS: &[&str] = &[
     "a4", "b4", "c4", "d4", "e4", "f4", "g4", "h4", "a5", "b5", "c5", "d5", "e5", "f5", "g5", "h5",
 ];
 
-fn en_passant_label(black_to_move: bool, file: chess::File) -> &'static str {
+fn en_passant_label(black_to_move: bool, file: chess::File, font: FontId) -> RichText {
     let rank = if black_to_move { 0b0000 } else { 0b1000 };
-    EN_PASSANT_LABELS[file.to_index() | rank]
+    let text = EN_PASSANT_LABELS[file.to_index() | rank];
+    RichText::new(text).font(font)
 }
 
 impl Deref for FenPopupData {
@@ -218,6 +225,56 @@ fn castle_rights(kingside: bool, queenside: bool) -> CastleRights {
     }
 }
 
+struct FenPopupFonts {
+    title: FontId,
+    label: FontId,
+    sublabel: FontId,
+    button: FontId,
+    editable: FontId,
+    drag_value: bevy_egui::egui::TextStyle,
+}
+
+impl Default for FenPopupFonts {
+    fn default() -> Self {
+        Self {
+            title: FontId::new(32.0, default()),
+            label: FontId::new(18.0, default()),
+            sublabel: FontId::new(16.0, default()),
+            button: FontId::new(20.0, default()),
+            editable: FontId::new(14.5, default()),
+            drag_value: bevy_egui::egui::TextStyle::Name(Arc::from("gambit-drag-value")),
+        }
+    }
+}
+
+macro_rules! handle_getters {
+    ($( $handle:ident : $ty:ty ; )+) => {
+        $( fn $handle(&self) -> $ty { self.$handle.clone() } )+
+    }
+}
+
+impl FenPopupFonts {
+    handle_getters! {
+        title: FontId;
+        label: FontId;
+        sublabel: FontId;
+        button: FontId;
+        editable: FontId;
+        drag_value: bevy_egui::egui::TextStyle;
+    }
+}
+
+pub(super) fn fen_menu_style(data: Res<FenPopupData>, mut egui_contexts: EguiContexts) {
+    egui_contexts.ctx_mut().style_mut(|style| {
+        let drag_value_style = FontId::new(16.0, default());
+        style.text_styles.entry(data.fonts.drag_value()).or_insert(drag_value_style);
+        style.drag_value_text_style = data.fonts.drag_value();
+
+        style.spacing.interact_size = bevy_egui::egui::vec2(16.0, 16.0);
+        style.spacing.icon_width = 16.0;
+    });
+}
+
 enum FenPopupInteraction {
     None,
     Cancel,
@@ -246,25 +303,15 @@ mod egui {
     use bevy_egui::egui::{
         lerp, pos2,
         text::{CCursor, CCursorRange},
-        vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, Frame, Key, Layout,
-        Response, RichText, Sense, Stroke, TextBuffer, TextEdit, TextStyle, Ui, Vec2, WidgetInfo,
-        WidgetType, Window,
+        text_edit::TextEditOutput,
+        vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, FontId, Frame, Key,
+        Layout, Response, RichText, Sense, Stroke, TextEdit, Ui, Vec2, WidgetInfo, WidgetType,
+        Window,
     };
+    use chess::ALL_FILES;
     use egui_extras::{Size, StripBuilder};
 
-    use crate::utils::UiSetTextStyleSize;
-
     use super::{FenPopupData, FenPopupInteraction, DEFAULT_BOARD_FEN};
-
-    /// `#7fa650`
-    const LOAD_BUTTON_COLOR: Color32 = Color32::from_rgb(0x7f, 0xa6, 0x50);
-
-    const LOAD_BUTTON_TEXT_COLOR: Color32 = Color32::WHITE;
-
-    const CANCEL_BUTTON_TEXT_COLOR: Color32 = Color32::WHITE;
-
-    /// `#ba2929`
-    const CANCEL_BUTTON_COLOR: Color32 = Color32::from_rgb(0xba, 0x29, 0x29);
 
     pub(super) fn fen_window(ctx: &Context, data: &mut FenPopupData) -> FenPopupInteraction {
         let mut interaction = FenPopupInteraction::None;
@@ -279,84 +326,24 @@ mod egui {
                     return;
                 }
 
-                ui.vertical_centered_justified(|mut ui| {
-                    ui.set_text_style_size(&TextStyle::Body, 20.0);
-                    ui.set_text_style_size(&TextStyle::Button, 24.0);
-                    ui.set_text_style_size(&TextStyle::Heading, 32.0);
-
-                    ui.heading("Load Game");
+                ui.vertical_centered_justified(|ui| {
+                    ui.heading(RichText::new("Load Game").font(data.fonts.title()));
                     ui.separator();
 
-                    ui.set_min_size(vec2(768.0, 0.0));
+                    ui.set_min_size(vec2(626.0, 0.0));
                     Frame::none().outer_margin(12.0).show(ui, |ui| {
                         const SPACING: f32 = 24.0;
-
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("FEN:").underline());
-
-                            let response = fen_text_edit(ui, &mut data.fen);
-
-                            if data.focus_fen {
-                                data.focus_fen = false;
-                                ui.memory_mut(move |mem| {
-                                    mem.request_focus(response.id);
-                                });
-                            }
-
-                            if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
-                                interaction = FenPopupInteraction::Submit;
-                            }
-                        });
-
+                        ui.horizontal(|ui| fen_control(ui, data, &mut interaction));
                         ui.add_space(SPACING);
-
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("Side to move:").underline());
-                            players_turn_label_white(ui, data.black_to_move);
-                            players_turn_toggle(ui, &mut data.black_to_move);
-                            players_turn_label_black(ui, data.black_to_move);
-                        });
-
+                        ui.horizontal(|ui| side_to_move_control(ui, data));
                         ui.add_space(SPACING);
-
-                        ui.horizontal(|ui| {
-                            castle_rights_check_boxes(ui, data);
-                        });
-
+                        ui.horizontal(|ui| en_passant_target_control(ui, data));
                         ui.add_space(SPACING);
-
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("En Passant Target:").underline());
-                            en_passant_target(ui, data);
-                        });
-
+                        ui.horizontal(|ui| castle_rights_check_boxes(ui, data));
                         ui.add_space(SPACING);
-
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("Halfmove Clock:").underline());
-                            halfmove_clock(ui, data);
-                        });
-
-                        ui.horizontal(|ui| {
-                            ui.label(RichText::new("Fullmove Count:").underline());
-                            fullmove_count(ui, data);
-                        });
-
+                        ui.horizontal(|ui| move_tracker_controls(ui, data));
                         ui.add_space(SPACING);
-
-                        ui.horizontal(|ui| {
-                            if cancel_button(ui).clicked() {
-                                interaction = FenPopupInteraction::Cancel;
-                            }
-
-                            let size = ui.available_rect_before_wrap().size();
-                            let layout = Layout::right_to_left(Align::Center);
-                            ui.allocate_ui_with_layout(size, layout, |ui| {
-                                if load_button(ui).clicked() {
-                                    interaction = FenPopupInteraction::Submit;
-                                }
-                            });
-                        });
+                        ui.horizontal(|ui| action_buttons(ui, data, &mut interaction));
                     });
                 });
             });
@@ -373,34 +360,46 @@ mod egui {
         interaction
     }
 
-    fn fen_text_edit(ui: &mut Ui, model: &mut dyn TextBuffer) -> Response {
-        let mut output = TextEdit::singleline(model)
+    fn fen_control(ui: &mut Ui, data: &mut FenPopupData, interaction: &mut FenPopupInteraction) {
+        ui.label(RichText::new("FEN:").font(data.fonts.label()));
+
+        let TextEditOutput { response, mut state, .. } = TextEdit::singleline(&mut data.fen)
             .hint_text(DEFAULT_BOARD_FEN)
+            .font(data.fonts.editable())
             .desired_width(f32::INFINITY)
             .show(ui);
 
-        if output.response.clicked() {
-            let text_len = model.as_str().len();
+        if data.focus_fen {
+            data.focus_fen = false;
+            ui.memory_mut(move |mem| mem.request_focus(response.id));
+        }
+
+        if response.clicked() {
+            let text_len = data.fen.len();
             if text_len > 0 {
-                output.state.set_ccursor_range(Some(CCursorRange::two(
+                state.set_ccursor_range(Some(CCursorRange::two(
                     CCursor::default(),
                     CCursor::new(text_len),
                 )));
-                output.state.store(ui.ctx(), output.response.id);
+                state.store(ui.ctx(), response.id);
             }
         }
 
-        output.response
+        if response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
+            *interaction = FenPopupInteraction::Submit;
+        }
     }
 
-    fn players_turn_label_white(ui: &mut Ui, black_to_move: bool) {
-        let text = RichText::new("White");
-        ui.label(if black_to_move { text } else { text.strong() });
+    fn side_to_move_control(ui: &mut Ui, data: &mut FenPopupData) {
+        ui.label(RichText::new("Side to move:").font(data.fonts.label()));
+        players_turn_label(ui, data, "White", !data.black_to_move);
+        players_turn_toggle(ui, &mut data.black_to_move);
+        players_turn_label(ui, data, "Black", data.black_to_move);
     }
 
-    fn players_turn_label_black(ui: &mut Ui, black_to_move: bool) {
-        let text = RichText::new("Black");
-        ui.label(if black_to_move { text.strong() } else { text });
+    fn players_turn_label(ui: &mut Ui, data: &FenPopupData, text: &str, selected: bool) {
+        let text = RichText::new(text).font(data.fonts.sublabel());
+        ui.label(if selected { text.strong() } else { text });
     }
 
     // Taken from: https://github.com/emilk/egui/blob/041f2e64bac778c9095fbf4316dc1f7c7bceb670/crates/egui_demo_lib/src/demo/toggle_switch.rs
@@ -432,59 +431,92 @@ mod egui {
         response
     }
 
+    fn en_passant_target_control(ui: &mut Ui, data: &mut FenPopupData) {
+        let layout = Layout::left_to_right(Align::Center).with_cross_justify(true);
+        ui.with_layout(layout, |ui| {
+            ui.label(RichText::new("En Passant Target:").font(data.fonts.label()));
+
+            ui.checkbox(&mut data.has_en_passant_target, "");
+
+            ui.add_visible_ui(data.has_en_passant_target, |ui| {
+                let text = data.en_passant_label();
+                ComboBox::from_label("").selected_text(text).show_ui(ui, |ui| {
+                    for file in ALL_FILES {
+                        data.en_passant_selectable(ui, file);
+                    }
+                });
+            });
+        });
+    }
+
     fn castle_rights_check_boxes(ui: &mut Ui, data: &mut FenPopupData) {
-        let strip_builder = StripBuilder::new(ui).sizes(Size::initial(256.0), 2);
+        let label = |text: &str, font: FontId| RichText::new(text).font(font);
+
+        let white_header = label("White Castle Rights:", data.fonts.label());
+        let black_header = label("Black Castle Rights:", data.fonts.label());
+        let king_label = label("Kingside (O-O)", data.fonts.sublabel());
+        let queen_label = label("Queenside (O-O-O)", data.fonts.sublabel());
+
+        let strip_builder = StripBuilder::new(ui).sizes(Size::initial(224.0), 2);
         strip_builder.horizontal(|mut strip| {
             strip.cell(|ui| {
                 ui.vertical(|ui| {
-                    ui.label(RichText::new("White Castle Rights").underline());
-                    ui.checkbox(&mut data.castle_rights_white_kingside, "Kingside (O-O)");
-                    ui.checkbox(&mut data.castle_rights_white_queenside, "Queenside (O-O-O)");
+                    ui.label(white_header);
+                    ui.checkbox(&mut data.castle_rights_white_kingside, king_label.clone());
+                    ui.checkbox(&mut data.castle_rights_white_queenside, queen_label.clone());
                 });
             });
             strip.cell(|ui| {
                 ui.vertical(|ui| {
-                    ui.label(RichText::new("Black Castle Rights").underline());
-                    ui.checkbox(&mut data.castle_rights_black_kingside, "Kingside (O-O)");
-                    ui.checkbox(&mut data.castle_rights_black_queenside, "Queenside (O-O-O)");
+                    ui.label(black_header);
+                    ui.checkbox(&mut data.castle_rights_black_kingside, king_label);
+                    ui.checkbox(&mut data.castle_rights_black_queenside, queen_label);
                 });
             });
         });
     }
 
-    fn en_passant_target(ui: &mut Ui, data: &mut FenPopupData) {
-        ui.checkbox(&mut data.has_en_passant_target, "");
-        ui.add_enabled_ui(data.has_en_passant_target, |ui| {
-            let text = data.en_passant_label();
-            let output = ComboBox::from_label("").selected_text(text).show_ui(ui, |ui| {
-                data.en_passant_selectable(ui, chess::File::A);
-                data.en_passant_selectable(ui, chess::File::B);
-                data.en_passant_selectable(ui, chess::File::C);
-                data.en_passant_selectable(ui, chess::File::D);
-                data.en_passant_selectable(ui, chess::File::E);
-                data.en_passant_selectable(ui, chess::File::F);
-                data.en_passant_selectable(ui, chess::File::G);
-                data.en_passant_selectable(ui, chess::File::H);
+    fn move_tracker_controls(ui: &mut Ui, data: &mut FenPopupData) {
+        let strip_builder = StripBuilder::new(ui).sizes(Size::initial(224.0), 2);
+        strip_builder.horizontal(|mut strip| {
+            strip.cell(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("Halfmove Clock:").font(data.fonts.label()));
+                    ui.add(DragValue::new(&mut data.halfmove_clock).clamp_range(0..=99));
+                });
             });
-            output.response
+            strip.cell(|ui| {
+                ui.horizontal(|ui| {
+                    ui.label(RichText::new("Fullmove Count:").font(data.fonts.label()));
+                    ui.add(DragValue::new(&mut data.fullmove_count).clamp_range(0..=u16::MAX));
+                });
+            });
         });
     }
 
-    fn halfmove_clock(ui: &mut Ui, data: &mut FenPopupData) {
-        ui.add(DragValue::new(&mut data.halfmove_clock).clamp_range(0..=99));
+    fn action_buttons(ui: &mut Ui, data: &FenPopupData, interaction: &mut FenPopupInteraction) {
+        let size = ui.available_size_before_wrap();
+        let layout = Layout::right_to_left(Align::Center);
+        ui.allocate_ui_with_layout(size, layout, |ui| {
+            if load_button(ui, data.fonts.button()).clicked() {
+                *interaction = FenPopupInteraction::Submit;
+            }
+
+            ui.add_space(8.0);
+
+            if cancel_button(ui, data.fonts.button()).clicked() {
+                *interaction = FenPopupInteraction::Cancel;
+            }
+        });
     }
 
-    fn fullmove_count(ui: &mut Ui, data: &mut FenPopupData) {
-        ui.add(DragValue::new(&mut data.fullmove_count).clamp_range(0..=u16::MAX));
+    fn cancel_button(ui: &mut Ui, font: FontId) -> Response {
+        let text = RichText::new("Cancel").font(font).color(Color32::WHITE);
+        ui.add(Button::new(text).fill(Color32::from_rgb(0xba, 0x29, 0x29))) // #ba2929
     }
 
-    fn cancel_button(ui: &mut Ui) -> Response {
-        let text = RichText::new("Cancel").color(CANCEL_BUTTON_TEXT_COLOR);
-        ui.add(Button::new(text).fill(CANCEL_BUTTON_COLOR))
-    }
-
-    fn load_button(ui: &mut Ui) -> Response {
-        let text = RichText::new("Load").color(LOAD_BUTTON_TEXT_COLOR);
-        ui.add(Button::new(text).fill(LOAD_BUTTON_COLOR))
+    fn load_button(ui: &mut Ui, font: FontId) -> Response {
+        let text = RichText::new("Load").font(font).color(Color32::WHITE);
+        ui.add(Button::new(text).fill(Color32::from_rgb(0x7f, 0xa6, 0x50))) // #7fa650
     }
 }
