@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use super::{FenPopupData, GameMenu, GameMenuDimLayer};
+use super::{GameMenu, GameMenuDimLayer, PopupState};
 
 #[derive(Clone, Copy, Debug, Default, Eq, States)]
 pub enum MenuState {
@@ -50,15 +50,15 @@ impl fmt::Display for MenuState {
 }
 
 pub(super) fn on_enter_menu_state(
-    menu_state: ResMut<State<MenuState>>,
-    mut fen_popup_data: ResMut<FenPopupData>,
+    menu_state: Res<State<MenuState>>,
+    mut fen_popup_state: ResMut<PopupState>,
     mut game_over_timer: ResMut<GameOverTimer>,
     mut q_menu_components: Query<&mut Style, Or<(With<GameMenuDimLayer>, With<GameMenu>)>>,
 ) {
     let mut set_menu_display =
         |d| q_menu_components.iter_mut().for_each(|mut style| style.display = d);
     match *menu_state.get() {
-        MenuState::FenInput => fen_popup_data.reset(),
+        MenuState::FenInput => fen_popup_state.reset(),
         MenuState::Menu => set_menu_display(Display::Flex),
         MenuState::Game => set_menu_display(Display::None),
         MenuState::DoGameOver => *game_over_timer = default(),
