@@ -119,7 +119,7 @@ impl PopupState {
                     self.en_passant_target_file,
                     self.fonts.sublabel(),
                 );
-                ComboBox::from_label("").selected_text(text).show_ui(ui, |ui| {
+                ComboBox::from_label("").width(56.0).selected_text(text).show_ui(ui, |ui| {
                     for file in ALL_FILES {
                         let label =
                             en_passant_label(self.black_to_move, file, self.fonts.sublabel());
@@ -163,12 +163,14 @@ impl PopupState {
             strip.cell(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Halfmove Clock:").font(self.fonts.label()));
+                    ui.spacing_mut().interact_size.x = 27.0;
                     ui.add(DragValue::new(&mut self.halfmove_clock).clamp_range(0..=99));
                 });
             });
             strip.cell(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Fullmove Count:").font(self.fonts.label()));
+                    ui.spacing_mut().interact_size.x = 36.0;
                     ui.add(DragValue::new(&mut self.fullmove_count).clamp_range(0..=u16::MAX));
                 });
             });
