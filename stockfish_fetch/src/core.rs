@@ -23,15 +23,17 @@ pub struct StockfishBuilder {
     bin_p: PathBuf,
 }
 
-impl StockfishBuilder {
-    pub fn new() -> Self {
+impl Default for StockfishBuilder {
+    fn default() -> Self {
         let zip_p = Path::new(WORKING_DIR).join(STOCKFISH_ZIP_NAME);
         let repo_dir_p = Path::new(WORKING_DIR).join(STOCKFISH_REPO_DIR_NAME);
         let mut bin_p = repo_dir_p.join("src");
         bin_p.push(STOCKFISH_BIN_NAME);
         Self { zip_p, repo_dir_p, bin_p }
     }
+}
 
+impl StockfishBuilder {
     pub fn run(&self) -> Result<()> {
         if self.bin_p.exists() {
             info!(path = %self.bin_p.display(), "Executable exists, nothing to do");

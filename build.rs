@@ -55,5 +55,5 @@ fn main2() -> Result<()> {
     })?;
 
     // Core logic
-    StockfishBuilder::new().run()
+    StockfishBuilder::default().run()
 }
