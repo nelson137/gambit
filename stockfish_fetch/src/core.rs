@@ -9,7 +9,13 @@ use anyhow::{anyhow, Context, Result};
 use tracing::{error, info};
 use zip::ZipArchive;
 
-use crate::{build_consts::*, build_utils::BuildCommand};
+use crate::{
+    consts::{
+        STOCKFISH_ARCH, STOCKFISH_BIN_NAME, STOCKFISH_REPO_DIR_NAME, STOCKFISH_ZIP_NAME,
+        STOCKFISH_ZIP_URL, WORKING_DIR,
+    },
+    utils::BuildCommand,
+};
 
 pub struct StockfishBuilder {
     zip_p: PathBuf,

@@ -6,6 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [workspace]
+members = ["stockfish_fetch"]
 
 [features]
 debug = []
@@ -22,6 +23,12 @@ opt-level = 0
 [profile.dev.package.'*']
 opt-level = 2
 
+[build-dependencies]
+anyhow = "1.0"
+stockfish_fetch = { path = "./stockfish_fetch" }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["local-time", "time"] }
+
 [dependencies]
 bevy = { version = "0.12", features = ["flac"] }
 bevy_egui = "0.23"
@@ -30,4 +37,3 @@ bevy-inspector-egui = { version = "0.21", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 egui_extras = "0.23"
-gambit_stockfish = { path = "./gambit_stockfish" }

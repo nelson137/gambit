@@ -6,16 +6,9 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use build_core::StockfishBuilder;
-use build_utils::LogWriter;
+use stockfish_fetch::{consts::*, core::StockfishBuilder, utils::LogWriter};
 use tracing::error;
 use tracing_subscriber::fmt::{time::LocalTime, SubscriberBuilder};
-
-mod build_consts;
-mod build_core;
-mod build_utils;
-
-use crate::build_consts::*;
 
 fn main() -> ExitCode {
     println!("cargo:rerun-if-changed=build.rs");
