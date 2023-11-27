@@ -7,6 +7,7 @@ use self::{
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     mouse::MouseLogicPlugin,
+    stockfish::StockfishPlugin,
     ui::GameUiPlugin,
 };
 
@@ -20,6 +21,7 @@ pub mod load;
 pub mod menu;
 pub mod mouse;
 pub mod panels;
+pub mod stockfish;
 pub mod ui;
 
 pub struct GameLogicPlugin;
@@ -34,6 +36,7 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(SelectionPlugin)
             .add_plugins(MovePlugin)
             .add_plugins(PieceAnimationPlugin)
+            .add_plugins(StockfishPlugin)
             // Events
             .add_event::<PromotionEvent>()
             // Startup
