@@ -1,5 +1,6 @@
 use std::{
     collections::{hash_map::Entry, HashMap},
+    fmt::Write,
     str::FromStr,
 };
 
@@ -91,6 +92,16 @@ impl BoardState {
                 | GameStatus::GameOverRepetition
                 | GameStatus::GameOver50Moves
         )
+    }
+
+    pub fn fen(&self) -> String {
+        let mut fen = self.board.to_string();
+        fen.truncate(fen.len() - 3);
+        let half_move = self.half_move_clock;
+        let full_move = self.full_move_count;
+        write!(&mut fen, "{half_move} {full_move}")
+            .expect("Write halfmove clock & fullmove count to FEN");
+        fen
     }
 
     pub fn side_to_move(&self) -> PieceColor {

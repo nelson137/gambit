@@ -1,4 +1,4 @@
-use std::{fmt, hash::Hash};
+use std::{fmt, hash::Hash, str::FromStr};
 
 use bevy::prelude::*;
 use chess::{File, Rank};
@@ -78,6 +78,14 @@ impl Square {
 impl From<chess::Square> for Square {
     fn from(square: chess::Square) -> Self {
         Self(square)
+    }
+}
+
+impl FromStr for Square {
+    type Err = chess::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Ok(Self(chess::Square::from_str(s)?))
     }
 }
 

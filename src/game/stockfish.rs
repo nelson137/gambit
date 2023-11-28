@@ -6,12 +6,18 @@ use std::{
     os::unix::fs::PermissionsExt,
     path::PathBuf,
     process::{self, ChildStdin, Stdio},
+    str::FromStr,
 };
 
 use bevy::{prelude::*, tasks::IoTaskPool};
 use crossbeam_channel::{unbounded, Receiver, TryRecvError};
 
-use crate::utils::AppNoop;
+use crate::{
+    game::board::{PieceColor, Square},
+    utils::AppNoop,
+};
+
+use super::board::{BoardState, MovePiece, MovePlugin};
 
 const STOCKFISH_EXECUTABLE: &[u8] =
     include_bytes!("../../target/stockfish/Stockfish-sf_15/src/stockfish");
@@ -20,20 +26,25 @@ pub struct StockfishPlugin;
 
 impl Plugin for StockfishPlugin {
     fn build(&self, app: &mut App) {
+        if !app.is_plugin_added::<MovePlugin>() {
+            panic!("Attempted to add plugin without required dependency: {:?}", MovePlugin);
+        }
+
         app.noop()
             .add_event::<SfCommand>()
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)
+            .add_systems(PreUpdate, stockfish_move_as_black)
             .noop();
     }
 }
 
-#[derive(Clone, Copy, Debug, Event)]
+#[derive(Clone, Debug, Event)]
 enum SfCommand {
     Uci,
     IsReady,
     UciNewGame,
-    Position(&'static str),
+    Position(String), // FEN
     Go,
     Sleep(u32), // milliseconds
     Stop,
@@ -45,7 +56,7 @@ impl SfCommand {
             Self::Uci => Cow::Borrowed(b"uci\n"),
             Self::IsReady => Cow::Borrowed(b"isready\n"),
             Self::UciNewGame => Cow::Borrowed(b"ucinewgame\n"),
-            Self::Position(args) => Cow::Owned(format!("position {args}\n").into_bytes()),
+            Self::Position(fen) => Cow::Owned(format!("position fen {fen}\n").into_bytes()),
             Self::Go => Cow::Borrowed(b"go infinite\n"),
             Self::Sleep(_) => Cow::Borrowed(b""),
             Self::Stop => Cow::Borrowed(b"stop\n"),
@@ -133,15 +144,7 @@ fn initialize_stockfish(mut commands: Commands) {
 
     let mut sf = Stockfish::new(stdin, response_rx);
 
-    sf.extend_cmds([
-        SfCommand::Uci,
-        SfCommand::UciNewGame,
-        SfCommand::IsReady,
-        SfCommand::Position("startpos moves d2d4 g8f6 e2e3 e7e6 g1f3 d7d5 f3e5 c7c5 d1h5"),
-        SfCommand::Go,
-        SfCommand::Sleep(4000),
-        SfCommand::Stop,
-    ]);
+    sf.extend_cmds([SfCommand::Uci, SfCommand::UciNewGame, SfCommand::IsReady]);
 
     commands.insert_resource(sf);
 }
@@ -193,7 +196,9 @@ enum SfState {
 }
 
 fn stockfish_update(
+    mut commands: Commands,
     time: Res<Time>,
+    board_state: Res<BoardState>,
     mut sleep_timer: Local<Option<Timer>>,
     mut stockfish: ResMut<Stockfish>,
     mut sf_state: Local<SfState>,
@@ -230,8 +235,26 @@ fn stockfish_update(
             for line in stockfish.iter_responses() {
                 if line.starts_with("bestmove") {
                     trace!(response = line, "Stockfish");
-                    let response = line.split(' ').collect::<Vec<_>>();
-                    info!(bestmove = response[1], ponder = response[3], "STOCKFISH:");
+                    *sf_state = SfState::Idle;
+
+                    let mut chunks = line.splitn(3, ' ');
+                    chunks.next();
+                    let bestmove = chunks.next().expect("invalid bestmove response from stockfish");
+                    if !bestmove.len() == 4 {
+                        panic!("Unexpected move from stockfish: {bestmove}");
+                    }
+
+                    let from_sq = Square::from_str(&bestmove[0..2]).unwrap_or_else(|_| {
+                        panic!("Invalid source square in move from stockfish: {bestmove}")
+                    });
+                    let to_sq = Square::from_str(&bestmove[2..4]).unwrap_or_else(|_| {
+                        panic!("Invalid destination square in move from stockfish: {bestmove}")
+                    });
+
+                    let piece = board_state.piece(from_sq);
+                    commands.entity(piece).insert(MovePiece::new(from_sq, to_sq, None, true));
+
+                    break 'is_waiting;
                 }
             }
             return;
@@ -263,6 +286,23 @@ fn stockfish_update(
                 return;
             }
             _ => stockfish.write_cmd(command),
+        }
+    }
+}
+
+fn stockfish_move_as_black(
+    board_state: Res<BoardState>,
+    mut stockfish: ResMut<Stockfish>,
+    mut removed: RemovedComponents<MovePiece>,
+) {
+    for _ in removed.read() {
+        if board_state.side_to_move() == PieceColor::BLACK {
+            stockfish.extend_cmds([
+                SfCommand::Position(board_state.fen()),
+                SfCommand::Go,
+                SfCommand::Sleep(2500),
+                SfCommand::Stop,
+            ]);
         }
     }
 }
