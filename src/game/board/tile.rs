@@ -3,7 +3,7 @@ use chess::{File, Rank};
 
 use crate::{
     debug_name_f,
-    game::consts::{FONT_PATH, Z_NOTATION_TEXT, Z_TILE},
+    game::consts::{FONT_PATH, Z_TILE},
 };
 
 use super::{BoardState, Square, UiBoard};
@@ -80,7 +80,6 @@ pub fn spawn_tiles(
                             right: Val::Percent(8.0),
                             ..default()
                         },
-                        z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
                     });
                 }
@@ -95,7 +94,6 @@ pub fn spawn_tiles(
                             left: Val::Percent(4.5),
                             ..default()
                         },
-                        z_index: ZIndex::Global(Z_NOTATION_TEXT),
                         ..default()
                     });
                 }

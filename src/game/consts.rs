@@ -57,22 +57,26 @@ pub const MIN_BOARD_SIZE: Val = Val::Px(256.0);
 // Z-Values
 //==================================================
 
-pub const Z_GAME_MENU: i32 = 21;
+// Menu --------------------
 
-pub const Z_GAME_MENU_DIM_LAYER: i32 = 20;
+pub const Z_MENU: i32 = 50;
+
+// Board UI & Annotations --------------------
 
 pub const Z_PROMOTER: i32 = 16;
 
 pub const Z_END_GAME_ICONS: i32 = 15;
 
+// Pieces --------------------
+
 pub const Z_PIECE_SELECTED: i32 = 11;
 
 pub const Z_PIECE: i32 = 10;
 
-pub const Z_MOVE_HINT: i32 = 4;
+// Board --------------------
 
-pub const Z_HIGHLIGHT_TILE: i32 = 3;
+pub const Z_MOVE_HINT: i32 = 3;
 
-pub const Z_NOTATION_TEXT: i32 = 2;
+pub const Z_HIGHLIGHT_TILE: i32 = 2;
 
 pub const Z_TILE: i32 = 1;

@@ -5,7 +5,7 @@ use crate::{
     game::consts::{
         FONT_PATH, INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_HEIGHT, INIT_MENU_TITLE_SIZE,
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
-        TITLE_FONT_PATH, Z_GAME_MENU, Z_GAME_MENU_DIM_LAYER,
+        TITLE_FONT_PATH, Z_MENU,
     },
     utils::RoundToNearest,
 };
@@ -33,7 +33,7 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            z_index: ZIndex::Global(Z_GAME_MENU_DIM_LAYER),
+            z_index: ZIndex::Global(Z_MENU),
             ..default()
         },
     ));
@@ -67,7 +67,6 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                z_index: ZIndex::Global(Z_GAME_MENU),
                 ..default()
             },
         ))
