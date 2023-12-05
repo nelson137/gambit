@@ -5,7 +5,7 @@ use bevy_egui::egui::Ui;
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
     hierarchy::{hierarchy_ui, SelectedEntities},
-    ui_for_entities_shared_components, ui_for_entity_with_children,
+    ui_for_entities_shared_components, ui_for_entity,
 };
 use bevy_inspector_egui::{
     bevy_egui::{EguiContext, EguiSet},
@@ -52,12 +52,7 @@ struct InspectorState {
 
 impl Default for InspectorState {
     fn default() -> Self {
-        let left_state = SplitPanelState::equally_sized([
-            Pane::Hierarchy,
-            Pane::EntityComponents,
-            Pane::EntityComponents,
-            Pane::EntityComponents,
-        ]);
+        let left_state = SplitPanelState::equally_sized([Pane::Hierarchy, Pane::EntityComponents]);
         let right_state = SplitPanelState::equally_sized([Pane::Resources, Pane::Stockfish]);
         Self { left_state, right_state, selected_entities: default(), selected_resource: default() }
     }
@@ -118,15 +113,19 @@ impl<'a> PaneViewer for InspectorPaneViewer<'a> {
 impl<'a> InspectorPaneViewer<'a> {
     fn show_hierarchy(&mut self, ui: &mut Ui) {
         hierarchy_ui(self.world, ui, self.selected_entities);
-
-        match self.selected_entities.as_slice() {
-            &[entity] => ui_for_entity_with_children(self.world, entity, ui),
-            entities => ui_for_entities_shared_components(self.world, entities, ui),
-        }
     }
 
     fn show_entity_components(&mut self, ui: &mut Ui) {
-        ui.heading("Selected Entity Components");
+        match self.selected_entities.as_slice() {
+            &[] => {}
+            &[entity] => {
+                ui_for_entity(self.world, entity, ui);
+            }
+            entities => {
+                ui.label("Shared components");
+                ui_for_entities_shared_components(self.world, entities, ui);
+            }
+        }
     }
 
     fn show_resources(&mut self, ui: &mut Ui) {
