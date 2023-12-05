@@ -1,14 +1,14 @@
 use bevy::{prelude::*, reflect::TypeRegistry, window::PrimaryWindow};
-use bevy_egui::egui::{RichText, Ui};
+use bevy_egui::{
+    egui::{Context, RichText, Ui},
+    EguiContext, EguiSet,
+};
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
     hierarchy::{hierarchy_ui, SelectedEntities},
     ui_for_entities_shared_components, ui_for_entity,
 };
-use bevy_inspector_egui::{
-    bevy_egui::{EguiContext, EguiSet},
-    egui, DefaultInspectorConfigPlugin,
-};
+use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 
 use crate::utils::AppNoop;
 
@@ -56,7 +56,7 @@ impl Default for InspectorState {
 }
 
 impl InspectorState {
-    fn ui(&mut self, world: &mut World, ctx: &mut egui::Context) {
+    fn ui(&mut self, world: &mut World, ctx: &mut Context) {
         let type_registry = world.resource::<AppTypeRegistry>().0.clone();
         let type_registry = type_registry.read();
 
@@ -95,7 +95,7 @@ struct InspectorPaneViewer<'a> {
 impl<'a> PaneViewer for InspectorPaneViewer<'a> {
     type Pane = Pane;
 
-    fn ui(&mut self, ui: &mut egui::Ui, pane: &mut Self::Pane) {
+    fn ui(&mut self, ui: &mut Ui, pane: &mut Self::Pane) {
         match *pane {
             Pane::Hierarchy => self.show_hierarchy(ui),
             Pane::EntityComponents => self.show_entity_components(ui),
