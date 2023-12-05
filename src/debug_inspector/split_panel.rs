@@ -3,7 +3,7 @@ use std::iter;
 use bevy::utils::default;
 use bevy_egui::egui::{
     panel::Side, pos2, vec2, Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Rect,
-    Sense, SidePanel, Stroke, Ui,
+    ScrollArea, Sense, SidePanel, Stroke, Ui,
 };
 
 struct SplitPanelStyle {
@@ -170,11 +170,14 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
     }
 
     fn show_panes(&mut self, ui: &mut Ui, pane_viewer: &mut impl PaneViewer<Pane = Pane>) {
-        for pane in &mut self.state.panes {
+        for (i, pane) in self.state.panes.iter_mut().enumerate() {
             let layout = Layout::top_down(Align::Min);
             let ui = &mut ui.child_ui(pane.content_rect, layout);
             ui.set_clip_rect(pane.rect);
-            pane_viewer.ui(ui, &mut pane.pane);
+            ScrollArea::both().id_source(("split_panel", "pane", i)).show(ui, |ui| {
+                ui.expand_to_include_rect(ui.available_rect_before_wrap());
+                pane_viewer.ui(ui, &mut pane.pane);
+            });
         }
     }
 
