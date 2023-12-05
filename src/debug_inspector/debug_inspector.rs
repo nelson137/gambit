@@ -127,11 +127,12 @@ impl<'a> InspectorPaneViewer<'a> {
         let mut resources = self
             .type_registry
             .iter()
-            .filter(|reg| reg.data::<ReflectResource>().is_some())
+            .filter(|&reg| reg.data::<ReflectResource>().is_some())
             .map(|reg| {
                 let info = reg.type_info();
                 (info.type_path_table().short_path(), info.type_id())
             })
+            .filter(|&(_, type_id)| self.world.components().get_resource_id(type_id).is_some())
             .collect::<Vec<_>>();
         resources.sort_by_key(|(name, _)| *name);
 
