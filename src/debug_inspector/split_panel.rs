@@ -9,6 +9,7 @@ use bevy_egui::egui::{
 struct SplitPanelStyle {
     padding: Option<Margin>,
     border_stroke: Stroke,
+    pane_min_size: f32,
     separator_width: f32,
     separator_interact_expand: f32,
     separator_color_default: Color32,
@@ -21,6 +22,7 @@ impl Default for SplitPanelStyle {
         Self {
             padding: Some(Margin::same(8.0)),
             border_stroke: Stroke::new(0.0, Color32::BLACK),
+            pane_min_size: 64.0,
             separator_width: 2.0,
             separator_interact_expand: 4.0,
             separator_color_default: Color32::from_gray(60),
@@ -178,6 +180,7 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
         let n_separators = self.state.panes.len() - 1;
         let content_range = (content_rect.max.y - content_rect.min.y)
             - n_separators as f32 * self.style.separator_width;
+        let min_fraction = (self.style.pane_min_size / content_range).min(1.0);
 
         for (i, rect) in self.separator_rects.iter().copied().enumerate() {
             let interact_expand = vec2(0.0, self.style.separator_interact_expand);
@@ -204,9 +207,16 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
                 self.state.panes[i + 1].fraction = avg_fraction;
             } else if response.interact_pointer_pos().is_some() {
                 let delta = response.drag_delta().y;
-                let fraction_delta = delta / content_range;
-                self.state.panes[i].fraction += fraction_delta;
-                self.state.panes[i + 1].fraction -= fraction_delta;
+                let orig_pane_above_frac = self.state.panes[i].fraction;
+                let orig_pane_below_frac = self.state.panes[i + 1].fraction;
+                let max_fraction = orig_pane_above_frac + orig_pane_below_frac - min_fraction;
+
+                let new_pane_above_frac = (orig_pane_above_frac + delta / content_range)
+                    .max(min_fraction)
+                    .min(max_fraction);
+
+                self.state.panes[i].fraction = new_pane_above_frac;
+                self.state.panes[i + 1].fraction -= new_pane_above_frac - orig_pane_above_frac;
             }
         }
     }
