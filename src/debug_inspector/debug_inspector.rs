@@ -1,5 +1,3 @@
-use std::any::TypeId;
-
 use bevy::{prelude::*, reflect::TypeRegistry, window::PrimaryWindow};
 use bevy_egui::egui::Ui;
 use bevy_inspector_egui::bevy_inspector::{
@@ -47,14 +45,13 @@ struct InspectorState {
     left_state: SplitPanelState<Pane>,
     right_state: SplitPanelState<Pane>,
     selected_entities: SelectedEntities,
-    selected_resource: Option<(TypeId, String)>,
 }
 
 impl Default for InspectorState {
     fn default() -> Self {
         let left_state = SplitPanelState::equally_sized([Pane::Hierarchy, Pane::EntityComponents]);
         let right_state = SplitPanelState::equally_sized([Pane::Resources, Pane::Stockfish]);
-        Self { left_state, right_state, selected_entities: default(), selected_resource: default() }
+        Self { left_state, right_state, selected_entities: default() }
     }
 }
 
@@ -67,7 +64,6 @@ impl InspectorState {
             world,
             type_registry: &type_registry,
             selected_entities: &mut self.selected_entities,
-            selected_resource: &mut self.selected_resource,
         };
 
         const DEFAULT_WIDTH: f32 = 318.0;
@@ -94,7 +90,6 @@ struct InspectorPaneViewer<'a> {
     world: &'a mut World,
     type_registry: &'a TypeRegistry,
     selected_entities: &'a mut SelectedEntities,
-    selected_resource: &'a mut Option<(TypeId, String)>,
 }
 
 impl<'a> PaneViewer for InspectorPaneViewer<'a> {
@@ -140,21 +135,10 @@ impl<'a> InspectorPaneViewer<'a> {
             .collect::<Vec<_>>();
         resources.sort_by_key(|(name, _)| *name);
 
-        let selected_id =
-            self.selected_resource.as_ref().map(|r| r.0).unwrap_or(TypeId::of::<()>());
-
         for (name, type_id) in resources {
-            let selected = type_id == selected_id;
-            let label = ui.selectable_label(selected, name);
-            if label.clicked() {
-                *self.selected_resource = Some((type_id, name.to_string()));
-            }
-        }
-
-        if let Some((ref type_id, ref name)) = self.selected_resource {
-            ui.separator();
-            ui.label(name);
-            ui_for_resource(self.world, *type_id, ui, name, self.type_registry)
+            ui.collapsing(name, |ui| {
+                ui_for_resource(self.world, type_id, ui, name, self.type_registry);
+            });
         }
     }
 
