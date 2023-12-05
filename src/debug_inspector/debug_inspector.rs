@@ -52,9 +52,13 @@ struct InspectorState {
 
 impl Default for InspectorState {
     fn default() -> Self {
-        let left_state =
-            SplitPanelState::new([(Pane::Hierarchy, 0.5), (Pane::EntityComponents, 0.5)]);
-        let right_state = SplitPanelState::new([(Pane::Resources, 0.5), (Pane::Stockfish, 0.5)]);
+        let left_state = SplitPanelState::equally_sized([
+            Pane::Hierarchy,
+            Pane::EntityComponents,
+            Pane::EntityComponents,
+            Pane::EntityComponents,
+        ]);
+        let right_state = SplitPanelState::equally_sized([Pane::Resources, Pane::Stockfish]);
         Self { left_state, right_state, selected_entities: default(), selected_resource: default() }
     }
 }

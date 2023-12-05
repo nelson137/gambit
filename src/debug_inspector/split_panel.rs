@@ -37,8 +37,10 @@ pub struct SplitPanelState<Pane> {
 }
 
 impl<Pane> SplitPanelState<Pane> {
-    pub fn new(panes: impl IntoIterator<Item = (Pane, f32)>) -> Self {
-        let panes = panes.into_iter().map(PaneState::new).collect::<Vec<_>>();
+    pub fn equally_sized(panes: impl IntoIterator<Item = Pane>) -> Self {
+        let mut panes = panes.into_iter().map(|p| PaneState::new(p, 0.0)).collect::<Vec<_>>();
+        let frac = 1.0 / panes.len() as f32;
+        panes.iter_mut().for_each(move |p| p.fraction = frac);
 
         let sum: f32 = panes.iter().map(|p| p.fraction).sum();
         assert!(
@@ -58,8 +60,8 @@ struct PaneState<Pane> {
 }
 
 impl<Pane> PaneState<Pane> {
-    fn new(state: (Pane, f32)) -> Self {
-        Self { pane: state.0, fraction: state.1, rect: Rect::ZERO, content_rect: Rect::ZERO }
+    fn new(pane: Pane, fraction: f32) -> Self {
+        Self { pane, fraction, rect: Rect::ZERO, content_rect: Rect::ZERO }
     }
 }
 
