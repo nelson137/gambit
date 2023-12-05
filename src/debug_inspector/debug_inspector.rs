@@ -1,5 +1,5 @@
 use bevy::{prelude::*, reflect::TypeRegistry, window::PrimaryWindow};
-use bevy_egui::egui::Ui;
+use bevy_egui::egui::{RichText, Ui};
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
     hierarchy::{hierarchy_ui, SelectedEntities},
@@ -107,12 +107,19 @@ impl<'a> PaneViewer for InspectorPaneViewer<'a> {
 
 impl<'a> InspectorPaneViewer<'a> {
     fn show_hierarchy(&mut self, ui: &mut Ui) {
+        ui.heading("Hierarchy");
+        ui.separator();
         hierarchy_ui(self.world, ui, self.selected_entities);
     }
 
     fn show_entity_components(&mut self, ui: &mut Ui) {
+        ui.heading("Entity Components");
+        ui.separator();
+
         match self.selected_entities.as_slice() {
-            &[] => {}
+            &[] => {
+                ui.label(RichText::new("No entities selected").italics());
+            }
             &[entity] => {
                 ui_for_entity(self.world, entity, ui);
             }
@@ -124,6 +131,9 @@ impl<'a> InspectorPaneViewer<'a> {
     }
 
     fn show_resources(&mut self, ui: &mut Ui) {
+        ui.heading("Resources");
+        ui.separator();
+
         let mut resources = self
             .type_registry
             .iter()
