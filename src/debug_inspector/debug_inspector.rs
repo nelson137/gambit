@@ -16,7 +16,7 @@ use bevy_inspector_egui::bevy_inspector::{
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 
 use crate::{
-    game::stockfish::{SfCommunications, SfMessage},
+    game::stockfish::{SfCommand, SfCommunications, SfMessage, Stockfish},
     utils::AppNoop,
 };
 
@@ -175,6 +175,8 @@ impl<'a> InspectorPaneViewer<'a> {
 
         let sf_comms = self.world.resource::<SfCommunications>();
 
+        let mut user_command: Option<SfCommand> = None;
+
         ui.with_layout(Layout::bottom_up(Align::Center), |ui| {
             // Fix layout bug that adds scrollbar to whole pane
             ui.add_space(1.0);
@@ -185,7 +187,13 @@ impl<'a> InspectorPaneViewer<'a> {
                     .hint_text("Enter a stockfish command")
                     .show(ui);
                 if output.response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
-                    bevy::log::debug!("SUBMIT STOCKFISH COMMAND | {}", self.sf_text_edit_model);
+                    user_command = Some(SfCommand::Custom({
+                        let cmd_str = self.sf_text_edit_model.trim();
+                        let mut s = String::with_capacity(cmd_str.len() + 1);
+                        s.push_str(cmd_str);
+                        s.push('\n');
+                        s
+                    }));
                     self.sf_text_edit_model.clear();
                 }
             });
@@ -209,5 +217,9 @@ impl<'a> InspectorPaneViewer<'a> {
                 }
             });
         });
+
+        if let Some(command) = user_command {
+            self.world.resource_mut::<Stockfish>().push_cmd(command);
+        }
     }
 }

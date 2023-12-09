@@ -49,10 +49,11 @@ pub enum SfCommand {
     Go,
     Sleep(u32), // milliseconds
     Stop,
+    Custom(String),
 }
 
 impl SfCommand {
-    pub fn to_str(&self) -> Cow<'static, str> {
+    pub fn to_str(&self) -> Cow<str> {
         match self {
             Self::Uci => Cow::Borrowed("uci\n"),
             Self::IsReady => Cow::Borrowed("isready\n"),
@@ -61,10 +62,11 @@ impl SfCommand {
             Self::Go => Cow::Borrowed("go infinite\n"),
             Self::Sleep(_) => Cow::Borrowed(""),
             Self::Stop => Cow::Borrowed("stop\n"),
+            Self::Custom(s) => Cow::Borrowed(s.as_str()),
         }
     }
 
-    fn into_bytes(self) -> Cow<'static, [u8]> {
+    fn to_bytes(&self) -> Cow<[u8]> {
         match self.to_str() {
             Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
             Cow::Owned(s) => Cow::Owned(s.into_bytes()),
@@ -73,7 +75,7 @@ impl SfCommand {
 }
 
 #[derive(Resource)]
-struct Stockfish {
+pub struct Stockfish {
     stdin: ChildStdin,
     response: Receiver<String>,
     command_queue: VecDeque<SfCommand>,
@@ -84,11 +86,11 @@ impl Stockfish {
         Self { stdin, response, command_queue: VecDeque::new() }
     }
 
-    // fn push_cmd(&mut self, command: SfCommand) {
-    //     self.command_queue.push_back(command);
-    // }
+    pub fn push_cmd(&mut self, command: SfCommand) {
+        self.command_queue.push_back(command);
+    }
 
-    fn extend_cmds(&mut self, commands: impl IntoIterator<Item = SfCommand>) {
+    pub fn extend_cmds(&mut self, commands: impl IntoIterator<Item = SfCommand>) {
         self.command_queue.extend(commands);
     }
 
@@ -97,7 +99,7 @@ impl Stockfish {
     }
 
     fn write_cmd(&mut self, command: SfCommand) {
-        let cmd_bytes = command.into_bytes();
+        let cmd_bytes = command.to_bytes();
         self.stdin.write_all(&cmd_bytes).expect("write command to stockfish stdin");
     }
 
