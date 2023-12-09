@@ -1,7 +1,9 @@
-use bevy::{prelude::*, reflect::TypeRegistry, window::PrimaryWindow};
+use bevy::{
+    app::prelude::*, ecs::prelude::*, reflect::TypeRegistry, utils::default, window::PrimaryWindow,
+};
 use bevy_egui::{
     egui::{
-        self, vec2, Align, Context, FontFamily, FontId, Key, Layout, RichText, ScrollArea,
+        vec2, Align, Context, FontFamily, FontId, Key, Label, Layout, RichText, ScrollArea,
         TextEdit, Ui,
     },
     EguiContext, EguiSet,
@@ -203,7 +205,7 @@ impl<'a> InspectorPaneViewer<'a> {
                         SfMessage::Response(res) => RichText::new(res.trim()),
                     };
                     let text = text.font(font_id.clone());
-                    ui.add(egui::Label::new(text).wrap(false));
+                    ui.add(Label::new(text).wrap(false));
                 }
             });
         });
