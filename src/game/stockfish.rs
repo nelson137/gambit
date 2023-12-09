@@ -52,15 +52,22 @@ pub enum SfCommand {
 }
 
 impl SfCommand {
-    fn into_bytes(self) -> Cow<'static, [u8]> {
+    pub fn to_str(&self) -> Cow<'static, str> {
         match self {
-            Self::Uci => Cow::Borrowed(b"uci\n"),
-            Self::IsReady => Cow::Borrowed(b"isready\n"),
-            Self::UciNewGame => Cow::Borrowed(b"ucinewgame\n"),
-            Self::Position(fen) => Cow::Owned(format!("position fen {fen}\n").into_bytes()),
-            Self::Go => Cow::Borrowed(b"go infinite\n"),
-            Self::Sleep(_) => Cow::Borrowed(b""),
-            Self::Stop => Cow::Borrowed(b"stop\n"),
+            Self::Uci => Cow::Borrowed("uci\n"),
+            Self::IsReady => Cow::Borrowed("isready\n"),
+            Self::UciNewGame => Cow::Borrowed("ucinewgame\n"),
+            Self::Position(fen) => Cow::Owned(format!("position fen {fen}\n")),
+            Self::Go => Cow::Borrowed("go infinite\n"),
+            Self::Sleep(_) => Cow::Borrowed(""),
+            Self::Stop => Cow::Borrowed("stop\n"),
+        }
+    }
+
+    fn into_bytes(self) -> Cow<'static, [u8]> {
+        match self.to_str() {
+            Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
+            Cow::Owned(s) => Cow::Owned(s.into_bytes()),
         }
     }
 }
