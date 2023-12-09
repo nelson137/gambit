@@ -32,6 +32,7 @@ impl Plugin for StockfishPlugin {
 
         app.noop()
             .add_event::<SfCommand>()
+            .init_resource::<SfCommunications>()
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)
             .add_systems(PreUpdate, stockfish_move_as_black)
@@ -40,7 +41,7 @@ impl Plugin for StockfishPlugin {
 }
 
 #[derive(Clone, Debug, Event)]
-enum SfCommand {
+pub enum SfCommand {
     Uci,
     IsReady,
     UciNewGame,
@@ -82,6 +83,10 @@ impl Stockfish {
 
     fn extend_cmds(&mut self, commands: impl IntoIterator<Item = SfCommand>) {
         self.command_queue.extend(commands);
+    }
+
+    fn pop_cmd(&mut self) -> Option<SfCommand> {
+        self.command_queue.pop_front()
     }
 
     fn write_cmd(&mut self, command: SfCommand) {
@@ -186,6 +191,57 @@ fn ensure_stockfish_executable() -> PathBuf {
     stockfish_p
 }
 
+#[derive(Deref, DerefMut, Resource)]
+pub struct SfCommunications(Vec<SfMessage>);
+
+impl Default for SfCommunications {
+    fn default() -> Self {
+        Self(Vec::with_capacity(4000))
+    }
+}
+
+impl SfCommunications {
+    fn iter_responses_from<'a>(&'a self, cursor: &'a mut usize) -> impl Iterator<Item = &str> {
+        let iter = self.0.iter().filter_map(SfMessage::as_response).skip(*cursor);
+        CursorIterator::new(iter, cursor)
+    }
+}
+
+pub enum SfMessage {
+    Command(SfCommand),
+    Response(String),
+}
+
+impl SfMessage {
+    fn as_response(&self) -> Option<&str> {
+        if let Self::Response(response) = self {
+            Some(response)
+        } else {
+            None
+        }
+    }
+}
+
+struct CursorIterator<'a, I> {
+    inner: I,
+    cursor: &'a mut usize,
+}
+
+impl<'a, I> CursorIterator<'a, I> {
+    fn new(inner: I, cursor: &'a mut usize) -> Self {
+        Self { inner, cursor }
+    }
+}
+
+impl<'a, I: Iterator> Iterator for CursorIterator<'a, I> {
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        *self.cursor += 1;
+        self.inner.next()
+    }
+}
+
 #[derive(Clone, Copy, Debug, Default)]
 enum SfState {
     #[default]
@@ -199,6 +255,8 @@ fn stockfish_update(
     mut commands: Commands,
     time: Res<Time>,
     board_state: Res<BoardState>,
+    mut sf_comms: ResMut<SfCommunications>,
+    mut response_cursor: Local<usize>,
     mut sleep_timer: Local<Option<Timer>>,
     mut stockfish: ResMut<Stockfish>,
     mut sf_state: Local<SfState>,
@@ -212,9 +270,11 @@ fn stockfish_update(
         }
     }
 
+    sf_comms.extend(stockfish.iter_responses().map(SfMessage::Response));
+
     'is_waiting: {
         if let SfState::WaitingUci = *sf_state {
-            for line in stockfish.iter_responses() {
+            for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line == "uciok" {
                     trace!(response = line, "Stockfish");
                     *sf_state = SfState::Idle;
@@ -223,7 +283,7 @@ fn stockfish_update(
             }
             return;
         } else if let SfState::WaitingReady = *sf_state {
-            for line in stockfish.iter_responses() {
+            for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line == "readyok" {
                     trace!(response = line, "Stockfish");
                     *sf_state = SfState::Idle;
@@ -232,7 +292,7 @@ fn stockfish_update(
             }
             return;
         } else if let SfState::WaitingFinishSearch = *sf_state {
-            for line in stockfish.iter_responses() {
+            for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line.starts_with("bestmove") {
                     trace!(response = line, "Stockfish");
                     *sf_state = SfState::Idle;
@@ -263,7 +323,12 @@ fn stockfish_update(
 
     // Stockfish state is `Idle`
 
-    while let Some(command) = stockfish.command_queue.pop_front() {
+    let mut write_cmd = |stockfish: &mut Stockfish, command: SfCommand| {
+        sf_comms.push(SfMessage::Command(command.clone()));
+        stockfish.write_cmd(command);
+    };
+
+    while let Some(command) = stockfish.pop_cmd() {
         trace!(?command, "Stockfish");
         match command {
             SfCommand::Sleep(ms) => {
@@ -272,20 +337,20 @@ fn stockfish_update(
             }
             SfCommand::Uci => {
                 *sf_state = SfState::WaitingUci;
-                stockfish.write_cmd(command);
+                write_cmd(&mut stockfish, command);
                 return;
             }
             SfCommand::IsReady => {
                 *sf_state = SfState::WaitingReady;
-                stockfish.write_cmd(command);
+                write_cmd(&mut stockfish, command);
                 return;
             }
             SfCommand::Stop => {
                 *sf_state = SfState::WaitingFinishSearch;
-                stockfish.write_cmd(command);
+                write_cmd(&mut stockfish, command);
                 return;
             }
-            _ => stockfish.write_cmd(command),
+            _ => write_cmd(&mut stockfish, command),
         }
     }
 }
