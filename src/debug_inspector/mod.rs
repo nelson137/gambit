@@ -1,10 +1,11 @@
-mod split_panel;
-
 pub struct DebugInspectorPlugin;
 
 #[cfg(feature = "debug-inspector")]
 #[allow(clippy::module_inception)]
 mod debug_inspector;
+
+#[cfg(feature = "debug-inspector")]
+mod split_panel;
 
 #[cfg(not(feature = "debug-inspector"))]
 #[allow(clippy::module_inception)]

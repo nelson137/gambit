@@ -49,6 +49,7 @@ pub enum SfCommand {
     Go,
     Sleep(u32), // milliseconds
     Stop,
+    #[cfg(feature = "debug-inspector")]
     Custom(String),
 }
 
@@ -62,6 +63,7 @@ impl SfCommand {
             Self::Go => Cow::Borrowed("go infinite\n"),
             Self::Sleep(_) => Cow::Borrowed(""),
             Self::Stop => Cow::Borrowed("stop\n"),
+            #[cfg(feature = "debug-inspector")]
             Self::Custom(s) => Cow::Borrowed(s.as_str()),
         }
     }
@@ -86,6 +88,7 @@ impl Stockfish {
         Self { stdin, response, command_queue: VecDeque::new() }
     }
 
+    #[cfg(feature = "debug-inspector")]
     pub fn push_cmd(&mut self, command: SfCommand) {
         self.command_queue.push_back(command);
     }
