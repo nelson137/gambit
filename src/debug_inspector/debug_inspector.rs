@@ -204,9 +204,10 @@ impl<'a> InspectorPaneViewer<'a> {
             let ui = &mut ui.child_ui(ui.available_rect_before_wrap(), layout);
 
             let font_id = FontId::new(10.0, FontFamily::Monospace);
-            let row_height = ui.fonts(|f| f.row_height(&font_id));
+            let text_height = ui.fonts(|f| f.row_height(&font_id));
 
-            ScrollArea::both().show_rows(ui, row_height, sf_comms.len(), |ui, range| {
+            let scroll_area = ScrollArea::both().auto_shrink([false; 2]).stick_to_bottom(true);
+            scroll_area.show_rows(ui, text_height, sf_comms.len(), |ui, range| {
                 for i in range {
                     let text = match &sf_comms[i] {
                         SfMessage::Command(cmd) => RichText::new(cmd.to_str().trim()).strong(),
