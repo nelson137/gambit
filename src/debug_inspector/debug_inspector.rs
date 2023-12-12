@@ -1,5 +1,6 @@
 use bevy::{
-    app::prelude::*, ecs::prelude::*, reflect::TypeRegistry, utils::default, window::PrimaryWindow,
+    app::prelude::*, ecs::prelude::*, prelude::Deref, reflect::TypeRegistry, utils::default,
+    window::PrimaryWindow,
 };
 use bevy_egui::{
     egui::{
@@ -35,6 +36,7 @@ impl Plugin for DebugInspectorPlugin {
             .register_type::<bevy::pbr::StandardMaterial>()
             .add_plugins(DefaultInspectorConfigPlugin)
             .init_resource::<InspectorState>()
+            .init_resource::<DebugInspectorIsUsingMouse>()
             .add_systems(Update, debug_inspector_update.after(EguiSet::BeginFrame))
             .noop();
     }
@@ -43,10 +45,18 @@ impl Plugin for DebugInspectorPlugin {
 fn debug_inspector_update(world: &mut World) {
     let mut q = world.query_filtered::<&mut EguiContext, With<PrimaryWindow>>();
     let Ok(context) = q.get_single_mut(world) else { return };
-    let mut context = context.clone();
+    let mut context = EguiContext::clone(&context);
+
     world
         .resource_scope::<InspectorState, _>(|world, mut state| state.ui(world, context.get_mut()));
+
+    let ctx = context.get_mut();
+    world.resource_mut::<DebugInspectorIsUsingMouse>().0 =
+        ctx.is_pointer_over_area() || ctx.wants_pointer_input();
 }
+
+#[derive(Default, Deref, Resource)]
+pub struct DebugInspectorIsUsingMouse(bool);
 
 #[derive(Resource)]
 struct InspectorState {

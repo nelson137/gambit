@@ -29,11 +29,24 @@ impl Plugin for MouseLogicPlugin {
                 (mouse_screen_position_to_world, mouse_world_position_to_square)
                     .chain()
                     .after(PromoterSystem)
-                    .run_if(in_state(MenuState::Game)),
+                    .run_if(in_state(MenuState::Game))
+                    .run_if(mouse_is_in_world),
             )
             .add_systems(
                 PreUpdate,
-                (mouse_handler, update_drag_container).run_if(in_state(MenuState::Game)),
+                (mouse_handler, update_drag_container)
+                    .run_if(in_state(MenuState::Game))
+                    .run_if(mouse_is_in_world),
             );
     }
+}
+
+#[cfg(feature = "debug-inspector")]
+fn mouse_is_in_world(value: Res<crate::debug_inspector::DebugInspectorIsUsingMouse>) -> bool {
+    !**value
+}
+
+#[cfg(not(feature = "debug-inspector"))]
+fn mouse_is_in_world() -> bool {
+    true
 }

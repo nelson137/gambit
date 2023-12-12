@@ -5,6 +5,9 @@ pub struct DebugInspectorPlugin;
 mod debug_inspector;
 
 #[cfg(feature = "debug-inspector")]
+pub use debug_inspector::*;
+
+#[cfg(feature = "debug-inspector")]
 mod split_panel;
 
 #[cfg(not(feature = "debug-inspector"))]
