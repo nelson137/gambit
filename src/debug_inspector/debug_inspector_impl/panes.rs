@@ -20,10 +20,15 @@ pub(super) enum Pane {
     Stockfish,
 }
 
+#[derive(Default)]
+pub(super) struct PanesState {
+    selected_entities: SelectedEntities,
+    sf_text_edit: String,
+}
+
 pub(super) struct InspectorPaneViewer<'a> {
     pub(super) world: &'a mut World,
-    pub(super) selected_entities: &'a mut SelectedEntities,
-    pub(super) sf_text_edit_model: &'a mut String,
+    pub(super) state: &'a mut PanesState,
 }
 
 impl InspectorPaneViewer<'_> {
@@ -49,14 +54,14 @@ impl<'a> InspectorPaneViewer<'a> {
     fn show_hierarchy(&mut self, ui: &mut Ui) {
         ui.heading("Hierarchy");
         ui.separator();
-        hierarchy_ui(self.world, ui, self.selected_entities);
+        hierarchy_ui(self.world, ui, &mut self.state.selected_entities);
     }
 
     fn show_entity_components(&mut self, ui: &mut Ui) {
         ui.heading("Entity Components");
         ui.separator();
 
-        match self.selected_entities.as_slice() {
+        match self.state.selected_entities.as_slice() {
             &[] => {
                 ui.label(RichText::new("No entities selected").italics());
             }
@@ -108,19 +113,19 @@ impl<'a> InspectorPaneViewer<'a> {
             ui.add_space(1.0);
 
             ui.horizontal(|ui| {
-                let output = TextEdit::singleline(self.sf_text_edit_model)
+                let output = TextEdit::singleline(&mut self.state.sf_text_edit)
                     .min_size(vec2(ui.available_width(), 0.0))
                     .hint_text("Enter a stockfish command")
                     .show(ui);
                 if output.response.lost_focus() && ui.input(|i| i.key_pressed(Key::Enter)) {
                     user_command = Some(SfCommand::Custom({
-                        let cmd_str = self.sf_text_edit_model.trim();
+                        let cmd_str = self.state.sf_text_edit.trim();
                         let mut s = String::with_capacity(cmd_str.len() + 1);
                         s.push_str(cmd_str);
                         s.push('\n');
                         s
                     }));
-                    self.sf_text_edit_model.clear();
+                    self.state.sf_text_edit.clear();
                 }
             });
 

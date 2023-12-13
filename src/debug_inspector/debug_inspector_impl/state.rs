@@ -1,9 +1,8 @@
 use bevy::{ecs::prelude::*, utils::default};
 use bevy_egui::egui::Context;
-use bevy_inspector_egui::bevy_inspector::hierarchy::SelectedEntities;
 
 use super::{
-    panes::{InspectorPaneViewer, Pane},
+    panes::{InspectorPaneViewer, Pane, PanesState},
     split_panel::{SplitPanel, SplitPanelState},
 };
 
@@ -11,30 +10,20 @@ use super::{
 pub(super) struct InspectorState {
     left_state: SplitPanelState<Pane>,
     right_state: SplitPanelState<Pane>,
-    selected_entities: SelectedEntities,
-    sf_text_edit_model: String,
+    panes_state: PanesState,
 }
 
 impl Default for InspectorState {
     fn default() -> Self {
         let left_state = SplitPanelState::equally_sized([Pane::Hierarchy, Pane::EntityComponents]);
         let right_state = SplitPanelState::equally_sized([Pane::Resources, Pane::Stockfish]);
-        Self {
-            left_state,
-            right_state,
-            selected_entities: default(),
-            sf_text_edit_model: default(),
-        }
+        Self { left_state, right_state, panes_state: default() }
     }
 }
 
 impl InspectorState {
     pub(super) fn ui(&mut self, world: &mut World, ctx: &mut Context) {
-        let mut panel_viewer = InspectorPaneViewer {
-            world,
-            selected_entities: &mut self.selected_entities,
-            sf_text_edit_model: &mut self.sf_text_edit_model,
-        };
+        let mut panel_viewer = InspectorPaneViewer { world, state: &mut self.panes_state };
 
         const DEFAULT_WIDTH: f32 = 318.0;
 
