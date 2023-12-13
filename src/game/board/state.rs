@@ -57,6 +57,12 @@ impl FromWorld for BoardState {
 }
 
 fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
+    let fen = fen.trim();
+
+    if fen == "default" {
+        return Ok((Board::default(), 0, 1));
+    }
+
     let board = Board::from_str(fen)?;
     let invalid_fen = || chess::Error::InvalidFen { fen: fen.to_string() };
 
