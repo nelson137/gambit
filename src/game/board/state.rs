@@ -33,10 +33,10 @@ impl FromWorld for BoardState {
                 Err(err) => {
                     warn!("{err}");
                     warn!("Using default board");
-                    (Board::default(), 0, 0)
+                    (Board::default(), 0, 1)
                 }
             },
-            _ => (Board::default(), 0, 0),
+            None => (Board::default(), 0, 1),
         };
 
         let mut piece_state_counters = HashMap::with_capacity(300);
