@@ -22,6 +22,8 @@ pub const FONT_PATH: &str = "fonts/montserrat-700.otf";
 
 pub const TITLE_FONT_PATH: &str = "fonts/montserrat-800.otf";
 
+pub const DEFAULT_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+
 //==================================================
 // Sizes
 //==================================================

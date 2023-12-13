@@ -8,7 +8,9 @@ use bevy_egui::egui::{
 use chess::ALL_FILES;
 use egui_extras::{Size, StripBuilder};
 
-use super::{state::PopupState, FenPopupInteraction, DEFAULT_BOARD_FEN};
+use crate::game::consts::DEFAULT_FEN;
+
+use super::{state::PopupState, FenPopupInteraction};
 
 pub(super) fn fen_window(ctx: &Context, state: &mut PopupState) -> FenPopupInteraction {
     let mut interaction = FenPopupInteraction::None;
@@ -49,7 +51,7 @@ pub(super) fn fen_window(ctx: &Context, state: &mut PopupState) -> FenPopupInter
 
     match interaction {
         FenPopupInteraction::Submit if state.fen.is_empty() => {
-            state.fen.replace_range(.., DEFAULT_BOARD_FEN)
+            state.fen.replace_range(.., DEFAULT_FEN)
         }
         _ => {}
     }
@@ -73,7 +75,7 @@ impl PopupState {
 
         let font = self.fonts.editable();
         let TextEditOutput { response, mut state, .. } = TextEdit::singleline(&mut self.fen)
-            .hint_text(DEFAULT_BOARD_FEN)
+            .hint_text(DEFAULT_FEN)
             .font(font)
             .desired_width(f32::INFINITY)
             .show(ui);

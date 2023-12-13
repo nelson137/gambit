@@ -11,7 +11,7 @@ use bevy::{ecs::system::Resource, utils::default};
 use bevy_egui::egui::{Context, FontId, TextStyle};
 use chess::{Board, BoardBuilder, CastleRights};
 
-use super::DEFAULT_BOARD_FEN;
+use crate::game::consts::DEFAULT_FEN;
 
 fn compute_hash<T: Hash>(value: &T) -> u64 {
     let mut hasher = DefaultHasher::new();
@@ -117,7 +117,7 @@ impl PopupState {
 
     fn update_fen_from_controls(&mut self) {
         if self.fen.is_empty() {
-            self.fen.replace_range(.., DEFAULT_BOARD_FEN);
+            self.fen.replace_range(.., DEFAULT_FEN);
         }
 
         let board = BoardBuilder::from_str(&self.fen);

@@ -12,8 +12,6 @@ pub use self::state::PopupState;
 mod state;
 mod view;
 
-const DEFAULT_BOARD_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-
 enum FenPopupInteraction {
     None,
     Cancel,
