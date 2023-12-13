@@ -21,10 +21,11 @@ use crate::{
     utils::AppNoop,
 };
 
-use super::{
-    split_panel::{PaneViewer, SplitPanel, SplitPanelState},
-    DebugInspectorPlugin,
-};
+use super::DebugInspectorPlugin;
+
+use self::split_panel::{PaneViewer, SplitPanel, SplitPanelState};
+
+mod split_panel;
 
 impl Plugin for DebugInspectorPlugin {
     fn build(&self, app: &mut App) {
