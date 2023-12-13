@@ -1,5 +1,5 @@
 use bevy::{
-    app::prelude::*, ecs::prelude::*, prelude::Deref, reflect::TypeRegistry, utils::default,
+    app::prelude::*, ecs::prelude::*, prelude::Deref, reflect::TypeRegistryArc, utils::default,
     window::PrimaryWindow,
 };
 use bevy_egui::{
@@ -81,12 +81,8 @@ impl Default for InspectorState {
 
 impl InspectorState {
     fn ui(&mut self, world: &mut World, ctx: &mut Context) {
-        let type_registry = world.resource::<AppTypeRegistry>().0.clone();
-        let type_registry = type_registry.read();
-
         let mut panel_viewer = InspectorPaneViewer {
             world,
-            type_registry: &type_registry,
             selected_entities: &mut self.selected_entities,
             sf_text_edit_model: &mut self.sf_text_edit_model,
         };
@@ -113,9 +109,14 @@ enum Pane {
 
 struct InspectorPaneViewer<'a> {
     world: &'a mut World,
-    type_registry: &'a TypeRegistry,
     selected_entities: &'a mut SelectedEntities,
     sf_text_edit_model: &'a mut String,
+}
+
+impl InspectorPaneViewer<'_> {
+    fn get_type_registry(&self) -> TypeRegistryArc {
+        self.world.resource::<AppTypeRegistry>().0.clone()
+    }
 }
 
 impl<'a> PaneViewer for InspectorPaneViewer<'a> {
@@ -160,8 +161,10 @@ impl<'a> InspectorPaneViewer<'a> {
         ui.heading("Resources");
         ui.separator();
 
-        let mut resources = self
-            .type_registry
+        let type_registry = self.get_type_registry();
+        let type_registry = type_registry.read();
+
+        let mut resources = type_registry
             .iter()
             .filter(|&reg| reg.data::<ReflectResource>().is_some())
             .map(|reg| {
@@ -174,7 +177,7 @@ impl<'a> InspectorPaneViewer<'a> {
 
         for (name, type_id) in resources {
             ui.collapsing(name, |ui| {
-                ui_for_resource(self.world, type_id, ui, name, self.type_registry);
+                ui_for_resource(self.world, type_id, ui, name, &type_registry);
             });
         }
     }
