@@ -12,7 +12,7 @@ use crate::{
 use super::{
     board::{CapturePlugin, CaptureState, PieceColor},
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, UI_GAP_VAL},
-    ui::{spawn_ui, Ui},
+    ui::{spawn_ui, BoardAndPanelsContainer},
 };
 
 pub struct UiPanelsPlugin;
@@ -56,7 +56,7 @@ fn spawn_panels(mut commands: Commands) {
     let white_panel_entity = commands.spawn(white_panel.as_bundle()).id();
     commands.add(white_panel.build(white_panel_entity));
 
-    commands.reparent_in_tag::<Ui>([black_panel_entity, white_panel_entity]);
+    commands.reparent_in_tag::<BoardAndPanelsContainer>([black_panel_entity, white_panel_entity]);
 }
 
 pub struct PanelBuilder {

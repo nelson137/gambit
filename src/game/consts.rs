@@ -29,12 +29,12 @@ pub const DEFAULT_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
 //==================================================
 
 #[cfg(not(feature = "debug"))]
-pub const INIT_WIN_WIDTH: f32 = 670.0;
+pub const INIT_WIN_WIDTH: f32 = 698.0;
 #[cfg(not(feature = "debug"))]
 pub const INIT_WIN_HEIGHT: f32 = 750.0;
 
 #[cfg(feature = "debug")]
-pub const INIT_WIN_WIDTH: f32 = 670.0 * 2.0;
+pub const INIT_WIN_WIDTH: f32 = 698.0 * 2.0;
 #[cfg(feature = "debug")]
 pub const INIT_WIN_HEIGHT: f32 = 750.0;
 

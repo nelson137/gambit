@@ -43,7 +43,7 @@ impl Plugin for BoardPlugin {
                     },
                 },
             })
-            .add_systems(PostUpdate, (board_size, end_game_icon_size).before(UiSystem::Layout))
+            .add_systems(PostUpdate, end_game_icon_size.before(UiSystem::Layout))
             .noop();
     }
 }
