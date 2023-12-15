@@ -1,10 +1,16 @@
-use bevy::{ecs::prelude::*, reflect::TypeRegistryArc};
+use bevy::{
+    ecs::prelude::*,
+    hierarchy::{Children, Parent},
+    reflect::TypeRegistryArc,
+};
 use bevy_egui::egui::{
-    vec2, Align, FontFamily, FontId, Key, Label, Layout, RichText, ScrollArea, TextEdit, Ui,
+    collapsing_header::CollapsingState, emath::Rot2, remap, vec2, Align, FontFamily, FontId, Key,
+    Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit, Ui,
 };
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
-    hierarchy::{hierarchy_ui, SelectedEntities},
+    guess_entity_name,
+    hierarchy::{SelectedEntities, SelectionMode},
     ui_for_entities_shared_components, ui_for_entity,
 };
 
@@ -54,7 +60,75 @@ impl<'a> InspectorPaneViewer<'a> {
     fn show_hierarchy(&mut self, ui: &mut Ui) {
         ui.heading("Hierarchy");
         ui.separator();
-        hierarchy_ui(self.world, ui, &mut self.state.selected_entities);
+
+        let mut q = self.world.query_filtered::<Entity, Without<Parent>>();
+        let mut entities: Vec<_> = q.iter(self.world).collect();
+        entities.sort();
+
+        for &entity in &entities {
+            self.show_hierarchy_entity(ui, entity, &entities);
+        }
+    }
+
+    fn show_hierarchy_entity(&mut self, ui: &mut Ui, entity: Entity, local_generation: &[Entity]) {
+        let selected = self.state.selected_entities.contains(entity);
+
+        let name = guess_entity_name(self.world, entity);
+
+        let children =
+            self.world.get::<Children>(entity).map(|c| c.to_vec()).filter(|c| !c.is_empty());
+        let has_children = children.is_some();
+
+        let heading_id = ui.make_persistent_id(("hierarchy-item", &name));
+        let mut collapsing = CollapsingState::load_with_default_open(ui.ctx(), heading_id, false);
+
+        let header_response = ui.horizontal(|ui| {
+            let prev_item_spacing = ui.spacing_mut().item_spacing;
+            ui.spacing_mut().item_spacing.x = 2.0;
+            let collapser = collapsing.show_toggle_button(ui, move |ui, openness, response| {
+                if has_children {
+                    show_collapsing_icon(ui, openness, response);
+                }
+            });
+            ui.spacing_mut().item_spacing = prev_item_spacing;
+
+            let mut label = RichText::new(&name);
+            if selected {
+                label = label.strong();
+            }
+            let label = ui.selectable_label(selected, label);
+            if label.clicked() {
+                let mode = ui.input(|i| {
+                    SelectionMode::from_ctrl_shift(i.modifiers.command, i.modifiers.shift)
+                });
+                self.state.selected_entities.select(mode, entity, |from, to| {
+                    let is_boundary = |&e| e == from || e == to;
+                    let Some(from_i) = local_generation.iter().position(is_boundary) else {
+                        return [].iter().copied();
+                    };
+                    let Some(to_offset) =
+                        local_generation[from_i + 1..].iter().position(is_boundary)
+                    else {
+                        return [].iter().copied();
+                    };
+                    let to_i = from_i + to_offset + 1;
+                    local_generation[from_i..=to_i].iter().copied()
+                });
+            }
+
+            collapser
+        });
+
+        if let Some(children) = children {
+            collapsing.show_body_indented(&header_response.response, ui, |ui| {
+                let prev_indent = ui.spacing_mut().indent;
+                ui.spacing_mut().indent = 22.0;
+                for &child in &children {
+                    self.show_hierarchy_entity(ui, child, &children);
+                }
+                ui.spacing_mut().indent = prev_indent;
+            });
+        }
     }
 
     fn show_entity_components(&mut self, ui: &mut Ui) {
@@ -154,4 +228,21 @@ impl<'a> InspectorPaneViewer<'a> {
             self.world.resource_mut::<Stockfish>().push_cmd(command);
         }
     }
+}
+
+/// Draw a pointy triangle arrow
+fn show_collapsing_icon(ui: &mut Ui, openness: f32, response: &Response) {
+    let visuals = ui.style().interact(response);
+
+    let stroke = visuals.fg_stroke;
+
+    let rect = response.rect;
+    let rect = rect.expand2(rect.size() * -0.125).expand(visuals.expansion);
+
+    use std::f32::consts::TAU;
+    let rotation = Rot2::from_angle(remap(openness, 0.0..=1.0, -TAU / 4.0..=0.0));
+    let mut points = vec![rect.left_top(), rect.right_top(), rect.center_bottom()];
+    points.iter_mut().for_each(|p| *p = rect.center() + rotation * (*p - rect.center()));
+
+    ui.painter().add(Shape::closed_line(points, stroke));
 }
