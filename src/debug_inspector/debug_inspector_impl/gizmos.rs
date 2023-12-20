@@ -1,6 +1,6 @@
 use bevy::{
     core_pipeline::clear_color::ClearColorConfig, math::vec2, prelude::*,
-    render::view::RenderLayers, window::PrimaryWindow,
+    render::view::RenderLayers, utils::HashSet, window::PrimaryWindow,
 };
 
 use super::state::InspectorState;
@@ -23,29 +23,33 @@ pub(super) fn configure_gizmos(mut config: ResMut<GizmoConfig>) {
 }
 
 pub(super) fn draw_entity_hover_gizmo(
+    mut drawn_entities: Local<HashSet<Entity>>,
     mut inspector_state: ResMut<InspectorState>,
     q_win: Query<&Window, With<PrimaryWindow>>,
     q_global_transf: Query<&GlobalTransform>,
     q_node: Query<&Node>,
     mut gizmos: Gizmos,
 ) {
-    let Some(entity) = inspector_state.panes_state.hierarchy_hover.take() else { return };
-
     let Ok(win) = q_win.get_single() else { return };
     let half_res = vec2(win.resolution.width(), win.resolution.height()) / 2.0;
 
-    let Ok(global_transf) = q_global_transf.get(entity) else { return };
-    let transl = global_transf.compute_transform().translation;
-    let pos = vec2(transl.x - half_res.x, half_res.y - transl.y);
+    drawn_entities.extend(inspector_state.panes_state.selected_entities.iter());
+    drawn_entities.extend(inspector_state.panes_state.hierarchy_hover.take());
 
-    let Ok(node) = q_node.get(entity) else { return };
-    let size = node.size();
+    for entity in drawn_entities.drain() {
+        let Ok(global_transf) = q_global_transf.get(entity) else { continue };
+        let transl = global_transf.compute_transform().translation;
+        let pos = vec2(transl.x - half_res.x, half_res.y - transl.y);
 
-    const GIZMO_COLOR: Color = Color::RED;
+        let Ok(node) = q_node.get(entity) else { continue };
+        let size = node.size();
 
-    if size == Vec2::ZERO {
-        gizmos.circle_2d(pos, 1.0, GIZMO_COLOR);
-    } else {
-        gizmos.rect_2d(pos, 0.0, size, GIZMO_COLOR);
+        const GIZMO_COLOR: Color = Color::RED;
+
+        if size == Vec2::ZERO {
+            gizmos.circle_2d(pos, 1.0, GIZMO_COLOR);
+        } else {
+            gizmos.rect_2d(pos, 0.0, size, GIZMO_COLOR);
+        }
     }
 }
