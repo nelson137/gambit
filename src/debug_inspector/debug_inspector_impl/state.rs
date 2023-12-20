@@ -8,9 +8,9 @@ use super::{
 
 #[derive(Resource)]
 pub(super) struct InspectorState {
-    left_state: SplitPanelState<Pane>,
-    right_state: SplitPanelState<Pane>,
-    panes_state: PanesState,
+    pub left_state: SplitPanelState<Pane>,
+    pub right_state: SplitPanelState<Pane>,
+    pub panes_state: PanesState,
 }
 
 impl Default for InspectorState {

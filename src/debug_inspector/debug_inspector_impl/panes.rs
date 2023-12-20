@@ -28,8 +28,9 @@ pub(super) enum Pane {
 
 #[derive(Default)]
 pub(super) struct PanesState {
-    selected_entities: SelectedEntities,
-    sf_text_edit: String,
+    pub hierarchy_hover: Option<Entity>,
+    pub selected_entities: SelectedEntities,
+    pub sf_text_edit: String,
 }
 
 pub(super) struct InspectorPaneViewer<'a> {
@@ -118,6 +119,10 @@ impl<'a> InspectorPaneViewer<'a> {
 
             collapser
         });
+
+        if header_response.response.hovered() {
+            self.state.hierarchy_hover = Some(entity);
+        }
 
         if let Some(children) = children {
             collapsing.show_body_indented(&header_response.response, ui, |ui| {
