@@ -16,6 +16,7 @@ pub mod board;
 pub mod camera;
 pub mod consts;
 pub mod core;
+pub mod eval_bar;
 pub mod game_over;
 pub mod load;
 pub mod menu;

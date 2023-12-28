@@ -2,13 +2,13 @@ use bevy::prelude::*;
 
 use crate::{
     debug_name,
-    game::consts::CAPTURES_PANEL_HEIGHT,
     utils::{AppNoop, SortIndex},
 };
 
 use super::{
     board::{BoardPlugin, CapturePlugin, PromotionPlugin},
     consts::{MIN_BOARD_SIZE, UI_GAP_VAL},
+    eval_bar::EvaluationBarPlugin,
     menu::GameMenuUiPlugin,
     mouse::MouseUiPlugin,
     panels::UiPanelsPlugin,
@@ -24,6 +24,7 @@ impl Plugin for GameUiPlugin {
             .add_plugins(BoardPlugin)
             .add_plugins(CapturePlugin)
             .add_plugins(UiPanelsPlugin)
+            .add_plugins(EvaluationBarPlugin)
             .add_plugins(PromotionPlugin)
             .add_systems(Startup, spawn_ui)
             .noop();
@@ -32,6 +33,9 @@ impl Plugin for GameUiPlugin {
 
 #[derive(Component)]
 pub struct Ui;
+
+#[derive(Component)]
+pub struct EvaluationBarContainer;
 
 #[derive(Component)]
 pub struct BoardAndPanelsContainer;
@@ -73,6 +77,7 @@ pub fn spawn_ui(mut commands: Commands) {
             ))
             .with_children(|cmds| {
                 cmds.spawn((
+                    EvaluationBarContainer,
                     debug_name!("Evaluation Bar Container"),
                     NodeBundle {
                         style: Style {
@@ -84,49 +89,7 @@ pub fn spawn_ui(mut commands: Commands) {
                         },
                         ..default()
                     },
-                ))
-                .with_children(|cmds| {
-                    const SPACER_H: Val = Val::Px(CAPTURES_PANEL_HEIGHT);
-                    let spacer_bundle = || NodeBundle {
-                        style: Style { height: SPACER_H, flex_shrink: 0.0, ..default() },
-                        ..default()
-                    };
-
-                    cmds.spawn((debug_name!("Evaluation Bar Spacer (Top)"), spacer_bundle()));
-
-                    cmds.spawn((
-                        debug_name!("Evaluation Bar"),
-                        NodeBundle {
-                            background_color: BackgroundColor(Color::rgb_u8(0x40, 0x3d, 0x39)),
-                            style: Style {
-                                position_type: PositionType::Relative,
-                                width: Val::Px(20.0),
-                                flex_grow: 1.0,
-                                min_height: MIN_BOARD_SIZE,
-                                ..default()
-                            },
-                            ..default()
-                        },
-                    ))
-                    .with_children(|cmds| {
-                        cmds.spawn((
-                            debug_name!("Evaluation Bar White"),
-                            NodeBundle {
-                                background_color: BackgroundColor(Color::WHITE),
-                                style: Style {
-                                    position_type: PositionType::Absolute,
-                                    bottom: Val::Px(0.0),
-                                    width: Val::Percent(100.0),
-                                    height: Val::Percent(50.0),
-                                    ..default()
-                                },
-                                ..default()
-                            },
-                        ));
-                    });
-
-                    cmds.spawn((debug_name!("Evaluation Bar Spacer (Bottom)"), spacer_bundle()));
-                });
+                ));
 
                 cmds.spawn((
                     BoardAndPanelsContainer,

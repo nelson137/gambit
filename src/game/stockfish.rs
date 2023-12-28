@@ -13,7 +13,10 @@ use bevy::{prelude::*, tasks::IoTaskPool};
 use crossbeam_channel::{unbounded, Receiver, TryRecvError};
 
 use crate::{
-    game::board::{PieceColor, Square},
+    game::{
+        board::{PieceColor, Square},
+        eval_bar::EvaluationUpdate,
+    },
     utils::AppNoop,
 };
 
@@ -35,7 +38,7 @@ impl Plugin for StockfishPlugin {
             .init_resource::<SfCommunications>()
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)
-            .add_systems(PreUpdate, stockfish_move_as_black)
+            .add_systems(PreUpdate, (update_eval_bar, stockfish_move_as_black).chain())
             .noop();
     }
 }
@@ -49,6 +52,7 @@ pub enum SfCommand {
     Go,
     Sleep(u32), // milliseconds
     Stop,
+    Eval,
     #[cfg(feature = "debug-inspector")]
     Custom(String),
 }
@@ -63,6 +67,7 @@ impl SfCommand {
             Self::Go => Cow::Borrowed("go infinite\n"),
             Self::Sleep(_) => Cow::Borrowed(""),
             Self::Stop => Cow::Borrowed("stop\n"),
+            Self::Eval => Cow::Borrowed("eval\n"),
             #[cfg(feature = "debug-inspector")]
             Self::Custom(s) => Cow::Borrowed(s.as_str()),
         }
@@ -261,6 +266,7 @@ enum SfState {
     WaitingUci,
     WaitingReady,
     WaitingFinishSearch,
+    WaitingEval,
 }
 
 fn stockfish_update(
@@ -272,6 +278,7 @@ fn stockfish_update(
     mut sleep_timer: Local<Option<Timer>>,
     mut stockfish: ResMut<Stockfish>,
     mut sf_state: Local<SfState>,
+    mut eval_bar_writer: EventWriter<EvaluationUpdate>,
 ) {
     if let Some(st) = &mut *sleep_timer {
         st.tick(time.delta());
@@ -330,6 +337,34 @@ fn stockfish_update(
                 }
             }
             return;
+        } else if let SfState::WaitingEval = *sf_state {
+            for line in sf_comms.iter_responses_from(&mut response_cursor) {
+                if line.starts_with("Final evaluation") {
+                    trace!(response = line, "Stockfish");
+                    *sf_state = SfState::Idle;
+
+                    let stat = match line.split_whitespace().nth(2) {
+                        Some(value) => value.to_string(),
+                        None => {
+                            warn!(response = line, "Unexpected response from Stockfish to `eval`");
+                            break 'is_waiting;
+                        }
+                    };
+
+                    let value = match stat.parse::<f32>() {
+                        Ok(value) => value,
+                        Err(err) => {
+                            warn!(stat, "Failed to parse evaluation stat from Stockfish: {err}");
+                            break 'is_waiting;
+                        }
+                    };
+
+                    eval_bar_writer.send(EvaluationUpdate(value, stat));
+
+                    break 'is_waiting;
+                }
+            }
+            return;
         }
     }
 
@@ -362,8 +397,19 @@ fn stockfish_update(
                 write_cmd(&mut stockfish, command);
                 return;
             }
+            SfCommand::Eval => {
+                *sf_state = SfState::WaitingEval;
+                write_cmd(&mut stockfish, command);
+                return;
+            }
             _ => write_cmd(&mut stockfish, command),
         }
+    }
+}
+
+fn update_eval_bar(removed: RemovedComponents<MovePiece>, mut stockfish: ResMut<Stockfish>) {
+    if !removed.is_empty() {
+        stockfish.push_cmd(SfCommand::Eval);
     }
 }
 
