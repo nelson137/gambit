@@ -23,7 +23,7 @@ pub const STOCKFISH_REPO_DIR_NAME: &str = "Stockfish-sf_15";
 #[cfg(all(target_vendor = "apple", target_os = "macos", target_arch = "aarch64"))]
 pub const STOCKFISH_ARCH: &str = "ARCH=apple-silicon";
 #[cfg(not(target_arch = "aarch64"))]
-pub const STOCKFISH_ARCH: &str = "ARCH=x86-x64";
+pub const STOCKFISH_ARCH: &str = "ARCH=x86-64-modern";
 
 /// The name of the Stockfish executable.
 pub const STOCKFISH_BIN_NAME: &str = "stockfish";
