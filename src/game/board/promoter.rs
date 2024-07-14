@@ -40,7 +40,7 @@ pub struct PromoterSystem;
 pub struct PromotionUi(PieceColor);
 
 #[derive(Component, Debug)]
-pub struct PromotionButton(PieceColor, PieceType);
+pub struct PromotionButton(PieceType);
 
 #[derive(Component)]
 pub struct PromotionCancelButton;
@@ -86,7 +86,7 @@ pub fn spawn_promoters(
 
                     cmds.spawn((
                         debug_name_f!("Promotion Button ({color}) ({typ})"),
-                        PromotionButton(color, typ),
+                        PromotionButton(typ),
                         ButtonBundle {
                             background_color: PROMO_TILE_COLOR.into(),
                             focus_policy: FocusPolicy::Block,
@@ -234,7 +234,7 @@ pub fn promotion_buttons(
 ) {
     for (button, interaction) in &q_button {
         if let Interaction::Pressed = interaction {
-            event_writer.send(PromotionEvent::Promote(button.1));
+            event_writer.send(PromotionEvent::Promote(button.0));
             mouse_buttons.reset_all();
         }
     }

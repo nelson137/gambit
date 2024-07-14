@@ -27,7 +27,7 @@ impl Plugin for EvaluationBarPlugin {
 pub struct EvaluationBar;
 
 #[derive(Event)]
-pub struct EvaluationUpdate(pub f32, pub String);
+pub struct EvaluationUpdate(pub f32);
 
 pub fn spawn_eval_bar(mut commands: Commands) {
     const SPACER_H: Val = Val::Px(CAPTURES_PANEL_HEIGHT);

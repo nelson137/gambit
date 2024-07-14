@@ -340,7 +340,6 @@ mod tests {
 
         pub trait TestAppExts {
             fn board_state(&self) -> &BoardState;
-            fn board_state_mut(&mut self) -> Mut<'_, BoardState>;
 
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
@@ -358,10 +357,6 @@ mod tests {
         impl TestAppExts for App {
             fn board_state(&self) -> &BoardState {
                 self.world.resource::<BoardState>()
-            }
-
-            fn board_state_mut(&mut self) -> Mut<'_, BoardState> {
-                self.world.resource_mut::<BoardState>()
             }
 
             fn set_state(&mut self, state: SelectionState) {

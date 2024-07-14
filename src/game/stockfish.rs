@@ -225,16 +225,17 @@ impl SfCommunications {
 }
 
 pub enum SfMessage {
+    #[cfg(feature = "debug-inspector")]
     Command(SfCommand),
     Response(String),
 }
 
 impl SfMessage {
     fn as_response(&self) -> Option<&str> {
-        if let Self::Response(response) = self {
-            Some(response)
-        } else {
-            None
+        match self {
+            Self::Response(response) => Some(response),
+            #[cfg(feature = "debug-inspector")]
+            Self::Command(_) => None,
         }
     }
 }
@@ -301,7 +302,8 @@ fn stockfish_update(
                 }
             }
             return;
-        } else if let SfState::WaitingReady = *sf_state {
+        }
+        if let SfState::WaitingReady = *sf_state {
             for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line == "readyok" {
                     trace!(response = line, "Stockfish");
@@ -310,7 +312,8 @@ fn stockfish_update(
                 }
             }
             return;
-        } else if let SfState::WaitingFinishSearch = *sf_state {
+        }
+        if let SfState::WaitingFinishSearch = *sf_state {
             for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line.starts_with("bestmove") {
                     trace!(response = line, "Stockfish");
@@ -337,7 +340,8 @@ fn stockfish_update(
                 }
             }
             return;
-        } else if let SfState::WaitingEval = *sf_state {
+        }
+        if let SfState::WaitingEval = *sf_state {
             for line in sf_comms.iter_responses_from(&mut response_cursor) {
                 if line.starts_with("Final evaluation") {
                     trace!(response = line, "Stockfish");
@@ -359,7 +363,7 @@ fn stockfish_update(
                         }
                     };
 
-                    eval_bar_writer.send(EvaluationUpdate(value, stat));
+                    eval_bar_writer.send(EvaluationUpdate(value));
 
                     break 'is_waiting;
                 }
@@ -370,7 +374,9 @@ fn stockfish_update(
 
     // Stockfish state is `Idle`
 
+    #[allow(unused_mut)]
     let mut write_cmd = |stockfish: &mut Stockfish, command: SfCommand| {
+        #[cfg(feature = "debug-inspector")]
         sf_comms.push(SfMessage::Command(command.clone()));
         stockfish.write_cmd(command);
     };

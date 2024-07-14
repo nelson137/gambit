@@ -148,7 +148,6 @@ impl BoardState {
         self.board = Board::default();
     }
 
-    #[allow(dead_code)]
     pub fn log(&self) {
         let pretty_board = self.board().to_pretty_string();
         let pretty_state = {
@@ -388,10 +387,6 @@ pub enum GameStatus {
 }
 
 pub trait ChessBoardExts {
-    fn log(&self) {
-        self.to_pretty_string().lines().for_each(|l| info!("{l}"));
-    }
-
     fn to_pretty_string(&self) -> String;
 }
 
