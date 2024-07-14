@@ -93,7 +93,7 @@ impl Stockfish {
         Self { stdin, response, command_queue: VecDeque::new() }
     }
 
-    #[cfg(feature = "debug-inspector")]
+    // #[cfg(feature = "debug-inspector")]
     pub fn push_cmd(&mut self, command: SfCommand) {
         self.command_queue.push_back(command);
     }
