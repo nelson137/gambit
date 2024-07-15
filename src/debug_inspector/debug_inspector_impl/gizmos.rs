@@ -45,7 +45,7 @@ pub(super) fn draw_entity_hover_gizmo(
         let Ok(node) = q_node.get(entity) else { continue };
         let size = node.size();
 
-        const GIZMO_COLOR: Color = Color::RED;
+        const GIZMO_COLOR: Srgba = Srgba::RED;
 
         if size == Vec2::ZERO {
             gizmos.circle_2d(pos, 1.0, GIZMO_COLOR);

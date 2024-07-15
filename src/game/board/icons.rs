@@ -1,4 +1,4 @@
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{ecs::world::Command, prelude::*};
 use chess::{File, Rank};
 
 use crate::{debug_name, game::consts::Z_END_GAME_ICONS};

@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::system::{Command, SystemState},
+    ecs::{system::SystemState, world::Command},
     prelude::*,
     ui::UiSystem,
 };
@@ -190,7 +190,7 @@ impl Command for PanelBuilderCmd {
                             .id();
                     }
 
-                    let adv_color = Color::rgba(1.0, 1.0, 1.0, 0.5);
+                    let adv_color = Color::srgba(1.0, 1.0, 1.0, 0.5);
                     let adv_style = TextStyle { color: adv_color, font, font_size: 12.0 };
                     cmds.spawn((
                         MaterialAdvantageLabel(color),

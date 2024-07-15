@@ -309,7 +309,7 @@ fn update_indicators(
 
 #[cfg(test)]
 mod tests {
-    use bevy::ecs::system::Command;
+    use bevy::ecs::world::Command;
 
     use super::*;
 
@@ -335,7 +335,7 @@ mod tests {
         }
 
         pub fn get_tagged_entity<Tag: Component>(app: &mut App) -> Entity {
-            app.world.query_filtered::<Entity, With<Tag>>().single(&app.world)
+            app.world_mut().query_filtered::<Entity, With<Tag>>().single(app.world())
         }
 
         pub trait TestAppExts {
@@ -356,34 +356,34 @@ mod tests {
 
         impl TestAppExts for App {
             fn board_state(&self) -> &BoardState {
-                self.world.resource::<BoardState>()
+                self.world().resource::<BoardState>()
             }
 
             fn set_state(&mut self, state: SelectionState) {
-                *self.world.resource_mut::<SelectionState>() = state;
+                *self.world_mut().resource_mut::<SelectionState>() = state;
             }
 
             fn set_selected(&mut self, square: Square) {
                 let entity = self.board_state().highlight(square);
-                self.world.entity_mut(entity).insert(Selected);
+                self.world_mut().entity_mut(entity).insert(Selected);
             }
 
             fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>) {
                 for sq in squares.into_iter() {
                     // Test assertions don't differentiate between move hints and capture hints
                     let entity = self.board_state().tile_hints(sq).move_entity;
-                    self.world.entity_mut(entity).insert(EnabledHint);
+                    self.world_mut().entity_mut(entity).insert(EnabledHint);
                 }
             }
 
             fn set_piece_to_drag_container(&mut self, square: Square) {
                 let parent = get_tagged_entity::<DragContainer>(self);
                 let child = self.board_state().piece(square);
-                PushChild { parent, child }.apply(&mut self.world);
+                PushChild { parent, child }.apply(self.world_mut());
             }
 
             fn assert_state(&self, expected: SelectionState) {
-                let actual = *self.world.resource::<SelectionState>();
+                let actual = *self.world().resource::<SelectionState>();
                 assert_eq!(actual, expected);
             }
 
@@ -392,7 +392,7 @@ mod tests {
                 let expected = Some(HashSet::from_iter([piece]));
 
                 let drag_container = get_tagged_entity::<DragContainer>(self);
-                let children = self.world.entity(drag_container).get::<Children>();
+                let children = self.world().entity(drag_container).get::<Children>();
                 let actual = children.map(|c| HashSet::from_iter(c.iter().copied()));
 
                 assert_eq!(actual, expected);
@@ -400,19 +400,20 @@ mod tests {
 
             fn assert_piece_move_marker(&self, piece: Square, expected: StartMove) {
                 let entity = self.board_state().piece(piece);
-                let actual = self.world.entity(entity).get::<StartMove>().copied();
+                let actual = self.world().entity(entity).get::<StartMove>().copied();
                 assert_eq!(actual, Some(expected), "start move marker on piece");
             }
 
             fn assert_selected(&mut self, expected: Option<Square>) {
                 if let Some(expected) = expected {
                     let entity = self.board_state().highlight(expected);
-                    let is_selected = self.world.entity(entity).contains::<Selected>();
+                    let is_selected = self.world().entity(entity).contains::<Selected>();
                     assert!(is_selected, "selected highlight tile entitiy");
                 } else {
-                    let mut q =
-                        self.world.query_filtered::<(), (With<HighlightTile>, With<Selected>)>();
-                    let actual_count = q.iter(&self.world).count();
+                    let mut q = self
+                        .world_mut()
+                        .query_filtered::<(), (With<HighlightTile>, With<Selected>)>();
+                    let actual_count = q.iter(self.world()).count();
                     assert_eq!(actual_count, 0, "count of selected highlight tile entities");
                 }
             }
@@ -425,8 +426,9 @@ mod tests {
                     .map(|sq| board_state.tile_hints(sq).move_entity)
                     .collect::<HashSet<_>>();
 
-                let mut q = self.world.query_filtered::<Entity, (With<Hint>, With<EnabledHint>)>();
-                let actual = q.iter(&self.world).collect::<HashSet<_>>();
+                let mut q =
+                    self.world_mut().query_filtered::<Entity, (With<Hint>, With<EnabledHint>)>();
+                let actual = q.iter(self.world()).collect::<HashSet<_>>();
 
                 assert_eq!(actual, expected, "enabled hint entities");
             }
@@ -435,7 +437,7 @@ mod tests {
                 let board_state = self.board_state();
                 let piece = board_state.piece(piece);
                 let tile = board_state.tile(tile);
-                let piece_parent = self.world.entity(piece).get::<Parent>().map(Parent::get);
+                let piece_parent = self.world().entity(piece).get::<Parent>().map(Parent::get);
                 assert_eq!(piece_parent, Some(tile));
             }
         }
@@ -453,7 +455,7 @@ mod tests {
     fn unselected_starts_dragging_on_mouse_down_on_piece() {
         let mut app = build_app();
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::D2));
@@ -466,7 +468,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_down_when_not_on_piece() {
         let mut app = build_app();
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -478,7 +480,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_up() {
         let mut app = build_app();
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -494,7 +496,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_piece_to_drag_container(Square::D2);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -509,7 +511,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_piece_to_drag_container(Square::D2);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
@@ -525,7 +527,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D2));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::SelectedDragging(Square::D2));
@@ -541,7 +543,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::D4));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -555,7 +557,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::H2));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::H2));
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::H2));
@@ -572,7 +574,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseDown(Square::E4));
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::E4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -587,7 +589,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A1));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
@@ -603,7 +605,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_piece_to_drag_container(Square::D2);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D2));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -620,7 +622,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_piece_to_drag_container(Square::D2);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::D4));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -635,7 +637,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_piece_to_drag_container(Square::D2);
 
-        app.world.send_event(MouseSelectionEvent::MouseUp(Square::A8));
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));

@@ -127,7 +127,7 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
                 ui.allocate_rect(content_rect, Sense::hover());
 
                 let layout = Layout::top_down_justified(Align::Min);
-                let ui = &mut ui.child_ui(content_rect, layout);
+                let ui = &mut ui.child_ui(content_rect, layout, None);
 
                 self.compute_rects(content_rect);
 
@@ -172,7 +172,7 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
     fn show_panes(&mut self, ui: &mut Ui, pane_viewer: &mut impl PaneViewer<Pane = Pane>) {
         for (i, pane) in self.state.panes.iter_mut().enumerate() {
             let layout = Layout::top_down(Align::Min);
-            let ui = &mut ui.child_ui(pane.content_rect, layout);
+            let ui = &mut ui.child_ui(pane.content_rect, layout, None);
             ui.set_clip_rect(pane.rect);
             ScrollArea::both().id_source(("split_panel", "pane", i)).show(ui, |ui| {
                 ui.expand_to_include_rect(ui.available_rect_before_wrap());

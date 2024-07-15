@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::system::{Command, SystemState},
+    ecs::{system::SystemState, world::Command},
     prelude::*,
 };
 

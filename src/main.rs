@@ -23,7 +23,7 @@ fn main() {
         .add_plugins(bevy::log::LogPlugin {
             level: LOG_LEVEL,
             filter: LOG_FILTER.into(),
-            update_subscriber: None,
+            ..default()
         })
         // App
         .add_plugins((GameHeadlessPlugin, GameHeadPlugin))

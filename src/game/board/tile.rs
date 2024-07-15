@@ -14,7 +14,7 @@ pub struct Tile;
 /// The "black" bord color.
 ///
 /// `#769656`
-pub const COLOR_BLACK: Color = Color::rgb(
+pub const COLOR_BLACK: Color = Color::srgb(
     0x76 as f32 / u8::MAX as f32,
     0x96 as f32 / u8::MAX as f32,
     0x56 as f32 / u8::MAX as f32,
@@ -23,7 +23,7 @@ pub const COLOR_BLACK: Color = Color::rgb(
 /// The "white" bord color.
 ///
 /// `#eeeed2`
-pub const COLOR_WHITE: Color = Color::rgb(
+pub const COLOR_WHITE: Color = Color::srgb(
     0xee as f32 / u8::MAX as f32,
     0xee as f32 / u8::MAX as f32,
     0xd2 as f32 / u8::MAX as f32,

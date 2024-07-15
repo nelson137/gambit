@@ -43,7 +43,7 @@ pub fn spawn_eval_bar(mut commands: Commands) {
         .spawn((
             debug_name!("Evaluation Bar Background (black)"),
             NodeBundle {
-                background_color: BackgroundColor(Color::rgb_u8(0x40, 0x3d, 0x39)),
+                background_color: BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
                 style: Style {
                     position_type: PositionType::Relative,
                     width: Val::Px(20.0),

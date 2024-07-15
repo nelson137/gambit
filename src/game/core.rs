@@ -24,6 +24,7 @@ impl Plugin for GameHeadlessPlugin {
             .add_plugins(bevy::input::InputPlugin)
             .add_plugins(bevy::asset::AssetPlugin::default())
             .add_plugins(bevy::audio::AudioPlugin::default())
+            .add_plugins(bevy::state::app::StatesPlugin)
             .add_plugins(SortableChildrenPlugin)
             .noop();
     }
@@ -45,7 +46,7 @@ impl Plugin for GameHeadPlugin {
                 ..default()
             })
             .add_plugins(bevy::a11y::AccessibilityPlugin)
-            .add_plugins(bevy::winit::WinitPlugin::default())
+            .add_plugins(bevy::winit::WinitPlugin::<bevy::winit::WakeUp>::default())
             .add_plugins(bevy::render::RenderPlugin::default())
             .add_plugins(bevy::render::texture::ImagePlugin::default())
             .add_plugins(bevy::render::pipelined_rendering::PipelinedRenderingPlugin)

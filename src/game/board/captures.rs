@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{ecs::world::Command, prelude::*};
 
 use crate::{
     cli::CliArgs,

@@ -166,14 +166,14 @@ impl PopupState {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Halfmove Clock:").font(self.fonts.label()));
                     ui.spacing_mut().interact_size.x = 27.0;
-                    ui.add(DragValue::new(&mut self.halfmove_clock).clamp_range(0..=99));
+                    ui.add(DragValue::new(&mut self.halfmove_clock).range(0..=99));
                 });
             });
             strip.cell(|ui| {
                 ui.horizontal(|ui| {
                     ui.label(RichText::new("Fullmove Count:").font(self.fonts.label()));
                     ui.spacing_mut().interact_size.x = 36.0;
-                    ui.add(DragValue::new(&mut self.fullmove_count).clamp_range(0..=u16::MAX));
+                    ui.add(DragValue::new(&mut self.fullmove_count).range(0..=u16::MAX));
                 });
             });
         });
@@ -209,7 +209,7 @@ fn players_turn_toggle(ui: &mut Ui, value: &mut bool) -> Response {
         *value = !*value;
         response.mark_changed();
     }
-    response.widget_info(|| WidgetInfo::selected(WidgetType::Checkbox, *value, ""));
+    response.widget_info(|| WidgetInfo::selected(WidgetType::Checkbox, true, *value, ""));
 
     if ui.is_rect_visible(rect) {
         let visuals = ui.style().interact_selectable(&response, *value);

@@ -15,7 +15,7 @@ use super::MenuState;
 #[derive(Component)]
 pub(super) struct GameMenuDimLayer;
 
-const MENU_DIM_LAYER_COLOR: Color = Color::rgba(0.0, 0.0, 0.0, 0.7);
+const MENU_DIM_LAYER_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.7);
 
 pub fn spawn_menu_dim_layer(mut commands: Commands) {
     commands.spawn((
@@ -43,7 +43,7 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
 pub struct GameMenu;
 
 /// `#302e2b`
-const MENU_COLOR: Color = Color::rgba(
+const MENU_COLOR: Color = Color::srgba(
     0x30 as f32 / u8::MAX as f32,
     0x2e as f32 / u8::MAX as f32,
     0x2b as f32 / u8::MAX as f32,
@@ -115,14 +115,14 @@ pub(super) enum GameMenuButton {
 }
 
 /// `#7fa650`
-const BUTTON_COLOR_DEFAULT: Color = Color::rgb(
+const BUTTON_COLOR_DEFAULT: Color = Color::srgb(
     0x7f as f32 / u8::MAX as f32,
     0xa6 as f32 / u8::MAX as f32,
     0x50 as f32 / u8::MAX as f32,
 );
 
 /// `#8cb15e`
-const BUTTON_COLOR_HOVER: Color = Color::rgb(
+const BUTTON_COLOR_HOVER: Color = Color::srgb(
     0x8c as f32 / u8::MAX as f32,
     0xb1 as f32 / u8::MAX as f32,
     0x5e as f32 / u8::MAX as f32,

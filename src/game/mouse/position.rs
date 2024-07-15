@@ -26,7 +26,7 @@ pub(super) fn mouse_screen_position_to_world(
     let ndc = 2.0 * screen_pos / window_size;
 
     // Matrix for undoing the projection and camera transform
-    let ndc_to_world = camera_transf.compute_matrix() * camera.projection_matrix().inverse();
+    let ndc_to_world = camera_transf.compute_matrix() * camera.clip_from_view().inverse();
 
     // Convert ndc to world-space coordinates
     let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));

@@ -8,7 +8,7 @@ use super::{BoardState, Square};
 pub struct HighlightTile;
 
 /// The color used to highlight tiles.
-pub const COLOR_HIGHLIGHT: Color = Color::rgba(1.0, 1.0, 0.0, 0.5);
+pub const COLOR_HIGHLIGHT: Color = Color::srgba(1.0, 1.0, 0.0, 0.5);
 
 pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<BoardState>) {
     let top = Val::Px(0.0);

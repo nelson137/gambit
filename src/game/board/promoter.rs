@@ -115,11 +115,11 @@ pub fn spawn_promoters(
 
                 /// `#f1f1f1`
                 const CANCEL_BUTTON_BG_COLOR: Color =
-                    Color::rgb(0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0);
+                    Color::srgb(0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0);
 
                 /// `#8b8987`
                 const CANCEL_BUTTON_FG_COLOR: Color =
-                    Color::rgb(0x8b as f32 / 255.0, 0x89 as f32 / 255.0, 0x87 as f32 / 255.0);
+                    Color::srgb(0x8b as f32 / 255.0, 0x89 as f32 / 255.0, 0x87 as f32 / 255.0);
 
                 cmds.spawn((
                     debug_name_f!("Promotion Cancel Button Wrapper ({color})"),

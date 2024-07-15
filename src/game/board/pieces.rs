@@ -1,6 +1,6 @@
 use std::{fmt, ops::Not};
 
-use bevy::{ecs::system::Command, prelude::*};
+use bevy::{ecs::world::Command, prelude::*};
 use chess::{Piece, Rank};
 
 use crate::{
