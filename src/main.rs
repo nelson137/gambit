@@ -20,7 +20,11 @@ mod utils;
 
 fn main() {
     App::new()
-        .add_plugins(bevy::log::LogPlugin { level: LOG_LEVEL, filter: LOG_FILTER.into() })
+        .add_plugins(bevy::log::LogPlugin {
+            level: LOG_LEVEL,
+            filter: LOG_FILTER.into(),
+            update_subscriber: None,
+        })
         // App
         .add_plugins((GameHeadlessPlugin, GameHeadPlugin))
         // Game

@@ -249,9 +249,9 @@ pub(super) fn game_menu_elements_sizes(
         }
     }
 
-    q_text.p0().for_each_mut(set_text_font_size_impl(scale * INIT_MENU_TITLE_SIZE));
+    q_text.p0().iter_mut().for_each(set_text_font_size_impl(scale * INIT_MENU_TITLE_SIZE));
 
-    q_text.p1().for_each_mut(set_text_font_size_impl(scale * INIT_MENU_BUTTON_TEXT_SIZE));
+    q_text.p1().iter_mut().for_each(set_text_font_size_impl(scale * INIT_MENU_BUTTON_TEXT_SIZE));
 }
 
 pub(super) fn game_menu_buttons_hover(
@@ -270,7 +270,7 @@ pub(super) fn game_menu_buttons(
     mut pressed_button: Local<Option<(GameMenuButton, Rect)>>,
     q_button: Query<(&GameMenuButton, &Interaction, &Node, &GlobalTransform), Changed<Interaction>>,
     q_window: Query<&Window, With<PrimaryWindow>>,
-    mouse_buttons: Res<Input<MouseButton>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
 ) {
     for (&button, &interaction, node, global_transf) in &q_button {

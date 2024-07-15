@@ -34,7 +34,7 @@ impl Plugin for GameMenuLogicPlugin {
             .init_resource::<PopupState>()
             .init_resource::<GameOverTimer>()
             // States
-            .add_state::<MenuState>()
+            .init_state::<MenuState>()
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
             .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
@@ -66,7 +66,7 @@ pub mod test {
     impl Plugin for TestMenuStateInGamePlugin {
         fn build(&self, app: &mut App) {
             app.noop()
-                .add_state::<MenuState>()
+                .init_state::<MenuState>()
                 .add_systems(PreStartup, |mut s: ResMut<NextState<_>>| s.set(MenuState::Game))
                 .noop();
         }

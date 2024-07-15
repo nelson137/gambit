@@ -1,6 +1,6 @@
 use bevy::{
-    core_pipeline::clear_color::ClearColorConfig, math::vec2, prelude::*,
-    render::view::RenderLayers, utils::HashSet, window::PrimaryWindow,
+    math::vec2, prelude::*, render::camera::ClearColorConfig, render::view::RenderLayers,
+    utils::HashSet, window::PrimaryWindow,
 };
 
 use super::state::InspectorState;
@@ -8,16 +8,17 @@ use super::state::InspectorState;
 pub(super) fn spawn_gizmo_camera(mut commands: Commands) {
     commands.spawn((
         Camera2dBundle {
-            camera: Camera { order: 1, ..default() },
-            camera_2d: Camera2d { clear_color: ClearColorConfig::None },
+            camera: Camera { order: 1, clear_color: ClearColorConfig::None, ..default() },
+            camera_2d: Camera2d,
             ..default()
         },
-        UiCameraConfig { show_ui: false },
+        // UiCameraConfig { show_ui: false },
         RenderLayers::layer(1),
     ));
 }
 
-pub(super) fn configure_gizmos(mut config: ResMut<GizmoConfig>) {
+pub(super) fn configure_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
+    let config = config_store.config_mut::<DefaultGizmoConfigGroup>().0;
     config.render_layers = RenderLayers::layer(1);
     config.line_width = 4.0;
 }

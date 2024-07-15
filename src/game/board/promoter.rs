@@ -230,7 +230,7 @@ pub enum PromotionEvent {
 pub fn promotion_buttons(
     q_button: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
     mut event_writer: EventWriter<PromotionEvent>,
-    mut mouse_buttons: ResMut<Input<MouseButton>>,
+    mut mouse_buttons: ResMut<ButtonInput<MouseButton>>,
 ) {
     for (button, interaction) in &q_button {
         if let Interaction::Pressed = interaction {
@@ -241,7 +241,7 @@ pub fn promotion_buttons(
 }
 
 pub fn promotion_cancel_click_handler(
-    mouse_buttons: Res<Input<MouseButton>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut event_writer: EventWriter<PromotionEvent>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {

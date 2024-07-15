@@ -88,7 +88,7 @@ pub(super) fn game_over(
     if game_over_timer.0.just_finished() {
         trace!("Reset game");
 
-        q_end_game_icons.for_each_mut(|mut vis| *vis = Visibility::Hidden);
+        q_end_game_icons.iter_mut().for_each(|mut vis| *vis = Visibility::Hidden);
 
         selection_events.send(SelectionEvent::UnsetAll);
         board_state.reset();

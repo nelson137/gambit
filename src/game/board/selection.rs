@@ -379,7 +379,7 @@ mod tests {
             fn set_piece_to_drag_container(&mut self, square: Square) {
                 let parent = get_tagged_entity::<DragContainer>(self);
                 let child = self.board_state().piece(square);
-                AddChild { parent, child }.apply(&mut self.world);
+                PushChild { parent, child }.apply(&mut self.world);
             }
 
             fn assert_state(&self, expected: SelectionState) {

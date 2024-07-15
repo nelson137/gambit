@@ -11,7 +11,7 @@ use crate::{
 use super::position::{MouseBoardSquare, MouseWorldPosition};
 
 pub(super) fn mouse_handler(
-    mouse_buttons: Res<Input<MouseButton>>,
+    mouse_buttons: Res<ButtonInput<MouseButton>>,
     mouse_sq: Res<MouseBoardSquare>,
     mut event_writer: EventWriter<MouseSelectionEvent>,
 ) {

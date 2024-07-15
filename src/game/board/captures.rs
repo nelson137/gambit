@@ -316,7 +316,8 @@ impl Command for CapStateUpdate {
         } else {
             world
                 .query_filtered::<&mut Visibility, With<MaterialAdvantageLabel>>()
-                .for_each_mut(world, |mut vis| *vis = Visibility::Hidden);
+                .iter_mut(world)
+                .for_each(|mut vis| *vis = Visibility::Hidden);
         }
     }
 }
@@ -366,6 +367,7 @@ impl Command for ResetCapturesUi {
 
         world
             .query_filtered::<&mut Visibility, With<MaterialAdvantageLabel>>()
-            .for_each_mut(world, |mut vis| *vis = Visibility::Hidden);
+            .iter_mut(world)
+            .for_each(|mut vis| *vis = Visibility::Hidden);
     }
 }

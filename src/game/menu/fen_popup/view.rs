@@ -88,7 +88,7 @@ impl PopupState {
         if response.clicked() {
             let text_len = self.fen.len();
             if text_len > 0 {
-                state.set_ccursor_range(Some(CCursorRange::two(
+                state.cursor.set_char_range(Some(CCursorRange::two(
                     CCursor::default(),
                     CCursor::new(text_len),
                 )));

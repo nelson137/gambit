@@ -341,7 +341,7 @@ fn animate_pieces(
             commands.add(FinishPieceAnimation { target: entity, parent: animating.to_entity });
         }
 
-        let t = animating.interpolater.ease(animating.timer.percent());
+        let t = animating.interpolater.ease(animating.timer.fraction());
         let Vec2 { x, y } = animating.from.lerp(animating.to, t);
         style.left = Val::Px(x);
         style.top = Val::Px(y);
