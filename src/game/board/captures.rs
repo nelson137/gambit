@@ -210,7 +210,7 @@ pub struct CapState {
 
 impl Default for CapState {
     fn default() -> Self {
-        Self { image_handles: Vec::new(), image_entity: Entity::from_raw(u32::MAX), count: 0 }
+        Self { image_handles: Vec::new(), image_entity: Entity::PLACEHOLDER, count: 0 }
     }
 }
 
