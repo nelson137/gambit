@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use crate::utils::AppNoop;
+use crate::utils::NoopExts;
 
 use self::{
     board::{BoardState, MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},

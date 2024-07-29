@@ -2,7 +2,7 @@ use bevy::{app::prelude::*, ecs::prelude::*, prelude::Deref, window::PrimaryWind
 use bevy_egui::{EguiContext, EguiSet};
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 
-use crate::utils::AppNoop;
+use crate::utils::NoopExts;
 
 use super::DebugInspectorPlugin;
 

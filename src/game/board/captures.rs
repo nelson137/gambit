@@ -8,7 +8,7 @@ use crate::{
         board::{PieceColor, PieceType},
         panels::MaterialAdvantageLabel,
     },
-    utils::AppNoop,
+    utils::NoopExts,
 };
 
 use super::{BoardPlugin, BoardState, PieceMeta};

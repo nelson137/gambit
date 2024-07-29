@@ -1,5 +1,7 @@
 use bevy::prelude::*;
 
+use crate::utils::NoopExts;
+
 use super::{board::PromoterSystem, menu::MenuState};
 
 pub use self::{handler::*, position::*};
@@ -19,7 +21,7 @@ pub struct MouseLogicPlugin;
 
 impl Plugin for MouseLogicPlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.noop()
             // Resources
             .init_resource::<MouseWorldPosition>()
             .init_resource::<MouseBoardSquare>()
@@ -37,7 +39,8 @@ impl Plugin for MouseLogicPlugin {
                 (mouse_handler, update_drag_container)
                     .run_if(in_state(MenuState::Game))
                     .run_if(mouse_is_in_world),
-            );
+            )
+            .noop();
     }
 }
 

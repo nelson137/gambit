@@ -9,7 +9,7 @@ use crate::{
         board::MovePiece,
         consts::{FONT_PATH, Z_PROMOTER},
     },
-    utils::AppNoop,
+    utils::NoopExts,
 };
 
 use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};

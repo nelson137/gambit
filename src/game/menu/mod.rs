@@ -1,7 +1,7 @@
 use bevy::{prelude::*, ui::UiSystem};
 use bevy_startup_tree::{startup_tree, AddStartupTree};
 
-use crate::utils::AppNoop;
+use crate::utils::NoopExts;
 
 use self::fen_popup::*;
 
@@ -57,7 +57,7 @@ impl Plugin for GameMenuLogicPlugin {
 pub mod test {
     use bevy::prelude::*;
 
-    use crate::utils::AppNoop;
+    use crate::utils::NoopExts;
 
     use super::*;
 

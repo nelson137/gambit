@@ -17,7 +17,7 @@ use crate::{
         board::{PieceColor, Square},
         eval_bar::EvaluationUpdate,
     },
-    utils::AppNoop,
+    utils::NoopExts,
 };
 
 use super::board::{BoardState, MovePiece, MovePlugin};

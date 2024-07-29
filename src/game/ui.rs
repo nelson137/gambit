@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     debug_name,
-    utils::{AppNoop, SortIndex},
+    utils::{NoopExts, SortIndex},
 };
 
 use super::{

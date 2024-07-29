@@ -7,7 +7,7 @@ use bevy::{
 
 use crate::{
     game::consts::{INIT_WIN_HEIGHT, INIT_WIN_WIDTH},
-    utils::AppNoop,
+    utils::NoopExts,
     utils::SortableChildrenPlugin,
 };
 

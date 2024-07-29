@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{
     game::{board::StartMove, menu::MenuState, mouse::DragContainer},
-    utils::AppNoop,
+    utils::NoopExts,
 };
 
 use super::{BoardState, HighlightTile, Hint, Square};

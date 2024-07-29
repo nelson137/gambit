@@ -6,7 +6,7 @@ use crate::{
         consts::{CAPTURES_PANEL_HEIGHT, MIN_BOARD_SIZE},
         ui::EvaluationBarContainer,
     },
-    utils::{AppNoop, ReparentInTag},
+    utils::{NoopExts, ReparentInTag},
 };
 
 use super::ui::spawn_ui;

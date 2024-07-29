@@ -1,7 +1,7 @@
 use bevy::{prelude::*, ui::UiSystem};
 use bevy_startup_tree::{startup_tree, AddStartupTree};
 
-use crate::utils::AppNoop;
+use crate::utils::NoopExts;
 
 pub use self::{
     captures::*, highlight_tile::*, hints::*, icons::*, moves::*, pieces::*, promoter::*,

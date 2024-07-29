@@ -6,7 +6,7 @@ use chess::{Piece, Rank};
 use crate::{
     debug_name_f,
     game::consts::{Z_PIECE, Z_PIECE_SELECTED},
-    utils::AppNoop,
+    utils::NoopExts,
 };
 
 use super::{square::Square, BoardState};

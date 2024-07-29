@@ -6,7 +6,7 @@ use bevy::{
 
 use crate::{
     debug_name,
-    utils::{AppNoop, ReparentInTag, SortIndex},
+    utils::{NoopExts, ReparentInTag, SortIndex},
 };
 
 use super::{

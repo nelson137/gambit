@@ -1,14 +1,13 @@
 use bevy::{prelude::*, utils::HashSet};
 
-pub trait AppNoop {
-    fn noop(&mut self) -> &mut Self;
-}
-
-impl AppNoop for App {
+pub trait NoopExts {
     fn noop(&mut self) -> &mut Self {
         self
     }
 }
+
+impl NoopExts for App {}
+impl NoopExts for World {}
 
 pub trait ReparentInTag {
     fn reparent_in_tag<Tag: Component>(
