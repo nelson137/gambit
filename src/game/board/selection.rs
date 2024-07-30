@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    game::{board::StartMove, menu::MenuState, mouse::DragContainer},
+    game::{board::StartMove, menu::MenuState, mouse::Dragging},
     utils::NoopExts,
 };
 
@@ -66,7 +66,6 @@ fn handle_mouse_selection_events(
     mut selection_state: ResMut<SelectionState>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
-    q_drag_container: Query<Entity, With<DragContainer>>,
     mut selection_events: EventWriter<SelectionEvent>,
 ) {
     for &event in event_reader.read() {
@@ -136,9 +135,9 @@ fn handle_mouse_selection_events(
         match action {
             SelectionStateAction::None => {}
             SelectionStateAction::ChangeSelection(to_sq) => {
-                // Re-parent piece to drag container
+                // Start dragging piece
                 let piece = board_state.piece(to_sq);
-                commands.entity(piece).set_parent(q_drag_container.single());
+                commands.entity(piece).insert(Dragging { original_square: to_sq });
                 // Update selection & hints
                 let hl_tile = board_state.highlight(to_sq);
                 let hints = board_state.calculate_valid_moves(to_sq);
@@ -148,10 +147,9 @@ fn handle_mouse_selection_events(
                 *selection_state = SelectionState::SelectingDragging(to_sq);
             }
             SelectionStateAction::DropSelect(square) => {
-                // Re-parent piece back to its tile
+                // Drop piece
                 let piece = board_state.piece(square);
-                let tile = board_state.tile(square);
-                commands.entity(piece).set_parent(tile);
+                commands.entity(piece).remove::<Dragging>();
                 // Set state to Selected
                 *selection_state = SelectionState::Selected(square);
             }
@@ -162,16 +160,16 @@ fn handle_mouse_selection_events(
                 *selection_state = SelectionState::Unselected;
             }
             SelectionStateAction::StartSelectedDragging(square) => {
-                // Re-parent piece to drag container
+                // Start dragging piece
                 let piece = board_state.piece(square);
-                commands.entity(piece).set_parent(q_drag_container.single());
+                commands.entity(piece).insert(Dragging { original_square: square });
                 // Set state to SelectedDragging
                 *selection_state = SelectionState::SelectedDragging(square);
             }
             SelectionStateAction::StartSelectingDragging(square) => {
-                // Re-parent piece to drag container
+                // Start dragging piece
                 let piece = board_state.piece(square);
-                commands.entity(piece).set_parent(q_drag_container.single());
+                commands.entity(piece).insert(Dragging { original_square: square });
                 // Update selection & hints
                 let hl_tile = board_state.highlight(square);
                 let hints = board_state.calculate_valid_moves(square);
@@ -181,10 +179,9 @@ fn handle_mouse_selection_events(
                 *selection_state = SelectionState::SelectingDragging(square);
             }
             SelectionStateAction::Unselect(square) => {
-                // Re-parent piece back to its tile
+                // Drop piece
                 let piece = board_state.piece(square);
-                let tile = board_state.tile(square);
-                commands.entity(piece).set_parent(tile);
+                commands.entity(piece).remove::<Dragging>();
                 // Unselect square & remove hints
                 selection_events.send(SelectionEvent::Unselect);
                 // Set state to Unselected
@@ -319,6 +316,7 @@ mod tests {
         use crate::game::{
             core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
+            mouse::DragContainer,
             ui::GameUiPlugin,
         };
 

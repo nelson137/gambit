@@ -1,11 +1,15 @@
-use bevy::prelude::*;
+use bevy::{
+    ecs::component::{ComponentHooks, StorageType},
+    prelude::*,
+};
 
 use crate::{
     debug_name,
     game::{
-        board::{MouseSelectionEvent, Tile},
+        board::{BoardState, MouseSelectionEvent, Square, Tile},
         consts::Z_PIECE_SELECTED,
     },
+    utils::{hook, NoopExts},
 };
 
 use super::position::{MouseBoardSquare, MouseWorldPosition};
@@ -51,4 +55,38 @@ pub(super) fn update_drag_container(
     style.height = Val::Px(height);
     style.top = Val::Px(mouse_world_pos.y - height / 2.0);
     style.left = Val::Px(mouse_world_pos.x - width / 2.0);
+}
+
+#[derive(Clone)]
+pub struct Dragging {
+    pub original_square: Square,
+}
+
+impl Component for Dragging {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks
+            .noop()
+            .on_add(hook!(on_add_dragging_piece))
+            .on_remove(hook!(Dragging => on_remove_dragging_piece))
+            .noop();
+    }
+}
+
+fn on_add_dragging_piece(
+    In(piece): In<Entity>,
+    mut commands: Commands,
+    q_drag_container: Query<Entity, With<DragContainer>>,
+) {
+    commands.entity(piece).set_parent(q_drag_container.single());
+}
+
+fn on_remove_dragging_piece(
+    In((piece, dragging)): In<(Entity, Dragging)>,
+    mut commands: Commands,
+    board_state: Res<BoardState>,
+) {
+    let original_tile = board_state.tile(dragging.original_square);
+    commands.entity(piece).set_parent(original_tile);
 }

@@ -1,4 +1,4 @@
-use bevy::{prelude::*, utils::HashSet};
+use bevy::{ecs::component::ComponentHooks, prelude::*, utils::HashSet};
 
 pub trait NoopExts {
     fn noop(&mut self) -> &mut Self {
@@ -8,6 +8,48 @@ pub trait NoopExts {
 
 impl NoopExts for App {}
 impl NoopExts for World {}
+impl NoopExts for ComponentHooks {}
+
+#[macro_export]
+macro_rules! __hook {
+    ($hook_system:path) => {
+        |mut __world: ::bevy::ecs::world::DeferredWorld,
+         __entity: ::bevy::ecs::entity::Entity,
+         __cid: ::bevy::ecs::component::ComponentId| {
+            __world.commands().add(move |__world: &mut ::bevy::ecs::world::World| {
+                static __SYSID: ::std::sync::OnceLock<
+                    ::bevy::ecs::system::SystemId<::bevy::ecs::entity::Entity>,
+                > = std::sync::OnceLock::new();
+                let __sysid = *__SYSID.get_or_init(|| {
+                    ::bevy::log::debug!(system = %stringify!($hook_system), "register hook");
+                    __world.register_system($hook_system)
+                });
+                __world.run_system_with_input(__sysid, __entity).expect("run hook");
+            });
+        }
+    };
+
+    ($component:path => $hook_system:path) => {
+        |mut __world: ::bevy::ecs::world::DeferredWorld,
+         __entity: ::bevy::ecs::entity::Entity,
+         __cid: ::bevy::ecs::component::ComponentId| {
+            let __component = __world.get::<$component>(__entity)
+                .expect("entity has hook component")
+                .clone();
+            __world.commands().add(move |__world: &mut ::bevy::ecs::world::World| {
+                static __SYSID: ::std::sync::OnceLock<
+                    ::bevy::ecs::system::SystemId<(::bevy::ecs::entity::Entity, $component)>,
+                > = std::sync::OnceLock::new();
+                let __sysid = *__SYSID.get_or_init(|| {
+                    ::bevy::log::debug!(system = %stringify!($hook_system), "register hook");
+                    __world.register_system($hook_system)
+                });
+                __world.run_system_with_input(__sysid, (__entity, __component)).expect("run hook");
+            });
+        }
+    };
+}
+pub use crate::__hook as hook;
 
 pub trait ReparentInTag {
     fn reparent_in_tag<Tag: Component>(
