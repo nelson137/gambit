@@ -98,6 +98,11 @@ impl<'a> InspectorPaneViewer<'a> {
                 label = label.strong();
             }
             let label = ui.selectable_label(selected, label);
+
+            if label.hovered() {
+                self.state.hierarchy_hover = Some(entity);
+            }
+
             if label.clicked() {
                 let mode = ui.input(|i| {
                     SelectionMode::from_ctrl_shift(i.modifiers.command, i.modifiers.shift)
@@ -119,10 +124,6 @@ impl<'a> InspectorPaneViewer<'a> {
 
             collapser
         });
-
-        if header_response.response.hovered() {
-            self.state.hierarchy_hover = Some(entity);
-        }
 
         if let Some(children) = children {
             collapsing.show_body_indented(&header_response.response, ui, |ui| {
