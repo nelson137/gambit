@@ -243,12 +243,12 @@ impl Command for LoadCaptureState {
         let kings_bb = board.pieces(chess::Piece::King);
 
         for color in chess::ALL_COLORS {
-            let color_pieces_bb = *board.color_combined(color) & !kings_bb;
-            let color = PieceColor(!color);
+            let opponent_pieces_bb = *board.color_combined(!color) & !kings_bb;
+            let color = PieceColor(color);
 
             for typ in CAPTURABLE_PIECES {
-                let color_type_pieces = color_pieces_bb & *board.pieces(typ.into());
-                let captured_count = typ.num_pieces() - color_type_pieces.popcnt() as u8;
+                let opponent_pieces_of_type = opponent_pieces_bb & *board.pieces(typ.into());
+                let captured_count = typ.num_pieces() - opponent_pieces_of_type.popcnt() as u8;
                 let diff = CapStateDiff::Set(captured_count);
                 CapStateUpdate::new(color, typ, diff).apply(world);
             }
