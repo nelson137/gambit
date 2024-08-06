@@ -41,10 +41,8 @@ impl FromWorld for CaptureState {
         let asset_server = world.resource::<AssetServer>();
         let mut state = CaptureState::new();
 
-        let empty = asset_server.load("images/captures/empty.png");
-
         state[PieceColor::BLACK][PieceType::PAWN].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/white-pawns-1.png"),
             asset_server.load("images/captures/white-pawns-2.png"),
             asset_server.load("images/captures/white-pawns-3.png"),
@@ -55,26 +53,26 @@ impl FromWorld for CaptureState {
             asset_server.load("images/captures/white-pawns-8.png"),
         ]);
         state[PieceColor::BLACK][PieceType::BISHOP].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/white-bishops-1.png"),
             asset_server.load("images/captures/white-bishops-2.png"),
         ]);
         state[PieceColor::BLACK][PieceType::KNIGHT].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/white-knights-1.png"),
             asset_server.load("images/captures/white-knights-2.png"),
         ]);
         state[PieceColor::BLACK][PieceType::ROOK].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/white-rooks-1.png"),
             asset_server.load("images/captures/white-rooks-2.png"),
         ]);
         state[PieceColor::BLACK][PieceType::QUEEN]
             .image_handles
-            .extend([empty.clone(), asset_server.load("images/captures/white-queen.png")]);
+            .extend([default(), asset_server.load("images/captures/white-queen.png")]);
 
         state[PieceColor::WHITE][PieceType::PAWN].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/black-pawns-1.png"),
             asset_server.load("images/captures/black-pawns-2.png"),
             asset_server.load("images/captures/black-pawns-3.png"),
@@ -85,23 +83,23 @@ impl FromWorld for CaptureState {
             asset_server.load("images/captures/black-pawns-8.png"),
         ]);
         state[PieceColor::WHITE][PieceType::BISHOP].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/black-bishops-1.png"),
             asset_server.load("images/captures/black-bishops-2.png"),
         ]);
         state[PieceColor::WHITE][PieceType::KNIGHT].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/black-knights-1.png"),
             asset_server.load("images/captures/black-knights-2.png"),
         ]);
         state[PieceColor::WHITE][PieceType::ROOK].image_handles.extend([
-            empty.clone(),
+            default(),
             asset_server.load("images/captures/black-rooks-1.png"),
             asset_server.load("images/captures/black-rooks-2.png"),
         ]);
         state[PieceColor::WHITE][PieceType::QUEEN]
             .image_handles
-            .extend([empty.clone(), asset_server.load("images/captures/black-queen.png")]);
+            .extend([default(), asset_server.load("images/captures/black-queen.png")]);
 
         state
     }

@@ -8,8 +8,6 @@ HERE = Path(__file__).parent
 
 EXT = '.png'
 
-Image.new('RGBA', (1, 1)).save(HERE / 'empty.png')
-
 # (min.x, min.y, max.x, max.y)
 # (left, top, right, bottom)
 sprite_boxes: dict[str, (int, int, int, int)] = {
