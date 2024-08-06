@@ -156,9 +156,7 @@ fn initialize_stockfish(mut commands: Commands) {
             if count == 0 {
                 break;
             }
-            response_tx
-                .send(line.trim().to_string())
-                .expect("send stockfish response over channel");
+            let Ok(()) = response_tx.send(line.trim().to_string()) else { return };
             line.clear();
         }
     };
