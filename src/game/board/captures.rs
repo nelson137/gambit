@@ -262,7 +262,7 @@ fn load_capture_state_on_startup(mut commands: Commands) {
     commands.add(LoadCaptureState);
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct CapStateUpdate {
     color: PieceColor,
     typ: PieceType,

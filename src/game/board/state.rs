@@ -148,7 +148,9 @@ impl BoardState {
         self.board = Board::default();
     }
 
-    pub fn log(&self) {
+    #[cfg(debug_assertions)]
+    #[allow(dead_code)]
+    pub fn log_board(&self) {
         let pretty_board = self.board().to_pretty_string();
         let pretty_state = {
             let mut bb = chess::BoardBuilder::new();
@@ -386,16 +388,52 @@ pub enum GameStatus {
     GameOverRepetition,
 }
 
+#[allow(dead_code)]
 pub trait ChessBoardExts {
+    #[cfg(debug_assertions)]
     fn to_pretty_string(&self) -> String;
+
+    #[cfg(debug_assertions)]
+    fn log(&self) {
+        let pretty = self.to_pretty_string();
+        for line in pretty.lines() {
+            info!("{line}");
+        }
+    }
 }
 
+#[cfg(debug_assertions)]
+impl ChessBoardExts for chess::BitBoard {
+    fn to_pretty_string(&self) -> String {
+        let output = String::with_capacity(127);
+        chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
+            if !acc.is_empty() && sq.to_int() % 8 == 0 {
+                acc.push('\n');
+            }
+
+            acc.push(if self & chess::BitBoard::from_square(sq) == chess::EMPTY {
+                '.'
+            } else {
+                'X'
+            });
+
+            if (sq.to_int() + 1) % 8 > 0 {
+                acc.push(' ');
+            }
+
+            acc
+        })
+    }
+}
+
+#[cfg(debug_assertions)]
 impl ChessBoardExts for chess::Board {
     fn to_pretty_string(&self) -> String {
         Into::<chess::BoardBuilder>::into(self).to_pretty_string()
     }
 }
 
+#[cfg(debug_assertions)]
 impl ChessBoardExts for chess::BoardBuilder {
     fn to_pretty_string(&self) -> String {
         let output = String::with_capacity(127);
