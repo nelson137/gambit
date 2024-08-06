@@ -1,12 +1,18 @@
 use std::{fmt, ops::Not};
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::{
+    ecs::{
+        component::{ComponentHooks, StorageType},
+        world::Command,
+    },
+    prelude::*,
+};
 use chess::{Piece, Rank};
 
 use crate::{
     debug_name_f,
     game::consts::{Z_PIECE, Z_PIECE_SELECTED},
-    utils::NoopExts,
+    utils::{hook, NoopExts},
 };
 
 use super::{square::Square, BoardState};
@@ -246,19 +252,19 @@ fn spawn_animation_layer(mut commands: Commands) {
 /// Setup `entity` (the piece) for animation.
 ///
 /// If the `PieceAnimationPlugin` is not added to the app then this is a noop.
-pub struct StartPieceAnimation {
+pub struct AnimatePiece {
     pub entity: Entity,
     pub from: Square,
     pub to: Square,
 }
 
-impl StartPieceAnimation {
+impl AnimatePiece {
     pub fn new(entity: Entity, from: Square, to: Square) -> Self {
         Self { entity, from, to }
     }
 }
 
-impl Command for StartPieceAnimation {
+impl Command for AnimatePiece {
     fn apply(self, world: &mut World) {
         let Self { entity, from, to } = self;
 
@@ -298,7 +304,7 @@ impl Command for StartPieceAnimation {
     }
 }
 
-#[derive(Clone, Component)]
+#[derive(Clone)]
 struct Animating {
     timer: Timer,
     /// The cubic bezier function that drives the animation.
@@ -310,6 +316,14 @@ struct Animating {
     from: Vec2,
     to: Vec2,
     to_entity: Entity,
+}
+
+impl Component for Animating {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.noop().on_remove(hook!(Animating => on_remove_animating)).noop();
+    }
 }
 
 impl Animating {
@@ -338,7 +352,6 @@ fn animate_pieces(
 
         if animating.timer.just_finished() {
             commands.entity(entity).remove::<Animating>();
-            commands.add(FinishPieceAnimation { target: entity, parent: animating.to_entity });
         }
 
         let t = animating.interpolater.ease(animating.timer.fraction());
@@ -348,21 +361,16 @@ fn animate_pieces(
     }
 }
 
-struct FinishPieceAnimation {
-    target: Entity,
-    parent: Entity,
-}
+fn on_remove_animating(
+    In((entity, animating)): In<(Entity, Animating)>,
+    mut commands: Commands,
+    mut q_style: Query<&mut Style>,
+) {
+    commands.entity(entity).set_parent(animating.to_entity);
 
-impl Command for FinishPieceAnimation {
-    fn apply(self, world: &mut World) {
-        let mut entity = world.entity_mut(self.target);
-
-        entity.set_parent(self.parent);
-
-        let mut style = entity.get_mut::<Style>().unwrap();
-        style.left = Val::Px(0.0);
-        style.top = Val::Px(0.0);
-        style.width = Val::Percent(100.0);
-        style.height = Val::Percent(100.0);
-    }
+    let mut style = q_style.get_mut(entity).unwrap();
+    style.left = Val::Px(0.0);
+    style.top = Val::Px(0.0);
+    style.width = Val::Percent(100.0);
+    style.height = Val::Percent(100.0);
 }

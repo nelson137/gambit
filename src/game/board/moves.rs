@@ -1,7 +1,7 @@
 use bevy::{ecs::world::Command, prelude::*};
 use chess::File;
 
-use crate::game::{audio::PlayGameAudio, board::StartPieceAnimation, game_over::GameOver};
+use crate::game::{audio::PlayGameAudio, board::AnimatePiece, game_over::GameOver};
 
 use super::{
     BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square,
@@ -185,7 +185,7 @@ impl Command for MoveUiPiece {
         }
 
         if animate {
-            StartPieceAnimation::new(entity, from_sq, to_sq).apply(world);
+            AnimatePiece::new(entity, from_sq, to_sq).apply(world);
         } else {
             world.entity_mut(to_tile_entity).push_children(&[entity]);
         }
