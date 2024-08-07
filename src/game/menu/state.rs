@@ -7,6 +7,7 @@ use crate::{
     game::{
         board::{spawn_pieces, BoardState, EndGameIcon, ResetCapturesUi, SelectionEvent},
         load::DespawnPieces,
+        LoadGame,
     },
 };
 
@@ -29,6 +30,13 @@ pub(super) fn init_menu_state_from_cli(
         Some(_) => MenuState::Game,
         _ => MenuState::Menu,
     });
+}
+
+pub(super) fn set_state_to_game_on_load(
+    _trigger: Trigger<LoadGame>,
+    mut next_state: ResMut<NextState<MenuState>>,
+) {
+    next_state.set(MenuState::Game);
 }
 
 impl PartialEq for MenuState {

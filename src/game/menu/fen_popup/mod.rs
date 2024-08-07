@@ -3,7 +3,7 @@ use std::str::FromStr;
 use bevy::prelude::*;
 use bevy_egui::EguiContexts;
 
-use crate::game::load::LoadGame;
+use crate::game::LoadGame;
 
 use super::MenuState;
 
@@ -35,7 +35,7 @@ pub(super) fn fen_menu(
             next_menu_state.set(MenuState::Menu);
         }
         FenPopupInteraction::Submit => match chess::Board::from_str(&state.fen) {
-            Ok(board) => commands.add(LoadGame(board)),
+            Ok(board) => commands.trigger(LoadGame(board)),
             Err(err) => error!("{err}"),
         },
         FenPopupInteraction::None => {}

@@ -7,11 +7,12 @@ use crate::{
     game::{
         board::{PieceColor, PieceType},
         panels::MaterialAdvantageLabel,
+        LoadGame,
     },
     utils::NoopExts,
 };
 
-use super::{BoardPlugin, BoardState, PieceMeta};
+use super::{BoardPlugin, PieceMeta};
 
 #[derive(Debug)]
 pub struct CapturePlugin;
@@ -23,8 +24,11 @@ impl Plugin for CapturePlugin {
         }
 
         app.noop()
+            // Resources
             .init_resource::<CaptureState>()
-            .add_systems(PostStartup, load_capture_state_on_startup)
+            // Observers
+            .observe(load_capture_state)
+            // Systems
             .add_systems(PostUpdate, captures)
             .noop();
     }
@@ -230,34 +234,26 @@ impl CapState {
     }
 }
 
-pub struct LoadCaptureState;
+fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands, cli_args: Res<CliArgs>) {
+    // Don't load if no FEN was supplied on the CLI
+    if cli_args.fen.is_none() {
+        return;
+    }
 
-impl Command for LoadCaptureState {
-    fn apply(self, world: &mut World) {
-        // Don't load if no FEN was supplied on the CLI
-        if world.get_resource::<CliArgs>().and_then(|cli| cli.fen.as_deref()).is_none() {
-            return;
-        }
+    let board = trigger.event().0;
+    let kings_bb = board.pieces(chess::Piece::King);
 
-        let board = *world.resource::<BoardState>().board();
-        let kings_bb = board.pieces(chess::Piece::King);
+    for color in chess::ALL_COLORS {
+        let opponent_pieces_bb = *board.color_combined(!color) & !kings_bb;
+        let color = PieceColor(color);
 
-        for color in chess::ALL_COLORS {
-            let opponent_pieces_bb = *board.color_combined(!color) & !kings_bb;
-            let color = PieceColor(color);
-
-            for typ in CAPTURABLE_PIECES {
-                let opponent_pieces_of_type = opponent_pieces_bb & *board.pieces(typ.into());
-                let captured_count = typ.num_pieces() - opponent_pieces_of_type.popcnt() as u8;
-                let diff = CapStateDiff::Set(captured_count);
-                CapStateUpdate::new(color, typ, diff).apply(world);
-            }
+        for typ in CAPTURABLE_PIECES {
+            let opponent_pieces_of_type = opponent_pieces_bb & *board.pieces(typ.into());
+            let captured_count = typ.num_pieces() - opponent_pieces_of_type.popcnt() as u8;
+            let diff = CapStateDiff::Set(captured_count);
+            commands.add(CapStateUpdate::new(color, typ, diff));
         }
     }
-}
-
-fn load_capture_state_on_startup(mut commands: Commands) {
-    commands.add(LoadCaptureState);
 }
 
 #[derive(Clone, Copy, Debug)]

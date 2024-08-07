@@ -1,6 +1,8 @@
+use std::str::FromStr;
+
 use bevy::prelude::*;
 
-use crate::utils::NoopExts;
+use crate::{cli::CliArgs, utils::NoopExts};
 
 use self::{
     board::{BoardState, MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},
@@ -39,10 +41,30 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(PieceAnimationPlugin)
             .add_plugins(StockfishPlugin)
             // Events
+            .add_event::<LoadGame>()
             .add_event::<PromotionEvent>()
             // Startup
             .add_systems(Startup, setup_camera)
+            .add_systems(PostStartup, load_game)
             // PostStartup
             .noop();
     }
 }
+
+fn load_game(world: &mut World) {
+    let cli_args = world.resource::<CliArgs>();
+    let board = match cli_args.fen.as_deref().map(chess::Board::from_str) {
+        None => return,
+        Some(Err(err)) => {
+            error!("{err}");
+            return;
+        }
+        Some(Ok(board)) => board,
+    };
+
+    world.resource_mut::<BoardState>().set_board(&board);
+    world.trigger(LoadGame(board));
+}
+
+#[derive(Event)]
+pub struct LoadGame(pub chess::Board);

@@ -35,6 +35,8 @@ impl Plugin for GameMenuLogicPlugin {
             .init_resource::<GameOverTimer>()
             // States
             .init_state::<MenuState>()
+            // Observers
+            .observe(set_state_to_game_on_load)
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
             .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
