@@ -389,7 +389,7 @@ pub enum GameStatus {
 }
 
 #[allow(dead_code)]
-pub trait ChessBoardExts {
+pub trait ChessBoardExtsDebug {
     #[cfg(debug_assertions)]
     fn to_pretty_string(&self) -> String;
 
@@ -403,7 +403,7 @@ pub trait ChessBoardExts {
 }
 
 #[cfg(debug_assertions)]
-impl ChessBoardExts for chess::BitBoard {
+impl ChessBoardExtsDebug for chess::BitBoard {
     fn to_pretty_string(&self) -> String {
         let output = String::with_capacity(127);
         chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
@@ -427,14 +427,14 @@ impl ChessBoardExts for chess::BitBoard {
 }
 
 #[cfg(debug_assertions)]
-impl ChessBoardExts for chess::Board {
+impl ChessBoardExtsDebug for chess::Board {
     fn to_pretty_string(&self) -> String {
         Into::<chess::BoardBuilder>::into(self).to_pretty_string()
     }
 }
 
 #[cfg(debug_assertions)]
-impl ChessBoardExts for chess::BoardBuilder {
+impl ChessBoardExtsDebug for chess::BoardBuilder {
     fn to_pretty_string(&self) -> String {
         let output = String::with_capacity(127);
         chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
