@@ -3,7 +3,6 @@ use std::ops::{Index, IndexMut};
 use bevy::{ecs::world::Command, prelude::*};
 
 use crate::{
-    cli::CliArgs,
     game::{
         board::{PieceColor, PieceType},
         panels::MaterialAdvantageLabel,
@@ -234,13 +233,8 @@ impl CapState {
     }
 }
 
-fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands, cli_args: Res<CliArgs>) {
-    // Don't load if no FEN was supplied on the CLI
-    if cli_args.fen.is_none() {
-        return;
-    }
-
-    let board = trigger.event().0;
+fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands) {
+    let board = &trigger.event().board;
     let kings_bb = board.pieces(chess::Piece::King);
 
     for color in chess::ALL_COLORS {

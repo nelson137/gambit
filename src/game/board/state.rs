@@ -7,7 +7,7 @@ use std::{
 use bevy::prelude::*;
 use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPTY};
 
-use crate::cli::CliArgs;
+use crate::{cli::CliArgs, game::LoadGame};
 
 use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
 
@@ -77,6 +77,13 @@ fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
     }
 }
 
+pub(super) fn set_board_on_load_game(
+    trigger: Trigger<LoadGame>,
+    mut board_state: ResMut<BoardState>,
+) {
+    board_state.set_board(&trigger.event().board);
+}
+
 //==================================================
 // Getters, setters, and delegates
 //==================================================
@@ -112,15 +119,6 @@ impl BoardState {
 
     pub fn side_to_move(&self) -> PieceColor {
         self.board.side_to_move().into()
-    }
-
-    pub fn get_piece_meta(&self, square: Square) -> Option<PieceMeta> {
-        let color = self.board.color_on(square.0).map(PieceColor);
-        let typ = self.board.piece_on(square.0).map(PieceType);
-        match (color, typ) {
-            (Some(color), Some(typ)) => Some(PieceMeta::new(color, typ)),
-            _ => None,
-        }
     }
 
     pub fn my_castle_rights(&self) -> CastleRights {
@@ -386,6 +384,21 @@ pub enum GameStatus {
     GameOverStalemate,
     GameOver50Moves,
     GameOverRepetition,
+}
+
+pub trait ChessBoardExts {
+    fn get_piece_meta(&self, square: Square) -> Option<PieceMeta>;
+}
+
+impl ChessBoardExts for chess::Board {
+    fn get_piece_meta(&self, square: Square) -> Option<PieceMeta> {
+        let color = self.color_on(square.0).map(PieceColor);
+        let typ = self.piece_on(square.0).map(PieceType);
+        match (color, typ) {
+            (Some(color), Some(typ)) => Some(PieceMeta::new(color, typ)),
+            _ => None,
+        }
+    }
 }
 
 #[allow(dead_code)]

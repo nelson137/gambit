@@ -5,9 +5,10 @@ use bevy::prelude::*;
 use crate::{cli::CliArgs, utils::NoopExts};
 
 use self::{
-    board::{BoardState, MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},
+    board::{MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
+    menu::MenuState,
     mouse::MouseLogicPlugin,
     stockfish::StockfishPlugin,
     ui::GameUiPlugin,
@@ -20,7 +21,6 @@ pub mod consts;
 pub mod core;
 pub mod eval_bar;
 pub mod game_over;
-pub mod load;
 pub mod menu;
 pub mod mouse;
 pub mod panels;
@@ -45,26 +45,42 @@ impl Plugin for GameLogicPlugin {
             .add_event::<PromotionEvent>()
             // Startup
             .add_systems(Startup, setup_camera)
-            .add_systems(PostStartup, load_game)
+            .add_systems(PostStartup, load_game_on_startup)
             // PostStartup
             .noop();
     }
 }
 
-fn load_game(world: &mut World) {
+fn load_game_on_startup(world: &mut World) {
     let cli_args = world.resource::<CliArgs>();
-    let board = match cli_args.fen.as_deref().map(chess::Board::from_str) {
-        None => return,
+    let (board, menu_state) = match cli_args.fen.as_deref().map(chess::Board::from_str) {
+        None => (default(), MenuState::Menu),
         Some(Err(err)) => {
             error!("{err}");
             return;
         }
-        Some(Ok(board)) => board,
+        Some(Ok(board)) => (board, MenuState::Game),
     };
 
-    world.resource_mut::<BoardState>().set_board(&board);
-    world.trigger(LoadGame(board));
+    world.trigger(LoadGame::new(board, menu_state));
 }
 
 #[derive(Event)]
-pub struct LoadGame(pub chess::Board);
+pub struct LoadGame {
+    pub board: chess::Board,
+    pub menu_state: MenuState,
+}
+
+impl LoadGame {
+    pub fn new(board: chess::Board, menu_state: MenuState) -> Self {
+        Self { board, menu_state }
+    }
+
+    pub fn in_game(board: chess::Board) -> Self {
+        Self::new(board, MenuState::Game)
+    }
+
+    pub fn in_menu(board: chess::Board) -> Self {
+        Self::new(board, MenuState::Menu)
+    }
+}

@@ -11,11 +11,14 @@ use chess::{Piece, Rank};
 
 use crate::{
     debug_name_f,
-    game::consts::{Z_PIECE, Z_PIECE_SELECTED},
+    game::{
+        consts::{Z_PIECE, Z_PIECE_SELECTED},
+        LoadGame,
+    },
     utils::{hook, NoopExts},
 };
 
-use super::{square::Square, BoardState};
+use super::{square::Square, BoardState, ChessBoardExts};
 
 macro_rules! asset_path {
     ($color:literal, $type:literal) => {
@@ -178,13 +181,19 @@ impl PieceType {
     }
 }
 
-pub fn spawn_pieces(
+pub(super) fn spawn_pieces_on_load_game(
+    trigger: Trigger<LoadGame>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
+    q_pieces: Query<Entity, With<PieceMeta>>,
 ) {
+    // Despawn all pieces
+    board_state.clear_pieces();
+    q_pieces.iter().for_each(|e| commands.entity(e).despawn_recursive());
+
     for square in chess::ALL_SQUARES.map(Square::new) {
-        let Some(info) = board_state.get_piece_meta(square) else { continue };
+        let Some(info) = trigger.event().board.get_piece_meta(square) else { continue };
         let image_path = info.asset_path();
 
         let piece_entity = commands

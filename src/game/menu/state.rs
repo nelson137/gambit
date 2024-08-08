@@ -5,8 +5,7 @@ use bevy::prelude::*;
 use crate::{
     cli::CliArgs,
     game::{
-        board::{spawn_pieces, BoardState, EndGameIcon, ResetCapturesUi, SelectionEvent},
-        load::DespawnPieces,
+        board::{EndGameIcon, SelectionEvent},
         LoadGame,
     },
 };
@@ -33,10 +32,10 @@ pub(super) fn init_menu_state_from_cli(
 }
 
 pub(super) fn set_state_to_game_on_load(
-    _trigger: Trigger<LoadGame>,
+    trigger: Trigger<LoadGame>,
     mut next_state: ResMut<NextState<MenuState>>,
 ) {
-    next_state.set(MenuState::Game);
+    next_state.set(trigger.event().menu_state);
 }
 
 impl PartialEq for MenuState {
@@ -85,10 +84,7 @@ impl Default for GameOverTimer {
 pub(super) fn game_over(
     mut commands: Commands,
     time: Res<Time>,
-    asset_server: Res<AssetServer>,
     mut game_over_timer: ResMut<GameOverTimer>,
-    mut next_menu_state: ResMut<NextState<MenuState>>,
-    mut board_state: ResMut<BoardState>,
     mut selection_events: EventWriter<SelectionEvent>,
     mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
 ) {
@@ -99,13 +95,7 @@ pub(super) fn game_over(
         q_end_game_icons.iter_mut().for_each(|mut vis| *vis = Visibility::Hidden);
 
         selection_events.send(SelectionEvent::UnsetAll);
-        board_state.reset();
 
-        commands.add(ResetCapturesUi);
-
-        commands.add(DespawnPieces);
-        spawn_pieces(commands, asset_server, board_state);
-
-        next_menu_state.set(MenuState::Menu);
+        commands.trigger(LoadGame::in_menu(default()));
     }
 }
