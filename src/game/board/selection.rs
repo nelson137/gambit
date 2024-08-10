@@ -202,9 +202,6 @@ pub struct EnabledHint;
 #[derive(Component)]
 pub struct LastMove;
 
-#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SystemSet)]
-pub struct SelectionEventHandler;
-
 #[derive(Clone, Debug, Event)]
 #[allow(dead_code)]
 pub enum SelectionEvent {
