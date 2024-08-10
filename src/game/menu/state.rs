@@ -2,13 +2,7 @@ use std::{fmt, hash, mem};
 
 use bevy::prelude::*;
 
-use crate::{
-    cli::CliArgs,
-    game::{
-        board::{EndGameIcon, SelectionEvent},
-        LoadGame,
-    },
-};
+use crate::{cli::CliArgs, game::LoadGame};
 
 use super::{GameMenu, GameMenuDimLayer, PopupState};
 
@@ -85,17 +79,10 @@ pub(super) fn game_over(
     mut commands: Commands,
     time: Res<Time>,
     mut game_over_timer: ResMut<GameOverTimer>,
-    mut selection_events: EventWriter<SelectionEvent>,
-    mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
 ) {
     game_over_timer.0.tick(time.delta());
     if game_over_timer.0.just_finished() {
         trace!("Reset game");
-
-        q_end_game_icons.iter_mut().for_each(|mut vis| *vis = Visibility::Hidden);
-
-        selection_events.send(SelectionEvent::UnsetAll);
-
         commands.trigger(LoadGame::in_menu(default()));
     }
 }

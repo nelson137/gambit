@@ -1,7 +1,10 @@
 use bevy::{ecs::world::Command, prelude::*};
 use chess::{File, Rank};
 
-use crate::{debug_name, game::consts::Z_END_GAME_ICONS};
+use crate::{
+    debug_name,
+    game::{consts::Z_END_GAME_ICONS, LoadGame},
+};
 
 use super::{BoardState, PieceColor, Square, Tile};
 
@@ -187,4 +190,11 @@ pub(super) fn end_game_icon_size(
         style.width = icon_size;
         style.height = icon_size;
     }
+}
+
+pub(super) fn hide_end_game_icons_on_load_game(
+    _trigger: Trigger<LoadGame>,
+    mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
+) {
+    q_end_game_icons.iter_mut().for_each(|mut vis| *vis = Visibility::Hidden);
 }

@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use crate::{
-    game::{board::StartMove, menu::MenuState, mouse::Dragging},
+    game::{board::StartMove, menu::MenuState, mouse::Dragging, LoadGame},
     utils::NoopExts,
 };
 
@@ -17,6 +17,8 @@ impl Plugin for SelectionPlugin {
             // Events
             .add_event::<MouseSelectionEvent>()
             .add_event::<SelectionEvent>()
+            // Observers
+            .observe(unset_selections_on_load_game)
             // Systems
             // TODO: handle_selection_events should run at the end of the set
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
@@ -211,6 +213,13 @@ pub enum SelectionEvent {
     UpdateLastMove(Square, Square),
     UnsetLastMove,
     UnsetAll,
+}
+
+fn unset_selections_on_load_game(
+    _trigger: Trigger<LoadGame>,
+    mut selection_events: EventWriter<SelectionEvent>,
+) {
+    selection_events.send(SelectionEvent::UnsetAll);
 }
 
 fn handle_selection_events(
