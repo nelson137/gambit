@@ -6,24 +6,24 @@ use crate::{debug_name, game::consts::Z_END_GAME_ICONS};
 use super::{BoardState, PieceColor, Square, Tile};
 
 #[derive(Component)]
-pub struct EndGameIcon;
+pub(super) struct EndGameIcon;
 
 #[derive(Component)]
-pub struct WinnerIcon;
+struct WinnerIcon;
 
 #[derive(Component)]
-pub struct LoserIconBlack;
+struct LoserIconBlack;
 
 #[derive(Component)]
-pub struct LoserIconWhite;
+struct LoserIconWhite;
 
 #[derive(Component)]
-pub struct DrawIconBlack;
+struct DrawIconBlack;
 
 #[derive(Component)]
-pub struct DrawIconWhite;
+struct DrawIconWhite;
 
-pub fn spawn_end_game_icons(
+pub(super) fn spawn_end_game_icons(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     board_state: Res<BoardState>,
@@ -176,7 +176,7 @@ fn set_end_game_icon<IconMarker: Component>(
     }
 }
 
-pub fn end_game_icon_size(
+pub(super) fn end_game_icon_size(
     q_tiles: Query<&Node, With<Tile>>,
     mut q_end_game_icons: Query<&mut Style, With<EndGameIcon>>,
 ) {

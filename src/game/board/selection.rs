@@ -213,7 +213,7 @@ pub enum SelectionEvent {
     UnsetAll,
 }
 
-pub fn handle_selection_events(
+fn handle_selection_events(
     mut commands: Commands,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<SelectionEvent>,
