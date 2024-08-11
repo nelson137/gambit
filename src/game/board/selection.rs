@@ -1,4 +1,10 @@
-use bevy::prelude::*;
+use bevy::{
+    ecs::{
+        component::{ComponentHooks, ComponentId, StorageType},
+        world::DeferredWorld,
+    },
+    prelude::*,
+};
 
 use crate::{
     game::{board::StartMove, menu::MenuState, mouse::Dragging, LoadGame},
@@ -24,8 +30,7 @@ impl Plugin for SelectionPlugin {
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
             .add_systems(
                 Update,
-                (handle_selection_events, update_indicators)
-                    .chain()
+                handle_selection_events
                     .run_if(in_game_or_game_over)
                     .after(handle_mouse_selection_events),
             )
@@ -232,20 +237,20 @@ fn handle_selection_events(
             let mut entity_cmds = commands.entity(entity);
             entity_cmds.remove::<Selected>();
             if !q_last_move.contains(entity) {
-                entity_cmds.insert(HideIndicator);
+                entity_cmds.remove::<ShowingIndicator>();
             }
         }
     };
 
     let unset_last_move = |commands: &mut Commands| {
         for entity in &q_last_move {
-            commands.entity(entity).remove::<LastMove>().insert(HideIndicator);
+            commands.entity(entity).remove::<(ShowingIndicator, LastMove)>();
         }
     };
 
     let unset_hints = |commands: &mut Commands| {
         for entity in &q_selected_hints {
-            commands.entity(entity).remove::<EnabledHint>().insert(HideIndicator);
+            commands.entity(entity).remove::<(ShowingIndicator, EnabledHint)>();
         }
     };
 
@@ -255,9 +260,9 @@ fn handle_selection_events(
             SelectionEvent::UpdateSelection { highlight, hints } => {
                 unset_selection(&mut commands);
                 unset_hints(&mut commands);
-                commands.entity(*highlight).insert((Selected, ShowIndicator));
+                commands.entity(*highlight).insert((ShowingIndicator, Selected));
                 for &entity in hints {
-                    commands.entity(entity).insert((EnabledHint, ShowIndicator));
+                    commands.entity(entity).insert((ShowingIndicator, EnabledHint));
                 }
             }
             SelectionEvent::Unselect => {
@@ -268,8 +273,8 @@ fn handle_selection_events(
                 unset_last_move(&mut commands);
                 let e1 = board_state.highlight(from_sq);
                 let e2 = board_state.highlight(to_sq);
-                commands.entity(e1).insert((LastMove, ShowIndicator));
-                commands.entity(e2).insert((LastMove, ShowIndicator));
+                commands.entity(e1).insert((ShowingIndicator, LastMove));
+                commands.entity(e2).insert((ShowingIndicator, LastMove));
             }
             SelectionEvent::UnsetLastMove => unset_last_move(&mut commands),
             SelectionEvent::UnsetAll => {
@@ -281,33 +286,32 @@ fn handle_selection_events(
     }
 }
 
-#[derive(Component)]
-struct ShowIndicator;
+struct ShowingIndicator;
 
-#[derive(Component)]
-struct HideIndicator;
+impl Component for ShowingIndicator {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
-fn update_indicators(
-    mut commands: Commands,
-    mut q_show: Query<(Entity, &mut Visibility), (With<ShowIndicator>, Without<HideIndicator>)>,
-    mut q_hide: Query<(Entity, &mut Visibility), (With<HideIndicator>, Without<ShowIndicator>)>,
-    q_both: Query<Entity, (With<ShowIndicator>, With<HideIndicator>)>,
-) {
-    for (entity, mut vis) in &mut q_show {
-        trace!(?entity, "show");
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.on_add(on_add_showing_indicator).on_remove(on_remove_showing_indicator);
+    }
+}
+
+fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
+    world.commands().add(move |world: &mut World| {
+        trace!(%entity, "show indicator");
+        let mut entity = world.entity_mut(entity);
+        let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Visible;
-        commands.entity(entity).remove::<ShowIndicator>();
-    }
+    });
+}
 
-    for (entity, mut vis) in &mut q_hide {
-        trace!(?entity, "hide");
+fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
+    world.commands().add(move |world: &mut World| {
+        trace!(%entity, "hide indicator");
+        let mut entity = world.entity_mut(entity);
+        let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Hidden;
-        commands.entity(entity).remove::<HideIndicator>();
-    }
-
-    for entity in &q_both {
-        commands.entity(entity).remove::<(ShowIndicator, HideIndicator)>();
-    }
+    });
 }
 
 #[cfg(test)]
