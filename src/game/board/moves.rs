@@ -69,7 +69,6 @@ impl MovePiece {
 pub fn move_piece(
     mut commands: Commands,
     mut board_state: ResMut<BoardState>,
-    mut selection_events: EventWriter<SelectionEvent>,
     q_added: Query<(Entity, &PieceMeta, &MovePiece), Added<MovePiece>>,
 ) {
     for (entity, &PieceMeta { color, typ }, &MovePiece { from_sq, to_sq, promotion, animate }) in
@@ -122,8 +121,8 @@ pub fn move_piece(
         });
 
         // Clear selection & hints, update last move highlights
-        selection_events
-            .send_batch([SelectionEvent::Unselect, SelectionEvent::UpdateLastMove(from_sq, to_sq)]);
+        commands.trigger(SelectionEvent::Unselect);
+        commands.trigger(SelectionEvent::UpdateLastMove(from_sq, to_sq));
 
         // Update `chess::Board`
         board_state.make_board_move(from_sq, to_sq, promotion);

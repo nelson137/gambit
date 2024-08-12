@@ -25,21 +25,11 @@ impl Plugin for SelectionPlugin {
             .add_event::<SelectionEvent>()
             // Observers
             .observe(unset_selections_on_load_game)
+            .observe(handle_selection_events)
             // Systems
-            // TODO: handle_selection_events should run at the end of the set
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
-            .add_systems(
-                Update,
-                handle_selection_events
-                    .run_if(in_game_or_game_over)
-                    .after(handle_mouse_selection_events),
-            )
             .noop();
     }
-}
-
-fn in_game_or_game_over(state: Res<State<MenuState>>) -> bool {
-    matches!(*state.get(), MenuState::Game | MenuState::DoGameOver)
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Resource)]
@@ -73,7 +63,6 @@ fn handle_mouse_selection_events(
     mut selection_state: ResMut<SelectionState>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
-    mut selection_events: EventWriter<SelectionEvent>,
 ) {
     for &event in event_reader.read() {
         trace!(?event, "Mouse selection event");
@@ -148,8 +137,7 @@ fn handle_mouse_selection_events(
                 // Update selection & hints
                 let hl_tile = board_state.highlight(to_sq);
                 let hints = board_state.calculate_valid_moves(to_sq);
-                selection_events
-                    .send(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
+                commands.trigger(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(to_sq);
             }
@@ -180,8 +168,7 @@ fn handle_mouse_selection_events(
                 // Update selection & hints
                 let hl_tile = board_state.highlight(square);
                 let hints = board_state.calculate_valid_moves(square);
-                selection_events
-                    .send(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
+                commands.trigger(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(square);
             }
@@ -190,7 +177,7 @@ fn handle_mouse_selection_events(
                 let piece = board_state.piece(square);
                 commands.entity(piece).remove::<Dragging>();
                 // Unselect square & remove hints
-                selection_events.send(SelectionEvent::Unselect);
+                commands.trigger(SelectionEvent::Unselect);
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
@@ -217,17 +204,14 @@ pub enum SelectionEvent {
     UnsetAll,
 }
 
-fn unset_selections_on_load_game(
-    _trigger: Trigger<LoadGame>,
-    mut selection_events: EventWriter<SelectionEvent>,
-) {
-    selection_events.send(SelectionEvent::UnsetAll);
+fn unset_selections_on_load_game(_trigger: Trigger<LoadGame>, mut commands: Commands) {
+    commands.trigger(SelectionEvent::UnsetAll);
 }
 
 fn handle_selection_events(
+    trigger: Trigger<SelectionEvent>,
     mut commands: Commands,
     board_state: Res<BoardState>,
-    mut event_reader: EventReader<SelectionEvent>,
     q_selection: Query<Entity, (With<HighlightTile>, With<Selected>)>,
     q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
     q_selected_hints: Query<Entity, (With<Hint>, With<EnabledHint>)>,
@@ -254,34 +238,34 @@ fn handle_selection_events(
         }
     };
 
-    for event in event_reader.read() {
-        trace!(?event, "Selection event");
-        match event {
-            SelectionEvent::UpdateSelection { highlight, hints } => {
-                unset_selection(&mut commands);
-                unset_hints(&mut commands);
-                commands.entity(*highlight).insert((ShowingIndicator, Selected));
-                for &entity in hints {
-                    commands.entity(entity).insert((ShowingIndicator, EnabledHint));
-                }
+    let event = trigger.event();
+    trace!(?event, "Selection event");
+
+    match event {
+        SelectionEvent::UpdateSelection { highlight, hints } => {
+            unset_selection(&mut commands);
+            unset_hints(&mut commands);
+            commands.entity(*highlight).insert((ShowingIndicator, Selected));
+            for &entity in hints {
+                commands.entity(entity).insert((ShowingIndicator, EnabledHint));
             }
-            SelectionEvent::Unselect => {
-                unset_selection(&mut commands);
-                unset_hints(&mut commands);
-            }
-            &SelectionEvent::UpdateLastMove(from_sq, to_sq) => {
-                unset_last_move(&mut commands);
-                let e1 = board_state.highlight(from_sq);
-                let e2 = board_state.highlight(to_sq);
-                commands.entity(e1).insert((ShowingIndicator, LastMove));
-                commands.entity(e2).insert((ShowingIndicator, LastMove));
-            }
-            SelectionEvent::UnsetLastMove => unset_last_move(&mut commands),
-            SelectionEvent::UnsetAll => {
-                unset_selection(&mut commands);
-                unset_hints(&mut commands);
-                unset_last_move(&mut commands);
-            }
+        }
+        SelectionEvent::Unselect => {
+            unset_selection(&mut commands);
+            unset_hints(&mut commands);
+        }
+        &SelectionEvent::UpdateLastMove(from_sq, to_sq) => {
+            unset_last_move(&mut commands);
+            let e1 = board_state.highlight(from_sq);
+            let e2 = board_state.highlight(to_sq);
+            commands.entity(e1).insert((ShowingIndicator, LastMove));
+            commands.entity(e2).insert((ShowingIndicator, LastMove));
+        }
+        SelectionEvent::UnsetLastMove => unset_last_move(&mut commands),
+        SelectionEvent::UnsetAll => {
+            unset_selection(&mut commands);
+            unset_hints(&mut commands);
+            unset_last_move(&mut commands);
         }
     }
 }
