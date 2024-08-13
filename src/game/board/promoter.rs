@@ -1,4 +1,5 @@
 use bevy::{
+    ecs::component::{ComponentHooks, StorageType},
     prelude::*,
     ui::{FocusPolicy, UiSystem},
 };
@@ -9,7 +10,7 @@ use crate::{
         board::MovePiece,
         consts::{FONT_PATH, Z_PROMOTER},
     },
-    utils::NoopExts,
+    utils::{hook, NoopExts},
 };
 
 use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};
@@ -19,7 +20,6 @@ pub struct PromotionPlugin;
 impl Plugin for PromotionPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            .add_systems(Update, start_promotion)
             .add_systems(Update, promotion_ui_sizes.run_if(is_promoting_piece))
             .add_systems(
                 PreUpdate,
@@ -161,30 +161,7 @@ pub fn spawn_promoters(
     }
 }
 
-pub fn start_promotion(
-    mut commands: Commands,
-    board_state: Res<BoardState>,
-    mut q_added: Query<
-        (&PieceMeta, &PromotingPiece, &mut Visibility),
-        (Added<PromotingPiece>, Without<PromotionUi>),
-    >,
-    mut q_promoters: Query<(Entity, &PromotionUi, &mut Visibility), Without<PromotingPiece>>,
-) {
-    for (&PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq }, mut vis) in &mut q_added {
-        trace!(?color, %from_sq, %to_sq, "Start promotion");
-
-        *vis = Visibility::Hidden;
-
-        if let Some((entity, _, mut vis)) =
-            q_promoters.iter_mut().find(|(_, promo, _)| promo.0 == color)
-        {
-            commands.entity(entity).set_parent(board_state.tile(to_sq));
-            *vis = Visibility::Visible;
-        }
-    }
-}
-
-#[derive(Component)]
+#[derive(Clone, Copy)]
 pub struct PromotingPiece {
     from_sq: Square,
     to_sq: Square,
@@ -193,6 +170,38 @@ pub struct PromotingPiece {
 impl PromotingPiece {
     pub fn new(from_sq: Square, to_sq: Square) -> Self {
         Self { from_sq, to_sq }
+    }
+}
+
+impl Component for PromotingPiece {
+    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
+
+    fn register_component_hooks(hooks: &mut ComponentHooks) {
+        hooks.noop().on_add(hook!(PromotingPiece => start_promotion)).noop();
+    }
+}
+
+pub fn start_promotion(
+    In((piece, promoting)): In<(Entity, PromotingPiece)>,
+    mut commands: Commands,
+    board_state: Res<BoardState>,
+    q_piece_meta: Query<&PieceMeta>,
+    mut q_visibility: Query<&mut Visibility>,
+    mut q_promoters: Query<(Entity, &PromotionUi)>,
+) {
+    let PromotingPiece { from_sq, to_sq } = promoting;
+    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
+    let Ok(mut vis) = q_visibility.get_mut(piece) else { return };
+
+    trace!(?color, %from_sq, %to_sq, "Start promotion");
+
+    *vis = Visibility::Hidden;
+
+    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
+        commands.entity(entity).set_parent(board_state.tile(to_sq));
+        if let Ok(mut vis) = q_visibility.get_mut(entity) {
+            *vis = Visibility::Visible;
+        }
     }
 }
 
