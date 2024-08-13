@@ -1,10 +1,10 @@
 use std::{fmt, hash, mem};
 
-use bevy::prelude::*;
+use bevy::{ecs::system::QueryLens, prelude::*};
 
 use crate::{cli::CliArgs, game::LoadGame};
 
-use super::{GameMenu, GameMenuDimLayer, PopupState};
+use super::{GameMenuDimLayer, PopupState};
 
 #[derive(Clone, Copy, Debug, Default, Eq, States)]
 pub enum MenuState {
@@ -50,20 +50,24 @@ impl fmt::Display for MenuState {
     }
 }
 
-pub(super) fn on_enter_menu_state(
-    menu_state: Res<State<MenuState>>,
-    mut fen_popup_state: ResMut<PopupState>,
-    mut game_over_timer: ResMut<GameOverTimer>,
-    mut q_menu_components: Query<&mut Style, Or<(With<GameMenuDimLayer>, With<GameMenu>)>>,
-) {
-    let mut set_menu_display =
-        |d| q_menu_components.iter_mut().for_each(|mut style| style.display = d);
-    match *menu_state.get() {
-        MenuState::FenInput => fen_popup_state.reset(),
-        MenuState::Menu => set_menu_display(Display::Flex),
-        MenuState::Game => set_menu_display(Display::None),
-        MenuState::DoGameOver => *game_over_timer = default(),
-    }
+pub(super) fn on_enter_menu_state_fen_input(mut fen_popup_state: ResMut<PopupState>) {
+    fen_popup_state.reset();
+}
+
+pub(super) fn on_enter_menu_state_menu(mut q_menu: Query<&mut Style, With<GameMenuDimLayer>>) {
+    set_menu_display(q_menu.transmute_lens(), Display::Flex);
+}
+
+pub(super) fn on_enter_menu_state_game(mut q_menu: Query<&mut Style, With<GameMenuDimLayer>>) {
+    set_menu_display(q_menu.transmute_lens(), Display::None);
+}
+
+pub(super) fn on_enter_menu_state_do_game_over(mut game_over_timer: ResMut<GameOverTimer>) {
+    *game_over_timer = default();
+}
+
+fn set_menu_display(mut q_lens_menu: QueryLens<&mut Style>, display: Display) {
+    q_lens_menu.query().iter_mut().for_each(|mut style| style.display = display);
 }
 
 #[derive(Resource)]

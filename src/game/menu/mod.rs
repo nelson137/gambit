@@ -40,10 +40,10 @@ impl Plugin for GameMenuLogicPlugin {
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
             .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
-            .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state)
-            .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state)
-            .add_systems(OnEnter(MenuState::Game), on_enter_menu_state)
-            .add_systems(OnEnter(MenuState::DoGameOver), on_enter_menu_state)
+            .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state_fen_input)
+            .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state_menu)
+            .add_systems(OnEnter(MenuState::Game), on_enter_menu_state_game)
+            .add_systems(OnEnter(MenuState::DoGameOver), on_enter_menu_state_do_game_over)
             .add_systems(Update, fen_menu.run_if(in_state(MenuState::FenInput)))
             .add_systems(
                 Update,
