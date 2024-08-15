@@ -171,7 +171,11 @@ impl Component for PromotingPiece {
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.noop().on_add(hook!(PromotingPiece => start_promotion)).noop();
+        hooks
+            .noop()
+            .on_add(hook!(PromotingPiece => start_promotion))
+            .on_remove(hook!(PromotingPiece => end_promotion))
+            .noop();
     }
 }
 
@@ -181,8 +185,7 @@ pub fn start_promotion(
     board_state: Res<BoardState>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
-    mut q_style: Query<&mut Style>,
-    mut q_promoters: Query<(Entity, &PromotionUi)>,
+    mut q_promoters: Query<(Entity, &PromotionUi, &mut Style)>,
 ) {
     let PromotingPiece { from_sq, to_sq } = promoting;
     let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
@@ -190,13 +193,36 @@ pub fn start_promotion(
 
     trace!(?color, %from_sq, %to_sq, "Start promotion");
 
+    // Hide the piece
     *vis = Visibility::Hidden;
 
-    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
+    // Show the promoter UI
+    if let Some((entity, _, mut style)) =
+        q_promoters.iter_mut().find(|(_, promo, _)| promo.0 == color)
+    {
         commands.entity(entity).set_parent(board_state.tile(to_sq));
-        if let Ok(mut style) = q_style.get_mut(entity) {
-            style.display = Display::Block;
-        }
+        style.display = Display::Block;
+    }
+}
+
+pub fn end_promotion(
+    In((piece, promoting)): In<(Entity, PromotingPiece)>,
+    q_piece_meta: Query<&PieceMeta>,
+    mut q_visibility: Query<&mut Visibility>,
+    mut q_promoters: Query<(&PromotionUi, &mut Style)>,
+) {
+    let PromotingPiece { from_sq, to_sq } = promoting;
+    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
+    let Ok(mut piece_vis) = q_visibility.get_mut(piece) else { return };
+
+    trace!(?color, %from_sq, %to_sq, "End promotion");
+
+    // Show the piece
+    *piece_vis = Visibility::Visible;
+
+    // Hide the promoter UI
+    if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
+        style.display = Display::None;
     }
 }
 
@@ -254,21 +280,12 @@ pub fn promotion_result_handler(
     mut commands: Commands,
     board_state: Res<BoardState>,
     asset_server: Res<AssetServer>,
-    mut q_promo: Query<
-        (Entity, &PieceMeta, &PromotingPiece, &mut Visibility, &mut UiImage),
-        Without<PromotionUi>,
-    >,
-    mut q_promoters: Query<(&PromotionUi, &mut Style), Without<PromotingPiece>>,
+    mut q_promo: Query<(Entity, &PieceMeta, &PromotingPiece, &mut UiImage), Without<PromotionUi>>,
 ) {
     let Some(result) = promotion_result else { return };
 
-    let Ok((
-        entity,
-        &PieceMeta { color, .. },
-        &PromotingPiece { from_sq, to_sq },
-        mut vis,
-        mut image,
-    )) = q_promo.get_single_mut()
+    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq }, mut image)) =
+        q_promo.get_single_mut()
     else {
         warn!("Ignoring promotion event as no piece is awaiting promotion");
         return;
@@ -278,11 +295,6 @@ pub fn promotion_result_handler(
 
     let mut entity_cmds = commands.entity(entity);
     entity_cmds.remove::<PromotingPiece>();
-
-    // Hide the promoter UI
-    if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
-        style.display = Display::None;
-    }
 
     match result {
         PromotionResult::Promote(promo_typ) => {
@@ -295,7 +307,4 @@ pub fn promotion_result_handler(
             commands.entity(board_state.tile(from_sq)).push_children(&[entity]);
         }
     }
-
-    // Show the piece
-    *vis = Visibility::Visible;
 }
