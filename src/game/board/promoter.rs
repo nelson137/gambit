@@ -212,20 +212,21 @@ pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> bool {
 
 pub fn promotion_ui_sizes(
     q_tile: Query<&Node, With<Tile>>,
-    mut button_set: ParamSet<(
-        Query<&mut Style, With<PromotionButton>>,
-        Query<&mut Style, With<PromotionCancelButton>>,
-    )>,
+    mut q_style: Query<&mut Style>,
+    mut q_promo_button: Query<(), With<PromotionButton>>,
+    mut q_cancel_button: Query<(), With<PromotionCancelButton>>,
 ) {
     let Some(tile_node) = q_tile.iter().next() else { return };
     let tile_size = tile_node.size();
 
-    for mut style in &mut button_set.p0() {
+    let mut lens = q_promo_button.join::<&mut Style, &mut Style>(&mut q_style);
+    for mut style in &mut lens.query() {
         style.width = Val::Px(tile_size.x);
         style.height = Val::Px(tile_size.y);
     }
 
-    for mut style in &mut button_set.p1() {
+    let mut lens = q_cancel_button.join::<&mut Style, &mut Style>(&mut q_style);
+    for mut style in &mut lens.query() {
         style.width = Val::Px(tile_size.x);
         style.height = Val::Px(tile_size.y / 2.0);
     }
