@@ -23,8 +23,8 @@ impl Plugin for PromotionPlugin {
             .add_systems(Update, promotion_ui_sizes.run_if(is_promoting_piece))
             .add_systems(
                 PreUpdate,
-                (promotion_buttons, promotion_cancel_click_handler, promotion_event_handler)
-                    .chain()
+                promotion_click_handler
+                    .pipe(promotion_result_handler)
                     .in_set(PromoterSystem)
                     .run_if(is_promoting_piece)
                     .after(UiSystem::Focus),
@@ -128,9 +128,7 @@ pub fn spawn_promoters(
                 .with_children(|cmds| {
                     cmds.spawn((
                         debug_name_f!("Promotion Cancel Button ({color})"),
-                        // PromotionButton(color, None),
                         PromotionCancelButton,
-                        // ButtonBundle {
                         NodeBundle {
                             background_color: CANCEL_BUTTON_BG_COLOR.into(),
                             style: Style {
@@ -146,11 +144,7 @@ pub fn spawn_promoters(
                         let font = asset_server.load(FONT_PATH);
                         let text_style =
                             TextStyle { font, font_size: 24.0, color: CANCEL_BUTTON_FG_COLOR };
-                        cmds.spawn(TextBundle {
-                            text: Text::from_section("x", text_style),
-                            focus_policy: FocusPolicy::Block,
-                            ..default()
-                        });
+                        cmds.spawn(TextBundle::from_section("x", text_style));
                     });
                 });
             })
@@ -232,89 +226,76 @@ pub fn promotion_ui_sizes(
     }
 }
 
-#[derive(Clone, Copy, Debug, Event)]
-pub enum PromotionEvent {
+#[derive(Clone, Copy, Debug)]
+pub enum PromotionResult {
     Promote(PieceType),
     Cancel,
 }
 
-pub fn promotion_buttons(
-    q_button: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
-    mut event_writer: EventWriter<PromotionEvent>,
+pub fn promotion_click_handler(
+    q_buttons: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
     mut mouse_buttons: ResMut<ButtonInput<MouseButton>>,
-) {
-    for (button, interaction) in &q_button {
-        if let Interaction::Pressed = interaction {
-            event_writer.send(PromotionEvent::Promote(button.0));
-            mouse_buttons.reset_all();
-        }
+) -> Option<PromotionResult> {
+    if let Some((button, _)) = q_buttons.iter().find(|(_, i)| **i == Interaction::Pressed) {
+        mouse_buttons.reset_all();
+        return Some(PromotionResult::Promote(button.0));
     }
-}
 
-pub fn promotion_cancel_click_handler(
-    mouse_buttons: Res<ButtonInput<MouseButton>>,
-    mut event_writer: EventWriter<PromotionEvent>,
-) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
-        event_writer.send(PromotionEvent::Cancel);
+        mouse_buttons.reset_all();
+        return Some(PromotionResult::Cancel);
     }
+
+    None
 }
 
-pub fn promotion_event_handler(
+pub fn promotion_result_handler(
+    In(promotion_result): In<Option<PromotionResult>>,
     mut commands: Commands,
     board_state: Res<BoardState>,
     asset_server: Res<AssetServer>,
-    mut event_reader: EventReader<PromotionEvent>,
     mut q_promo: Query<
         (Entity, &PieceMeta, &PromotingPiece, &mut Visibility, &mut UiImage),
         Without<PromotionUi>,
     >,
     mut q_promoters: Query<(&PromotionUi, &mut Style), Without<PromotingPiece>>,
 ) {
-    let mut event_iter = event_reader.read();
-    if let Some(event) = event_iter.next().copied() {
-        // Exhaust the rest of the events.
-        // Currently there is no easy way to scope click events to entities given the state of
-        // `bevy_ui`. The easiest way to handle promotions and cancels is to always have the cancel
-        // event fire on any click but run the system after the buttons system. That way, within 1
-        // frame, there may be 2 events fired but only the first is used.
-        event_iter.count();
+    let Some(result) = promotion_result else { return };
 
-        let Ok((
-            entity,
-            &PieceMeta { color, .. },
-            &PromotingPiece { from_sq, to_sq },
-            mut vis,
-            mut image,
-        )) = q_promo.get_single_mut()
-        else {
-            warn!("Ignoring promotion event as no piece is awaiting promotion");
-            return;
-        };
+    let Ok((
+        entity,
+        &PieceMeta { color, .. },
+        &PromotingPiece { from_sq, to_sq },
+        mut vis,
+        mut image,
+    )) = q_promo.get_single_mut()
+    else {
+        warn!("Ignoring promotion event as no piece is awaiting promotion");
+        return;
+    };
 
-        trace!(?color, %from_sq, %to_sq, ?event, "Finish promotion");
+    trace!(?color, %from_sq, %to_sq, ?result, "Finish promotion");
 
-        let mut entity_cmds = commands.entity(entity);
-        entity_cmds.remove::<PromotingPiece>();
+    let mut entity_cmds = commands.entity(entity);
+    entity_cmds.remove::<PromotingPiece>();
 
-        // Hide the promoter UI
-        if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
-            style.display = Display::None;
-        }
-
-        match event {
-            PromotionEvent::Promote(promo_typ) => {
-                let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
-                image.texture = asset_server.load(new_asset_path);
-                entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
-            }
-            PromotionEvent::Cancel => {
-                // Re-parent piece back to its original square
-                commands.entity(board_state.tile(from_sq)).push_children(&[entity]);
-            }
-        }
-
-        // Show the piece
-        *vis = Visibility::Visible;
+    // Hide the promoter UI
+    if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
+        style.display = Display::None;
     }
+
+    match result {
+        PromotionResult::Promote(promo_typ) => {
+            let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
+            image.texture = asset_server.load(new_asset_path);
+            entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
+        }
+        PromotionResult::Cancel => {
+            // Re-parent piece back to its original square
+            commands.entity(board_state.tile(from_sq)).push_children(&[entity]);
+        }
+    }
+
+    // Show the piece
+    *vis = Visibility::Visible;
 }

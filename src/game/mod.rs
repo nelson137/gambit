@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use crate::{cli::CliArgs, utils::NoopExts};
 
 use self::{
-    board::{MovePlugin, PieceAnimationPlugin, PromotionEvent, SelectionPlugin},
+    board::{MovePlugin, PieceAnimationPlugin, SelectionPlugin},
     camera::setup_camera,
     menu::GameMenuLogicPlugin,
     menu::MenuState,
@@ -42,7 +42,6 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(StockfishPlugin)
             // Events
             .add_event::<LoadGame>()
-            .add_event::<PromotionEvent>()
             // Startup
             .add_systems(Startup, setup_camera)
             .add_systems(PostStartup, load_game_on_startup)
