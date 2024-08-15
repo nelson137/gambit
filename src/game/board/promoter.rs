@@ -65,6 +65,7 @@ pub fn spawn_promoters(
                 debug_name_f!("Promoter ({color})"),
                 NodeBundle {
                     style: Style {
+                        display: Display::None,
                         position_type: PositionType::Absolute,
                         left,
                         top,
@@ -72,7 +73,6 @@ pub fn spawn_promoters(
                         flex_direction,
                         ..default()
                     },
-                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_PROMOTER),
                     ..default()
                 },
@@ -187,6 +187,7 @@ pub fn start_promotion(
     board_state: Res<BoardState>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
+    mut q_style: Query<&mut Style>,
     mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
     let PromotingPiece { from_sq, to_sq } = promoting;
@@ -199,8 +200,8 @@ pub fn start_promotion(
 
     if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
         commands.entity(entity).set_parent(board_state.tile(to_sq));
-        if let Ok(mut vis) = q_visibility.get_mut(entity) {
-            *vis = Visibility::Visible;
+        if let Ok(mut style) = q_style.get_mut(entity) {
+            style.display = Display::Block;
         }
     }
 }
@@ -267,7 +268,7 @@ pub fn promotion_event_handler(
         (Entity, &PieceMeta, &PromotingPiece, &mut Visibility, &mut UiImage),
         Without<PromotionUi>,
     >,
-    mut q_promoters: Query<(&PromotionUi, &mut Visibility), Without<PromotingPiece>>,
+    mut q_promoters: Query<(&PromotionUi, &mut Style), Without<PromotingPiece>>,
 ) {
     let mut event_iter = event_reader.read();
     if let Some(event) = event_iter.next().copied() {
@@ -296,8 +297,8 @@ pub fn promotion_event_handler(
         entity_cmds.remove::<PromotingPiece>();
 
         // Hide the promoter UI
-        if let Some((_, mut vis)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
-            *vis = Visibility::Hidden;
+        if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
+            style.display = Display::None;
         }
 
         match event {
