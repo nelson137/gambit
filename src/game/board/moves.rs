@@ -78,6 +78,10 @@ pub fn move_piece(
 
         commands.entity(entity).remove::<MovePiece>();
 
+        // Clear selection & hints, update last move highlights
+        commands.trigger(SelectionEvent::Unselect);
+        commands.trigger(SelectionEvent::UpdateLastMove(from_sq, to_sq));
+
         // Move UI piece
         commands.add(MoveUiPiece::new(entity, color, from_sq, to_sq, animate));
 
@@ -119,10 +123,6 @@ pub fn move_piece(
                 PieceColor::WHITE => PlayGameAudio::MoveSelf,
             }
         });
-
-        // Clear selection & hints, update last move highlights
-        commands.trigger(SelectionEvent::Unselect);
-        commands.trigger(SelectionEvent::UpdateLastMove(from_sq, to_sq));
 
         // Update `chess::Board`
         board_state.make_board_move(from_sq, to_sq, promotion);

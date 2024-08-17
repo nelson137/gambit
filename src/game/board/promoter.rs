@@ -309,9 +309,12 @@ pub fn promotion_result_handler(
 
     match result {
         PromotionResult::Promote(promo_typ) => {
+            // Move the piece
+            entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
+
+            // Update the piece texture
             let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
             image.texture = asset_server.load(new_asset_path);
-            entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
         }
         PromotionResult::Cancel => {
             // Re-parent piece back to its original square
