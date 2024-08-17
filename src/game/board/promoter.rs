@@ -100,9 +100,6 @@ pub fn spawn_promoters(
                                 image: UiImage::new(asset_server.load(asset_path)),
                                 focus_policy: FocusPolicy::Pass,
                                 style: Style {
-                                    position_type: PositionType::Absolute,
-                                    top: Val::Px(0.0),
-                                    left: Val::Px(0.0),
                                     width: Val::Percent(100.0),
                                     height: Val::Percent(100.0),
                                     ..default()
