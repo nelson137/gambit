@@ -7,7 +7,7 @@ use bevy::{
 use crate::{
     debug_name_f,
     game::{
-        board::MovePiece,
+        board::{MovePiece, SelectionEvent},
         consts::{FONT_PATH, Z_PROMOTER},
     },
     utils::{hook, NoopExts},
@@ -190,6 +190,9 @@ pub fn start_promotion(
     let Ok(mut vis) = q_visibility.get_mut(piece) else { return };
 
     trace!(?color, %from_sq, %to_sq, "Start promotion");
+
+    // Clear selection & hints
+    commands.trigger(SelectionEvent::Unselect);
 
     // Hide the piece
     *vis = Visibility::Hidden;
