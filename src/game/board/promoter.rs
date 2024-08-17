@@ -129,8 +129,9 @@ pub fn spawn_promoters(
                     cmds.spawn((
                         debug_name_f!("Promotion Cancel Button ({color})"),
                         PromotionCancelButton,
-                        NodeBundle {
+                        ButtonBundle {
                             background_color: CANCEL_BUTTON_BG_COLOR.into(),
+                            focus_policy: FocusPolicy::Block,
                             style: Style {
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
@@ -238,7 +239,7 @@ fn promotion_ui_sizes(
     q_tile: Query<&Node, With<Tile>>,
     mut q_style: Query<PromoButtonD>,
     mut q_promo_button: Query<(), With<PromotionButton>>,
-    mut q_cancel_button: Query<(), With<PromotionCancelButton>>,
+    mut q_cancel_buttons: Query<(), With<PromotionCancelButton>>,
 ) {
     let Some(tile_node) = q_tile.iter().next() else { return };
     let tile_size = tile_node.size();
@@ -249,7 +250,7 @@ fn promotion_ui_sizes(
         style.height = Val::Px(tile_size.y);
     }
 
-    let mut lens = q_cancel_button.join::<PromoButtonD, PromoButtonD>(&mut q_style);
+    let mut lens = q_cancel_buttons.join::<PromoButtonD, PromoButtonD>(&mut q_style);
     for (_, mut style) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
         style.width = Val::Px(tile_size.x);
         style.height = Val::Px(tile_size.y / 2.0);
@@ -264,11 +265,17 @@ pub enum PromotionResult {
 
 pub fn promotion_click_handler(
     q_buttons: Query<(&PromotionButton, &Interaction), Changed<Interaction>>,
+    q_cancel_buttons: Query<(&PromotionCancelButton, &Interaction), Changed<Interaction>>,
     mut mouse_buttons: ResMut<ButtonInput<MouseButton>>,
 ) -> Option<PromotionResult> {
     if let Some((button, _)) = q_buttons.iter().find(|(_, i)| **i == Interaction::Pressed) {
         mouse_buttons.reset_all();
         return Some(PromotionResult::Promote(button.0));
+    }
+
+    if q_cancel_buttons.iter().any(|(_, i)| *i == Interaction::Pressed) {
+        mouse_buttons.reset_all();
+        return Some(PromotionResult::Cancel);
     }
 
     if mouse_buttons.just_pressed(MouseButton::Left) {
