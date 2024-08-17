@@ -20,7 +20,7 @@ pub struct PromotionPlugin;
 impl Plugin for PromotionPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            .add_systems(Update, promotion_ui_sizes.run_if(is_promoting_piece))
+            .add_systems(Update, promotion_ui_sizes)
             .add_systems(
                 PreUpdate,
                 promotion_click_handler
@@ -65,7 +65,6 @@ pub fn spawn_promoters(
                 debug_name_f!("Promoter ({color})"),
                 NodeBundle {
                     style: Style {
-                        display: Display::None,
                         position_type: PositionType::Absolute,
                         left,
                         top,
@@ -73,6 +72,7 @@ pub fn spawn_promoters(
                         flex_direction,
                         ..default()
                     },
+                    visibility: Visibility::Hidden,
                     z_index: ZIndex::Global(Z_PROMOTER),
                     ..default()
                 },
@@ -185,7 +185,7 @@ pub fn start_promotion(
     board_state: Res<BoardState>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
-    mut q_promoters: Query<(Entity, &PromotionUi, &mut Style)>,
+    mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
     let PromotingPiece { from_sq, to_sq } = promoting;
     let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
@@ -197,11 +197,11 @@ pub fn start_promotion(
     *vis = Visibility::Hidden;
 
     // Show the promoter UI
-    if let Some((entity, _, mut style)) =
-        q_promoters.iter_mut().find(|(_, promo, _)| promo.0 == color)
-    {
+    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
         commands.entity(entity).set_parent(board_state.tile(to_sq));
-        style.display = Display::Block;
+        if let Ok(mut vis) = q_visibility.get_mut(entity) {
+            *vis = Visibility::Visible;
+        }
     }
 }
 
@@ -209,7 +209,7 @@ pub fn end_promotion(
     In((piece, promoting)): In<(Entity, PromotingPiece)>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
-    mut q_promoters: Query<(&PromotionUi, &mut Style)>,
+    mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
     let PromotingPiece { from_sq, to_sq } = promoting;
     let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
@@ -221,8 +221,10 @@ pub fn end_promotion(
     *piece_vis = Visibility::Visible;
 
     // Hide the promoter UI
-    if let Some((_, mut style)) = q_promoters.iter_mut().find(|(promo, _)| promo.0 == color) {
-        style.display = Display::None;
+    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
+        if let Ok(mut vis) = q_visibility.get_mut(entity) {
+            *vis = Visibility::Hidden;
+        }
     }
 }
 
@@ -230,23 +232,25 @@ pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> bool {
     !q_promo.is_empty()
 }
 
-pub fn promotion_ui_sizes(
+type PromoButtonD<'a> = (&'a ViewVisibility, &'a mut Style);
+
+fn promotion_ui_sizes(
     q_tile: Query<&Node, With<Tile>>,
-    mut q_style: Query<&mut Style>,
+    mut q_style: Query<PromoButtonD>,
     mut q_promo_button: Query<(), With<PromotionButton>>,
     mut q_cancel_button: Query<(), With<PromotionCancelButton>>,
 ) {
     let Some(tile_node) = q_tile.iter().next() else { return };
     let tile_size = tile_node.size();
 
-    let mut lens = q_promo_button.join::<&mut Style, &mut Style>(&mut q_style);
-    for mut style in &mut lens.query() {
+    let mut lens = q_promo_button.join::<PromoButtonD, PromoButtonD>(&mut q_style);
+    for (_, mut style) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
         style.width = Val::Px(tile_size.x);
         style.height = Val::Px(tile_size.y);
     }
 
-    let mut lens = q_cancel_button.join::<&mut Style, &mut Style>(&mut q_style);
-    for mut style in &mut lens.query() {
+    let mut lens = q_cancel_button.join::<PromoButtonD, PromoButtonD>(&mut q_style);
+    for (_, mut style) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
         style.width = Val::Px(tile_size.x);
         style.height = Val::Px(tile_size.y / 2.0);
     }
