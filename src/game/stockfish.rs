@@ -20,7 +20,7 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::board::{BoardState, MovePiece, MovePlugin};
+use super::board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin};
 
 const STOCKFISH_EXECUTABLE: &[u8] =
     include_bytes!("../../target/stockfish/Stockfish-sf_15/src/stockfish");
@@ -36,9 +36,10 @@ impl Plugin for StockfishPlugin {
         app.noop()
             .add_event::<SfCommand>()
             .init_resource::<SfCommunications>()
+            .observe(update_eval_bar)
+            .observe(stockfish_move_as_black)
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)
-            .add_systems(PreUpdate, (update_eval_bar, stockfish_move_as_black).chain())
             .noop();
     }
 }
@@ -332,7 +333,7 @@ fn stockfish_update(
                     });
 
                     let piece = board_state.piece(from_sq);
-                    commands.entity(piece).insert(MovePiece::new(from_sq, to_sq, None, true));
+                    commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, true), piece);
 
                     break 'is_waiting;
                 }
@@ -411,25 +412,21 @@ fn stockfish_update(
     }
 }
 
-fn update_eval_bar(removed: RemovedComponents<MovePiece>, mut stockfish: ResMut<Stockfish>) {
-    if !removed.is_empty() {
-        stockfish.push_cmd(SfCommand::Eval);
-    }
+fn update_eval_bar(_trigger: Trigger<MovePieceCompleted>, mut stockfish: ResMut<Stockfish>) {
+    stockfish.push_cmd(SfCommand::Eval);
 }
 
 fn stockfish_move_as_black(
+    _trigger: Trigger<MovePieceCompleted>,
     board_state: Res<BoardState>,
     mut stockfish: ResMut<Stockfish>,
-    mut removed: RemovedComponents<MovePiece>,
 ) {
-    for _ in removed.read() {
-        if board_state.side_to_move() == PieceColor::BLACK {
-            stockfish.extend_cmds([
-                SfCommand::Position(board_state.fen()),
-                SfCommand::Go,
-                SfCommand::Sleep(2500),
-                SfCommand::Stop,
-            ]);
-        }
+    if board_state.side_to_move() == PieceColor::BLACK {
+        stockfish.extend_cmds([
+            SfCommand::Position(board_state.fen()),
+            SfCommand::Go,
+            SfCommand::Sleep(2500),
+            SfCommand::Stop,
+        ]);
     }
 }

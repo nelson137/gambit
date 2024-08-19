@@ -304,13 +304,13 @@ pub fn promotion_result_handler(
 
     trace!(?color, %from_sq, %to_sq, ?result, "Finish promotion");
 
-    let mut entity_cmds = commands.entity(entity);
-    entity_cmds.remove::<PromotingPiece>();
+    commands.entity(entity).remove::<PromotingPiece>();
 
     match result {
         PromotionResult::Promote(promo_typ) => {
             // Move the piece
-            entity_cmds.insert(MovePiece::new(from_sq, to_sq, Some(promo_typ), false));
+            commands
+                .trigger_targets(MovePiece::new(from_sq, to_sq, Some(promo_typ), false), entity);
 
             // Update the piece texture
             let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
