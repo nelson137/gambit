@@ -290,13 +290,12 @@ pub fn promotion_result_handler(
     In(promotion_result): In<Option<PromotionResult>>,
     mut commands: Commands,
     board_state: Res<BoardState>,
-    asset_server: Res<AssetServer>,
-    mut q_promo: Query<(Entity, &PieceMeta, &PromotingPiece, &mut UiImage), Without<PromotionUi>>,
+    q_promo: Query<(Entity, &PieceMeta, &PromotingPiece), Without<PromotionUi>>,
 ) {
     let Some(result) = promotion_result else { return };
 
-    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq }, mut image)) =
-        q_promo.get_single_mut()
+    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq })) =
+        q_promo.get_single()
     else {
         warn!("Ignoring promotion event as no piece is awaiting promotion");
         return;
@@ -311,10 +310,6 @@ pub fn promotion_result_handler(
             // Move the piece
             commands
                 .trigger_targets(MovePiece::new(from_sq, to_sq, Some(promo_typ), false), entity);
-
-            // Update the piece texture
-            let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
-            image.texture = asset_server.load(new_asset_path);
         }
         PromotionResult::Cancel => {
             // Re-parent piece back to its original square

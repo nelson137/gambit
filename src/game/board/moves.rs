@@ -47,19 +47,22 @@ impl MovePiece {
 pub fn move_piece(
     trigger: Trigger<MovePiece>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut board_state: ResMut<BoardState>,
-    q_meta: Query<&PieceMeta>,
+    mut q_info: Query<(&PieceMeta, &mut UiImage)>,
 ) {
     let entity = trigger.entity();
     let &MovePiece { from_sq, to_sq, promotion, animate } = trigger.event();
-    let Ok(&PieceMeta { color, typ }) = q_meta.get(entity) else { return };
+    let Ok((&PieceMeta { color, typ }, mut image)) = q_info.get_mut(entity) else { return };
 
     trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
 
-    if promotion.is_none()
-        && typ == PieceType::PAWN
-        && to_sq.get_rank() == color.to_their_backrank()
-    {
+    if let Some(promo_typ) = promotion {
+        // Update the piece texture
+        let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
+        image.texture = asset_server.load(new_asset_path);
+    } else if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
+        // Start promotion
         commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
         return;
     }
