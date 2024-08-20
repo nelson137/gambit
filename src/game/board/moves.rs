@@ -21,44 +21,11 @@ impl Plugin for MovePlugin {
             .add_event::<MovePieceCompleted>()
             // Observers
             .observe(move_piece)
-            // Systems
-            .add_systems(PostUpdate, start_move)
             .noop();
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Component)]
-pub struct StartMove {
-    from_sq: Square,
-    to_sq: Square,
-    animate: bool,
-}
-
-impl StartMove {
-    pub fn new(from_sq: Square, to_sq: Square, animate: bool) -> Self {
-        Self { from_sq, to_sq, animate }
-    }
-}
-
-pub fn start_move(
-    mut commands: Commands,
-    q_added: Query<(Entity, &PieceMeta, &StartMove), Added<StartMove>>,
-) {
-    for (entity, &PieceMeta { color, typ }, &StartMove { from_sq, to_sq, animate }) in &q_added {
-        trace!(?color, ?typ, %from_sq, %to_sq, "Start move");
-
-        let mut entity_cmds = commands.entity(entity);
-        entity_cmds.remove::<StartMove>();
-
-        if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
-            entity_cmds.insert(PromotingPiece::new(from_sq, to_sq));
-        } else {
-            commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, animate), entity);
-        }
-    }
-}
-
-#[derive(Event)]
+#[derive(Event, Debug, PartialEq, Eq)]
 pub struct MovePiece {
     from_sq: Square,
     to_sq: Square,
@@ -88,6 +55,14 @@ pub fn move_piece(
     let Ok(&PieceMeta { color, typ }) = q_meta.get(entity) else { return };
 
     trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
+
+    if promotion.is_none()
+        && typ == PieceType::PAWN
+        && to_sq.get_rank() == color.to_their_backrank()
+    {
+        commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
+        return;
+    }
 
     // Clear selection & hints, update last move highlights
     commands.trigger(SelectionEvent::Unselect);

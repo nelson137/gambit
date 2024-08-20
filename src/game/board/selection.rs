@@ -7,7 +7,7 @@ use bevy::{
 };
 
 use crate::{
-    game::{board::StartMove, menu::MenuState, mouse::Dragging, LoadGame},
+    game::{board::MovePiece, menu::MenuState, mouse::Dragging, LoadGame},
     utils::NoopExts,
 };
 
@@ -150,7 +150,7 @@ fn handle_mouse_selection_events(
             }
             SelectionStateAction::Move { from_sq, to_sq, animate } => {
                 let piece = board_state.piece(from_sq);
-                commands.entity(piece).insert(StartMove::new(from_sq, to_sq, animate));
+                commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, animate), piece);
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
@@ -340,7 +340,7 @@ mod tests {
 
             fn assert_state(&self, expected: SelectionState);
             fn assert_piece_in_drag_container(&mut self, expected: Square);
-            fn assert_piece_move_marker(&self, piece: Square, expected: StartMove);
+            fn assert_piece_move_marker(&mut self, expected: MovePiece);
             fn assert_selected(&mut self, expected: Option<Square>);
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
             fn assert_piece_on_tile(&self, piece: Square, tile: Square);
@@ -390,10 +390,9 @@ mod tests {
                 assert_eq!(actual, expected);
             }
 
-            fn assert_piece_move_marker(&self, piece: Square, expected: StartMove) {
-                let entity = self.board_state().piece(piece);
-                let actual = self.world().entity(entity).get::<StartMove>().copied();
-                assert_eq!(actual, Some(expected), "start move marker on piece");
+            fn assert_piece_move_marker(&mut self, expected: MovePiece) {
+                let actual = self.world_mut().resource_mut::<Events<MovePiece>>().drain().next();
+                assert_eq!(actual, Some(expected), "move piece event on piece");
             }
 
             fn assert_selected(&mut self, expected: Option<Square>) {
@@ -492,7 +491,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, false));
+        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, false));
     }
 
     #[test]
@@ -539,7 +538,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, true));
+        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, true));
     }
 
     #[test]
@@ -618,7 +617,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(Square::D2, StartMove::new(Square::D2, Square::D4, false));
+        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, false));
     }
 
     #[test]
