@@ -79,7 +79,7 @@ impl LoadGame {
         Self::new(board, MenuState::Game)
     }
 
-    pub fn in_menu(board: chess::Board) -> Self {
-        Self::new(board, MenuState::Menu)
+    pub fn in_menu() -> Self {
+        Self::new(default(), MenuState::Menu)
     }
 }

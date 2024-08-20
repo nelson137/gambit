@@ -87,6 +87,6 @@ pub(super) fn game_over(
     game_over_timer.0.tick(time.delta());
     if game_over_timer.0.just_finished() {
         trace!("Reset game");
-        commands.trigger(LoadGame::in_menu(default()));
+        commands.trigger(LoadGame::in_menu());
     }
 }
