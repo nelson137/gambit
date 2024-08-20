@@ -35,7 +35,11 @@ pub(super) fn fen_menu(
             next_menu_state.set(MenuState::Menu);
         }
         FenPopupInteraction::Submit => match chess::Board::from_str(&state.fen) {
-            Ok(board) => commands.trigger(LoadGame::in_game(board)),
+            Ok(board) => commands.trigger(LoadGame::in_game(
+                board,
+                state.halfmove_clock,
+                state.fullmove_count,
+            )),
             Err(err) => error!("{err}"),
         },
         FenPopupInteraction::None => {}

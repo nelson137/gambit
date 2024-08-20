@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use bevy::prelude::*;
 
 use crate::{cli::CliArgs, utils::NoopExts};
@@ -52,34 +50,41 @@ impl Plugin for GameLogicPlugin {
 
 fn load_game_on_startup(world: &mut World) {
     let cli_args = world.resource::<CliArgs>();
-    let (board, menu_state) = match cli_args.fen.as_deref().map(chess::Board::from_str) {
-        None => (default(), MenuState::Menu),
+    let (data, menu_state) = match cli_args.fen.as_deref().map(board::parse_fen) {
+        None => ((default(), 0, 1), MenuState::Menu),
         Some(Err(err)) => {
             error!("{err}");
             return;
         }
-        Some(Ok(board)) => (board, MenuState::Game),
+        Some(Ok(data)) => (data, MenuState::Game),
     };
 
-    world.trigger(LoadGame::new(board, menu_state));
+    world.trigger(LoadGame::new(data.0, data.1, data.2, menu_state));
 }
 
 #[derive(Event)]
 pub struct LoadGame {
     pub board: chess::Board,
     pub menu_state: MenuState,
+    pub half_move_clock: u8,
+    pub full_move_count: u16,
 }
 
 impl LoadGame {
-    pub fn new(board: chess::Board, menu_state: MenuState) -> Self {
-        Self { board, menu_state }
+    pub fn new(
+        board: chess::Board,
+        half_move_clock: u8,
+        full_move_count: u16,
+        menu_state: MenuState,
+    ) -> Self {
+        Self { board, half_move_clock, full_move_count, menu_state }
     }
 
-    pub fn in_game(board: chess::Board) -> Self {
-        Self::new(board, MenuState::Game)
+    pub fn in_game(board: chess::Board, half_move_clock: u8, full_move_count: u16) -> Self {
+        Self::new(board, half_move_clock, full_move_count, MenuState::Game)
     }
 
     pub fn in_menu() -> Self {
-        Self::new(default(), MenuState::Menu)
+        Self::new(default(), 0, 1, MenuState::Menu)
     }
 }

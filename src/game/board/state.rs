@@ -56,7 +56,7 @@ impl FromWorld for BoardState {
     }
 }
 
-fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
+pub fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
     let fen = fen.trim();
 
     if fen == "default" {
@@ -81,7 +81,8 @@ pub(super) fn set_board_on_load_game(
     trigger: Trigger<LoadGame>,
     mut board_state: ResMut<BoardState>,
 ) {
-    board_state.set_board(&trigger.event().board);
+    let e = trigger.event();
+    board_state.set_board(&e.board, e.half_move_clock, e.full_move_count);
 }
 
 //==================================================
@@ -176,8 +177,10 @@ impl BoardState {
         &self.board
     }
 
-    pub fn set_board(&mut self, board: &Board) {
+    pub fn set_board(&mut self, board: &Board, half_move_clock: u8, full_move_count: u16) {
         self.board = *board;
+        self.half_move_clock = half_move_clock;
+        self.full_move_count = full_move_count;
     }
 
     //------------------------------
