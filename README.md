@@ -23,6 +23,7 @@
 | Draw: 50-move rule | † | `8/5k2/3p4/1p1Pp2p/pP2Pp1P/P4P1K/8/8 b - - 99 50` | `k*` |
 | Promotion |  | `8/3P4/8/2K5/5k2/8/4p3/8 w - - 0 1` | `d8=Q` |
 | Promotion + Capture |  | `4n3/3P4/8/2K5/5k2/8/4p3/3N4 w - - 0 1` | `dxe8=Q` |
+| Promotion to Knight |  | `7k/7p/7B/8/8/8/2K1p1Q1/8 w - - 0 1` | `*`, `e2e1n` |
 
 † Draw
 <br>
