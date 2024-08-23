@@ -161,7 +161,7 @@ impl Command for MoveUiPiece {
         trace!(to_sq = %to_sq, "Move UI piece");
 
         if let Some(mut square) = world.entity_mut(entity).get_mut::<Square>() {
-            square.move_to(to_sq);
+            *square = to_sq;
         }
 
         let mut board_state = world.resource_mut::<BoardState>();
