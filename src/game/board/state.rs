@@ -341,6 +341,10 @@ impl BoardState {
         self.full_move_count += 1;
     }
 
+    pub fn move_is_en_passant(&self, color: PieceColor, to_sq: Square) -> bool {
+        to_sq.backward(color) == self.en_passant()
+    }
+
     #[must_use]
     pub fn update_piece(
         &mut self,
@@ -356,9 +360,9 @@ impl BoardState {
             // `chess::Board::en_passant` returns an optional square which is that of the piece that
             // can be captured in the en passant move that is currently available on the board.
             // The current move is this en passant if there is an en passant square and the
-            // destination of the move is the square behind it (from the perspective of the
-            // capturer).
-            Some(ep_sq) if ep_sq.forward(color).map(|sq| sq == to_sq).unwrap_or(false) => {
+            // destination of the move is the square ahead of it (from the perspective of the
+            // current player).
+            Some(ep_sq) if ep_sq.forward(color) == Some(to_sq) => {
                 self.pieces.insert(to_sq, piece);
                 self.pieces.remove(&ep_sq)
             }
