@@ -177,7 +177,7 @@ impl Command for UpdatePieceState {
         let Self { color, from_sq, to_sq } = self;
         let captured = world.resource_mut::<BoardState>().update_piece(color, from_sq, to_sq);
         if let Some(piece) = captured {
-            world.entity_mut(piece).insert(Captured);
+            world.trigger_targets(Captured, piece);
         }
     }
 }

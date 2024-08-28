@@ -27,8 +27,7 @@ impl Plugin for CapturePlugin {
             .init_resource::<CaptureState>()
             // Observers
             .observe(load_capture_state)
-            // Systems
-            .add_systems(PostUpdate, captures)
+            .observe(captures)
             .noop();
     }
 }
@@ -310,26 +309,26 @@ impl Command for CapStateUpdate {
     }
 }
 
-#[derive(Component)]
+#[derive(Event)]
 pub struct Captured;
 
 pub fn captures(
+    trigger: Trigger<Captured>,
     mut commands: Commands,
-    mut q_added: Query<(Entity, &PieceMeta, &mut Visibility), Added<Captured>>,
+    mut q_data: Query<(&PieceMeta, &mut Visibility)>,
 ) {
-    for (entity, &PieceMeta { mut color, typ }, mut vis) in &mut q_added {
-        trace!(?color, ?typ, "Capture piece");
+    let Ok((&PieceMeta { mut color, typ }, mut vis)) = q_data.get_mut(trigger.entity()) else {
+        return;
+    };
+    trace!(?color, ?typ, "Capture piece");
 
-        commands.entity(entity).remove::<Captured>();
+    *vis = Visibility::Hidden;
 
-        *vis = Visibility::Hidden;
+    // The count and capture image need to be updated for the player who performed the capture,
+    // i.e. the one whose color is the opposite of that of the captured piece.
+    color = !color;
 
-        // The count and capture image need to be updated for the player who performed the capture,
-        // i.e. the one whose color is the opposite of that of the captured piece.
-        color = !color;
-
-        commands.add(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
-    }
+    commands.add(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
 }
 
 pub struct ResetCapturesUi;
