@@ -302,12 +302,15 @@ fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: C
 mod tests {
     use bevy::ecs::world::Command;
 
+    use crate::game::board::{PieceColor, PieceType};
+
     use super::*;
 
     mod utils {
         use bevy::utils::HashSet;
 
         use crate::game::{
+            board::PieceMeta,
             core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
             mouse::DragContainer,
@@ -343,7 +346,7 @@ mod tests {
             fn assert_piece_move_marker(&mut self, expected: MovePiece);
             fn assert_selected(&mut self, expected: Option<Square>);
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
-            fn assert_piece_on_tile(&self, piece: Square, tile: Square);
+            fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType);
         }
 
         impl TestAppExts for App {
@@ -424,12 +427,23 @@ mod tests {
                 assert_eq!(actual, expected, "enabled hint entities");
             }
 
-            fn assert_piece_on_tile(&self, piece: Square, tile: Square) {
+            fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType) {
                 let board_state = self.board_state();
-                let piece = board_state.piece(piece);
-                let tile = board_state.tile(tile);
-                let piece_parent = self.world().entity(piece).get::<Parent>().map(Parent::get);
-                assert_eq!(piece_parent, Some(tile));
+                let piece = board_state.piece(sq);
+                let tile = board_state.tile(sq);
+                let piece = self.world().entity(piece);
+                let piece_typ = piece.get::<PieceMeta>();
+                assert_eq!(
+                    piece_typ,
+                    Some(&PieceMeta::new(color, typ)),
+                    "piece at square {sq} in piece state is not a {color} {typ}"
+                );
+                let piece_parent = piece.get::<Parent>().map(Parent::get);
+                assert_eq!(
+                    piece_parent,
+                    Some(tile),
+                    "piece at square {sq} in piece state is a child of {sq} tile"
+                );
             }
         }
     }
@@ -506,7 +520,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
-        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(Some(Square::D2));
         app.assert_hints([Square::D3, Square::D4]);
     }
@@ -552,7 +566,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::H2));
-        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_piece_in_drag_container(Square::H2);
         app.assert_selected(Some(Square::H2));
         app.assert_hints([Square::H3, Square::H4]);
@@ -600,7 +614,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(None);
         app.assert_hints([]);
     }
@@ -632,7 +646,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
-        app.assert_piece_on_tile(Square::D2, Square::D2);
+        app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(Some(Square::D2));
         app.assert_hints([Square::D3, Square::D4]);
     }

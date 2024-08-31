@@ -26,7 +26,7 @@ macro_rules! asset_path {
     };
 }
 
-#[derive(Clone, Copy, Component)]
+#[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
 pub struct PieceMeta {
     pub color: PieceColor,
     pub typ: PieceType,
