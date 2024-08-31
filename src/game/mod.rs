@@ -84,6 +84,11 @@ impl LoadGame {
         Self::new(board, half_move_clock, full_move_count, MenuState::Game)
     }
 
+    #[cfg(test)]
+    pub fn in_game_default() -> Self {
+        Self::in_game(chess::Board::default(), 0, 0)
+    }
+
     pub fn in_menu() -> Self {
         Self::new(default(), 0, 1, MenuState::Menu)
     }

@@ -310,7 +310,7 @@ mod tests {
         use bevy::utils::HashSet;
 
         use crate::game::{
-            board::PieceMeta,
+            board::{MovePlugin, PieceMeta},
             core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
             mouse::DragContainer,
@@ -324,7 +324,10 @@ mod tests {
             app.add_plugins((GameHeadlessPlugin, GameTestPlugin))
                 .add_plugins(TestMenuStateInGamePlugin)
                 .add_plugins(GameUiPlugin)
-                .add_plugins(SelectionPlugin);
+                .add_plugins(SelectionPlugin)
+                .add_plugins(MovePlugin);
+            app.update();
+            app.world_mut().trigger(LoadGame::in_game_default());
             app.update();
             app
         }
@@ -333,6 +336,7 @@ mod tests {
             app.world_mut().query_filtered::<Entity, With<Tag>>().single(app.world())
         }
 
+        #[allow(dead_code)]
         pub trait TestAppExts {
             fn board_state(&self) -> &BoardState;
 
@@ -342,6 +346,7 @@ mod tests {
             fn set_piece_to_drag_container(&mut self, square: Square);
 
             fn assert_state(&self, expected: SelectionState);
+            fn assert_drag_container_empty(&mut self);
             fn assert_piece_in_drag_container(&mut self, expected: Square);
             fn assert_piece_move_marker(&mut self, expected: MovePiece);
             fn assert_selected(&mut self, expected: Option<Square>);
@@ -380,6 +385,13 @@ mod tests {
             fn assert_state(&self, expected: SelectionState) {
                 let actual = *self.world().resource::<SelectionState>();
                 assert_eq!(actual, expected);
+            }
+
+            fn assert_drag_container_empty(&mut self) {
+                let drag_container = get_tagged_entity::<DragContainer>(self);
+                let children = self.world().entity(drag_container).get::<Children>();
+                let actual = children.map(|c| HashSet::from_iter(c.iter().copied()));
+                assert_eq!(actual, None, "drag container not empty");
             }
 
             fn assert_piece_in_drag_container(&mut self, piece: Square) {
@@ -649,5 +661,38 @@ mod tests {
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(Some(Square::D2));
         app.assert_hints([Square::D3, Square::D4]);
+    }
+
+    #[test]
+    fn dragging_removed_on_piece_move() {
+        // Bug reproduction:
+        // - Start with a default board
+        // - `a3`
+        // - `a6`
+        // - Start dragging `a3` to move it to `a4` but it isn't reparented to
+        //   the drag container
+
+        let mut app = build_app();
+
+        // `a3`
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A2));
+        app.update();
+        app.assert_piece_in_drag_container(Square::A2);
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A3));
+        app.update();
+        app.assert_piece_on_tile(Square::A3, PieceColor::WHITE, PieceType::PAWN);
+
+        // `a6`
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A7));
+        app.update();
+        app.assert_piece_in_drag_container(Square::A7);
+        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A6));
+        app.update();
+        app.assert_piece_on_tile(Square::A6, PieceColor::BLACK, PieceType::PAWN);
+
+        // Start dragging `a3`
+        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A3));
+        app.update();
+        app.assert_piece_in_drag_container(Square::A3);
     }
 }

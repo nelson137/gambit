@@ -5,7 +5,7 @@ use bevy::{
 use chess::File;
 
 use crate::{
-    game::{audio::PlayGameAudio, board::AnimatePiece, game_over::GameOver},
+    game::{audio::PlayGameAudio, board::AnimatePiece, game_over::GameOver, mouse::Dragging},
     utils::NoopExts,
 };
 
@@ -78,6 +78,7 @@ pub fn move_piece(
     commands.add(UpdatePieceState::new(color, from_sq, to_sq));
 
     // Move UI piece
+    commands.entity(entity).remove::<Dragging>();
     commands.add(MoveUiPiece::new(entity, from_sq, to_sq, animate));
 
     let is_capture = board_state.has_piece_at(to_sq);
