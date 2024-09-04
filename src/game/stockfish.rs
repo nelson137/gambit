@@ -195,6 +195,7 @@ fn ensure_stockfish_executable() -> PathBuf {
         let mut f = File::options()
             .write(true)
             .create(true)
+            .truncate(true)
             .open(&stockfish_p)
             .expect("create file for stockfish executable");
 
