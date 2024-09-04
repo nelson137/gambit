@@ -20,7 +20,10 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin};
+use super::{
+    board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin},
+    LoadGame,
+};
 
 const STOCKFISH_EXECUTABLE: &[u8] =
     include_bytes!("../../target/stockfish/Stockfish-sf_15/src/stockfish");
@@ -34,10 +37,16 @@ impl Plugin for StockfishPlugin {
         }
 
         app.noop()
+            // Events
             .add_event::<SfCommand>()
+            // Resources
             .init_resource::<SfCommunications>()
+            .init_resource::<StockfishPlayerColor>()
+            // Observers
             .observe(update_eval_bar)
-            .observe(stockfish_move_as_black)
+            .observe(set_stockfish_player_color_on_load_game)
+            .observe(stockfish_move)
+            // Systems
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)
             .noop();
@@ -417,12 +426,30 @@ fn update_eval_bar(_trigger: Trigger<MovePieceCompleted>, mut stockfish: ResMut<
     stockfish.push_cmd(SfCommand::Eval);
 }
 
-fn stockfish_move_as_black(
+#[derive(Resource)]
+struct StockfishPlayerColor(PieceColor);
+
+impl Default for StockfishPlayerColor {
+    fn default() -> Self {
+        Self(PieceColor::WHITE)
+    }
+}
+
+fn set_stockfish_player_color_on_load_game(
+    trigger: Trigger<LoadGame>,
+    mut player_color: ResMut<StockfishPlayerColor>,
+) {
+    let primary_color = PieceColor(trigger.event().board.side_to_move());
+    player_color.0 = !primary_color;
+}
+
+fn stockfish_move(
     _trigger: Trigger<MovePieceCompleted>,
     board_state: Res<BoardState>,
+    sf_color: Res<StockfishPlayerColor>,
     mut stockfish: ResMut<Stockfish>,
 ) {
-    if board_state.side_to_move() == PieceColor::BLACK {
+    if board_state.side_to_move() == sf_color.0 {
         stockfish.extend_cmds([
             SfCommand::Position(board_state.fen()),
             SfCommand::Go,
