@@ -13,6 +13,7 @@ debug = []
 debug-inspector = ["debug", "dep:bevy-inspector-egui"]
 trace_logs = []
 file_watcher = ["bevy/file_watcher"]
+stockfish-player = []
 
 [profile.release]
 opt-level = 2

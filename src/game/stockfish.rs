@@ -54,6 +54,7 @@ impl Plugin for StockfishPlugin {
 }
 
 #[derive(Clone, Debug, Event)]
+#[allow(dead_code)]
 pub enum SfCommand {
     Uci,
     IsReady,
@@ -443,6 +444,7 @@ fn set_stockfish_player_color_on_load_game(
     player_color.0 = !primary_color;
 }
 
+#[cfg(feature = "stockfish-player")]
 fn stockfish_move(
     _trigger: Trigger<MovePieceCompleted>,
     board_state: Res<BoardState>,
@@ -458,3 +460,6 @@ fn stockfish_move(
         ]);
     }
 }
+
+#[cfg(not(feature = "stockfish-player"))]
+fn stockfish_move(_trigger: Trigger<LoadGame>) {}
