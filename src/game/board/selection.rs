@@ -1,3 +1,5 @@
+use std::fmt::{self, Write};
+
 use bevy::{
     ecs::{
         component::{ComponentHooks, ComponentId, StorageType},
@@ -41,7 +43,7 @@ pub enum SelectionState {
     SelectedDragging(Square),
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub enum SelectionStateAction {
     ChangeSelection(Square),
     DropSelect(Square),
@@ -52,10 +54,40 @@ pub enum SelectionStateAction {
     Unselect(Square),
 }
 
+impl fmt::Display for SelectionStateAction {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Self::ChangeSelection(sq) => f.write_fmt(format_args!("ChangeSelection(=> {sq})")),
+            Self::DropSelect(sq) => f.write_fmt(format_args!("DropSelect({sq})")),
+            Self::Move { from_sq, to_sq, animate } => f.write_fmt(format_args!(
+                "Move({from_sq} => {to_sq}, {})",
+                if animate { "anim" } else { "no_anim" }
+            )),
+            Self::None => f.write_str("None"),
+            Self::StartSelectedDragging(sq) => {
+                f.write_fmt(format_args!("StartSelectedDragging({sq})"))
+            }
+            Self::StartSelectingDragging(sq) => {
+                f.write_fmt(format_args!("StartSelectingDragging({sq})"))
+            }
+            Self::Unselect(sq) => f.write_fmt(format_args!("Unselect({sq})")),
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Event)]
 pub enum MouseSelectionEvent {
     MouseDown(Square),
     MouseUp(Square),
+}
+
+impl fmt::Display for MouseSelectionEvent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Self::MouseDown(sq) => f.write_fmt(format_args!("MouseDown({sq})")),
+            Self::MouseUp(sq) => f.write_fmt(format_args!("MouseUp({sq})")),
+        }
+    }
 }
 
 fn handle_mouse_selection_events(
@@ -65,7 +97,7 @@ fn handle_mouse_selection_events(
     mut event_reader: EventReader<MouseSelectionEvent>,
 ) {
     for &event in event_reader.read() {
-        trace!(?event, "Mouse selection event");
+        trace!(%event, "Processing mouse selection");
         let action = match *selection_state {
             SelectionState::Unselected => match event {
                 MouseSelectionEvent::MouseDown(square) => {
@@ -127,7 +159,7 @@ fn handle_mouse_selection_events(
             },
         };
 
-        trace!(?action, "Selection action");
+        trace!(%action, "Processing mouse selection");
         match action {
             SelectionStateAction::None => {}
             SelectionStateAction::ChangeSelection(to_sq) => {
@@ -204,6 +236,32 @@ pub enum SelectionEvent {
     UnsetAll,
 }
 
+impl fmt::Display for SelectionEvent {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            Self::UpdateSelection { highlight, hints } => {
+                f.write_fmt(format_args!("UpdateSelection(highlight={highlight}, hints="))?;
+                if !hints.is_empty() {
+                    f.write_fmt(format_args!("{}", hints[0]))?;
+                    if hints.len() > 1 {
+                        for e in &hints[1..] {
+                            f.write_fmt(format_args!(",{e}"))?;
+                        }
+                    }
+                }
+                f.write_char(')')?;
+                Ok(())
+            }
+            Self::Unselect => f.write_str("Unselect"),
+            Self::UpdateLastMove(from_sq, to_sq) => {
+                f.write_fmt(format_args!("UpdateLastMove({from_sq} => {to_sq})"))
+            }
+            Self::UnsetLastMove => f.write_str("UnsetLastMove"),
+            Self::UnsetAll => f.write_str("UnsetAll"),
+        }
+    }
+}
+
 fn unset_selections_on_load_game(_trigger: Trigger<LoadGame>, mut commands: Commands) {
     commands.trigger(SelectionEvent::UnsetAll);
 }
@@ -239,7 +297,7 @@ fn handle_selection_events(
     };
 
     let event = trigger.event();
-    trace!(?event, "Selection event");
+    trace!(%event, "Processing piece selection");
 
     match event {
         SelectionEvent::UpdateSelection { highlight, hints } => {
@@ -282,7 +340,6 @@ impl Component for ShowingIndicator {
 
 fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
     world.commands().add(move |world: &mut World| {
-        trace!(%entity, "show indicator");
         let mut entity = world.entity_mut(entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Visible;
@@ -291,7 +348,6 @@ fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: Comp
 
 fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
     world.commands().add(move |world: &mut World| {
-        trace!(%entity, "hide indicator");
         let mut entity = world.entity_mut(entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Hidden;
