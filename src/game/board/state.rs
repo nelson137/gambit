@@ -142,11 +142,6 @@ impl BoardState {
         move_gen.any(|m| m.get_source() == source)
     }
 
-    pub fn reset(&mut self) {
-        self.clear_pieces();
-        self.board = Board::default();
-    }
-
     #[cfg(debug_assertions)]
     #[allow(dead_code)]
     pub fn log_board(&self) {

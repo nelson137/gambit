@@ -20,7 +20,7 @@ pub struct UiPanelsPlugin;
 impl Plugin for UiPanelsPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<CapturePlugin>() {
-            panic!("Attempted to add plugin without required dependency: {:?}", CapturePlugin);
+            panic!("Attempted to add plugin without required dependency: {CapturePlugin:?}");
         }
 
         app.noop()

@@ -33,7 +33,7 @@ pub struct StockfishPlugin;
 impl Plugin for StockfishPlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<MovePlugin>() {
-            panic!("Attempted to add plugin without required dependency: {:?}", MovePlugin);
+            panic!("Attempted to add plugin without required dependency: {MovePlugin:?}");
         }
 
         app.noop()
@@ -147,6 +147,7 @@ impl Iterator for SfResponseIter<'_> {
 fn initialize_stockfish(mut commands: Commands) {
     let stockfish_p = ensure_stockfish_executable();
 
+    #[allow(clippy::zombie_processes)]
     let mut proc = process::Command::new(stockfish_p)
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
@@ -228,7 +229,7 @@ impl Default for SfCommunications {
 }
 
 impl SfCommunications {
-    fn iter_responses_from<'a>(&'a self, cursor: &'a mut usize) -> impl Iterator<Item = &str> {
+    fn iter_responses_from<'a>(&'a self, cursor: &'a mut usize) -> impl Iterator<Item = &'a str> {
         let iter = self.0.iter().filter_map(SfMessage::as_response).skip(*cursor);
         CursorIterator::new(iter, cursor)
     }

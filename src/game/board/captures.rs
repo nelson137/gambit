@@ -19,7 +19,7 @@ pub struct CapturePlugin;
 impl Plugin for CapturePlugin {
     fn build(&self, app: &mut App) {
         if !app.is_plugin_added::<BoardPlugin>() {
-            panic!("Attempted to add plugin without required dependency: {:?}", BoardPlugin);
+            panic!("Attempted to add plugin without required dependency: {BoardPlugin:?}");
         }
 
         app.noop()

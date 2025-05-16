@@ -86,7 +86,7 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
             default_width: 200.0,
             style: SplitPanelStyle::default(),
             state,
-            separator_rects: iter::repeat(Rect::ZERO).take(n_separators).collect(),
+            separator_rects: iter::repeat_n(Rect::ZERO, n_separators).collect(),
         }
     }
 
