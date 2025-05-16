@@ -31,12 +31,12 @@ tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["local-time", "time"] }
 
 [dependencies]
-bevy = { version = "0.14", features = ["flac"] }
-bevy_egui = "0.28"
-bevy_startup_tree = "0.6.0"
-bevy-inspector-egui = { version = "0.25", optional = true }
+bevy = { version = "0.15", features = ["flac"] }
+bevy_egui = "0.33"
+bevy_startup_tree = "0.7"
+bevy-inspector-egui = { version = "0.30", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 crossbeam-channel = "0.5"
 dirs = "5.0"
-egui_extras = "0.28"
+egui_extras = "0.31"

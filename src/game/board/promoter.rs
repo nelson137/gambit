@@ -64,7 +64,7 @@ pub fn spawn_promoters(
                 PromotionUi(color),
                 debug_name_f!("Promoter ({color})"),
                 NodeBundle {
-                    style: Style {
+                    node: Node {
                         position_type: PositionType::Absolute,
                         left,
                         top,
@@ -73,9 +73,9 @@ pub fn spawn_promoters(
                         ..default()
                     },
                     visibility: Visibility::Hidden,
-                    z_index: ZIndex::Global(Z_PROMOTER),
                     ..default()
                 },
+                GlobalZIndex(Z_PROMOTER),
             ))
             .with_children(|cmds| {
                 const PROMO_TILE_COLOR: Color = Color::WHITE;
@@ -97,9 +97,9 @@ pub fn spawn_promoters(
                         cmds.spawn((
                             debug_name_f!("Promotion Piece ({color}) ({typ})"),
                             ImageBundle {
-                                image: UiImage::new(asset_server.load(asset_path)),
+                                image: ImageNode::new(asset_server.load(asset_path)),
                                 focus_policy: FocusPolicy::Pass,
-                                style: Style {
+                                node: Node {
                                     width: Val::Percent(100.0),
                                     height: Val::Percent(100.0),
                                     ..default()
@@ -120,7 +120,7 @@ pub fn spawn_promoters(
 
                 cmds.spawn((
                     debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
-                    NodeBundle { style: Style { flex_direction, ..default() }, ..default() },
+                    NodeBundle { node: Node { flex_direction, ..default() }, ..default() },
                 ))
                 .with_children(|cmds| {
                     cmds.spawn((
@@ -129,7 +129,7 @@ pub fn spawn_promoters(
                         ButtonBundle {
                             background_color: CANCEL_BUTTON_BG_COLOR.into(),
                             focus_policy: FocusPolicy::Block,
-                            style: Style {
+                            node: Node {
                                 justify_content: JustifyContent::Center,
                                 align_items: AlignItems::Center,
                                 width: Val::Percent(100.0),
@@ -140,9 +140,11 @@ pub fn spawn_promoters(
                     ))
                     .with_children(|cmds| {
                         let font = asset_server.load(FONT_PATH);
-                        let text_style =
-                            TextStyle { font, font_size: 24.0, color: CANCEL_BUTTON_FG_COLOR };
-                        cmds.spawn(TextBundle::from_section("x", text_style));
+                        cmds.spawn((
+                            Text("x".to_string()),
+                            TextFont { font, font_size: 24.0, ..default() },
+                            TextColor(CANCEL_BUTTON_FG_COLOR),
+                        ));
                     });
                 });
             })
@@ -233,27 +235,27 @@ pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> bool {
     !q_promo.is_empty()
 }
 
-type PromoButtonD<'a> = (&'a ViewVisibility, &'a mut Style);
+type PromoButtonD<'a> = (&'a ViewVisibility, &'a mut Node);
 
 fn promotion_ui_sizes(
-    q_tile: Query<&Node, With<Tile>>,
-    mut q_style: Query<PromoButtonD>,
+    q_tile: Query<&ComputedNode, With<Tile>>,
+    mut q_node: Query<PromoButtonD>,
     mut q_promo_button: Query<(), With<PromotionButton>>,
     mut q_cancel_buttons: Query<(), With<PromotionCancelButton>>,
 ) {
-    let Some(tile_node) = q_tile.iter().next() else { return };
-    let tile_size = tile_node.size();
+    let Some(tile_computed_node) = q_tile.iter().next() else { return };
+    let tile_size = tile_computed_node.size();
 
-    let mut lens = q_promo_button.join::<PromoButtonD, PromoButtonD>(&mut q_style);
-    for (_, mut style) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
-        style.width = Val::Px(tile_size.x);
-        style.height = Val::Px(tile_size.y);
+    let mut lens = q_promo_button.join::<PromoButtonD, PromoButtonD>(&mut q_node);
+    for (_, mut node) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
+        node.width = Val::Px(tile_size.x);
+        node.height = Val::Px(tile_size.y);
     }
 
-    let mut lens = q_cancel_buttons.join::<PromoButtonD, PromoButtonD>(&mut q_style);
-    for (_, mut style) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
-        style.width = Val::Px(tile_size.x);
-        style.height = Val::Px(tile_size.y / 2.0);
+    let mut lens = q_cancel_buttons.join::<PromoButtonD, PromoButtonD>(&mut q_node);
+    for (_, mut node) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
+        node.width = Val::Px(tile_size.x);
+        node.height = Val::Px(tile_size.y / 2.0);
     }
 }
 
@@ -313,7 +315,7 @@ pub fn promotion_result_handler(
         }
         PromotionResult::Cancel => {
             // Re-parent piece back to its original square
-            commands.entity(board_state.tile(from_sq)).push_children(&[entity]);
+            commands.entity(board_state.tile(from_sq)).add_children(&[entity]);
         }
     }
 }

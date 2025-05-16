@@ -1,5 +1,5 @@
 use bevy::{app::prelude::*, ecs::prelude::*, prelude::Deref, window::PrimaryWindow};
-use bevy_egui::{EguiContext, EguiSet};
+use bevy_egui::{EguiContext, EguiPreUpdateSet};
 use bevy_inspector_egui::DefaultInspectorConfigPlugin;
 
 use crate::utils::NoopExts;
@@ -33,7 +33,7 @@ impl Plugin for DebugInspectorPlugin {
             .add_systems(
                 Update,
                 (
-                    debug_inspector_update.after(EguiSet::BeginFrame),
+                    debug_inspector_update.after(EguiPreUpdateSet::BeginPass),
                     self::gizmos::draw_entity_hover_gizmo,
                 )
                     .chain(),

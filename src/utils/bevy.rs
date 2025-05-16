@@ -16,15 +16,8 @@ macro_rules! __hook {
         |mut __world: ::bevy::ecs::world::DeferredWorld,
          __entity: ::bevy::ecs::entity::Entity,
          __cid: ::bevy::ecs::component::ComponentId| {
-            __world.commands().add(move |__world: &mut ::bevy::ecs::world::World| {
-                static __SYSID: ::std::sync::OnceLock<
-                    ::bevy::ecs::system::SystemId<::bevy::ecs::entity::Entity>,
-                > = std::sync::OnceLock::new();
-                let __sysid = *__SYSID.get_or_init(|| {
-                    ::bevy::log::debug!(system = %stringify!($hook_system), "register hook");
-                    __world.register_system($hook_system)
-                });
-                __world.run_system_with_input(__sysid, __entity).expect("run hook");
+            __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
+                __world.run_system_cached_with($hook_system, __entity).expect("run hook");
             });
         }
     };
@@ -33,18 +26,12 @@ macro_rules! __hook {
         |mut __world: ::bevy::ecs::world::DeferredWorld,
          __entity: ::bevy::ecs::entity::Entity,
          __cid: ::bevy::ecs::component::ComponentId| {
-            let __component = __world.get::<$component>(__entity)
-                .expect("entity has hook component")
-                .clone();
-            __world.commands().add(move |__world: &mut ::bevy::ecs::world::World| {
-                static __SYSID: ::std::sync::OnceLock<
-                    ::bevy::ecs::system::SystemId<(::bevy::ecs::entity::Entity, $component)>,
-                > = std::sync::OnceLock::new();
-                let __sysid = *__SYSID.get_or_init(|| {
-                    ::bevy::log::debug!(system = %stringify!($hook_system), "register hook");
-                    __world.register_system($hook_system)
-                });
-                __world.run_system_with_input(__sysid, (__entity, __component)).expect("run hook");
+            let __component =
+                __world.get::<$component>(__entity).expect("entity has hook component").clone();
+            __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
+                __world
+                    .run_system_cached_with($hook_system, (__entity, __component))
+                    .expect("run hook");
             });
         }
     };
@@ -63,7 +50,7 @@ impl ReparentInTag for Commands<'_, '_> {
         &mut self,
         entities: impl IntoIterator<Item = Entity> + Send + 'static,
     ) {
-        self.add(move |world: &mut World| {
+        self.queue(move |world: &mut World| {
             let parent = world.query_filtered::<Entity, With<Tag>>().single(world);
             let mut parent = world.entity_mut(parent);
             for entity in entities {

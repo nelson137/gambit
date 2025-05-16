@@ -24,7 +24,7 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                 square,
                 NodeBundle {
                     background_color: COLOR_HIGHLIGHT.into(),
-                    style: Style {
+                    node: Node {
                         position_type: PositionType::Absolute,
                         top,
                         left,
@@ -33,9 +33,9 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                         ..default()
                     },
                     visibility: Visibility::Hidden,
-                    z_index: ZIndex::Global(Z_HIGHLIGHT_TILE),
                     ..default()
                 },
+                GlobalZIndex(Z_HIGHLIGHT_TILE),
             ))
             .id();
 

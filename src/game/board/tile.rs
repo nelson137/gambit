@@ -51,51 +51,55 @@ pub fn spawn_tiles(
                 square,
                 NodeBundle {
                     background_color: color.into(),
-                    style: Style {
+                    node: Node {
                         position_type: PositionType::Relative,
                         width: Val::Percent(100.0 / 8.0),
                         height: Val::Percent(100.0 / 8.0),
                         ..default()
                     },
-                    z_index: ZIndex::Global(Z_TILE),
                     ..default()
                 },
+                GlobalZIndex(Z_TILE),
             ))
             .with_children(|cmds| {
                 pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
 
-                let text_style = TextStyle {
-                    color: if file_rank_sum % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK },
+                let text_font = TextFont {
                     font_size: BOARD_TEXT_FONT_SIZE,
                     font: asset_server.load(FONT_PATH),
+                    ..default()
                 };
+                let text_color =
+                    TextColor(if file_rank_sum % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK });
 
                 // File markers
                 if square.get_rank() == Rank::First {
-                    cmds.spawn(TextBundle {
-                        text: Text::from_section(square.file_char(), text_style.clone()),
-                        style: Style {
+                    cmds.spawn((
+                        Text(square.file_char().to_string()),
+                        text_font.clone(),
+                        text_color,
+                        Node {
                             position_type: PositionType::Absolute,
                             bottom: Val::Percent(3.5),
                             right: Val::Percent(8.0),
                             ..default()
                         },
-                        ..default()
-                    });
+                    ));
                 }
 
                 // Rank markers
                 if square.get_file() == File::A {
-                    cmds.spawn(TextBundle {
-                        text: Text::from_section(square.rank_char(), text_style),
-                        style: Style {
+                    cmds.spawn((
+                        Text(square.rank_char().to_string()),
+                        text_font.clone(),
+                        text_color,
+                        Node {
                             position_type: PositionType::Absolute,
                             top: Val::Percent(1.0),
                             left: Val::Percent(4.5),
                             ..default()
                         },
-                        ..default()
-                    });
+                    ));
                 }
             })
             .id();

@@ -36,25 +36,21 @@ pub(super) fn mouse_handler(
 pub struct DragContainer;
 
 pub(super) fn spawn_drag_container(mut commands: Commands) {
-    commands.spawn((
-        DragContainer,
-        debug_name!("Drag Container"),
-        NodeBundle { z_index: ZIndex::Global(Z_PIECE_SELECTED), ..default() },
-    ));
+    commands.spawn((DragContainer, debug_name!("Drag Container"), GlobalZIndex(Z_PIECE_SELECTED)));
 }
 
 pub(super) fn update_drag_container(
     mouse_world_pos: Res<MouseWorldPosition>,
-    q_tiles: Query<&Node, With<Tile>>,
-    mut q_container: Query<&mut Style, With<DragContainer>>,
+    q_tiles: Query<&ComputedNode, With<Tile>>,
+    mut q_container: Query<&mut Node, With<DragContainer>>,
 ) {
-    let Some(tile_node) = q_tiles.iter().next() else { return };
-    let Vec2 { x: width, y: height } = tile_node.size();
-    let mut style = q_container.single_mut();
-    style.width = Val::Px(width);
-    style.height = Val::Px(height);
-    style.top = Val::Px(mouse_world_pos.y - height / 2.0);
-    style.left = Val::Px(mouse_world_pos.x - width / 2.0);
+    let Some(tile_computed_node) = q_tiles.iter().next() else { return };
+    let Vec2 { x: width, y: height } = tile_computed_node.size();
+    let mut node = q_container.single_mut();
+    node.width = Val::Px(width);
+    node.height = Val::Px(height);
+    node.top = Val::Px(mouse_world_pos.y - height / 2.0);
+    node.left = Val::Px(mouse_world_pos.x - width / 2.0);
 }
 
 #[derive(Clone)]

@@ -31,7 +31,7 @@ pub fn spawn_hints(
                 debug_name_f!("Move Hint ({square})"),
                 square,
                 NodeBundle {
-                    style: Style {
+                    node: Node {
                         position_type: PositionType::Absolute,
                         top: Val::Px(0.0),
                         left: Val::Px(0.0),
@@ -42,14 +42,14 @@ pub fn spawn_hints(
                         ..default()
                     },
                     visibility: Visibility::Hidden,
-                    z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },
+                GlobalZIndex(Z_MOVE_HINT),
             ))
             .with_children(|cmds| {
                 cmds.spawn(ImageBundle {
-                    image: UiImage::new(move_hint_texture.clone()),
-                    style: Style {
+                    image: ImageNode::new(move_hint_texture.clone()),
+                    node: Node {
                         width: Val::Percent(100.0 / 3.0),
                         height: Val::Percent(100.0 / 3.0),
                         ..default()
@@ -66,8 +66,8 @@ pub fn spawn_hints(
                 debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageBundle {
-                    image: UiImage::new(capture_hint_texture.clone()),
-                    style: Style {
+                    image: ImageNode::new(capture_hint_texture.clone()),
+                    node: Node {
                         position_type: PositionType::Absolute,
                         top: Val::Px(0.0),
                         left: Val::Px(0.0),
@@ -76,13 +76,13 @@ pub fn spawn_hints(
                         ..default()
                     },
                     visibility: Visibility::Hidden,
-                    z_index: ZIndex::Global(Z_MOVE_HINT),
                     ..default()
                 },
+                GlobalZIndex(Z_MOVE_HINT),
             ))
             .id();
 
         board_state.set_tile_hints(square, TileHints { capture_entity, move_entity });
-        commands.entity(board_state.tile(square)).push_children(&[move_entity, capture_entity]);
+        commands.entity(board_state.tile(square)).add_children(&[move_entity, capture_entity]);
     }
 }

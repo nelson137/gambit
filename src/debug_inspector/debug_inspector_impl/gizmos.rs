@@ -28,7 +28,7 @@ pub(super) fn draw_entity_hover_gizmo(
     mut inspector_state: ResMut<InspectorState>,
     q_win: Query<&Window, With<PrimaryWindow>>,
     q_global_transf: Query<&GlobalTransform>,
-    q_node: Query<&Node>,
+    q_computed_node: Query<&ComputedNode>,
     mut gizmos: Gizmos,
 ) {
     let Ok(win) = q_win.get_single() else { return };
@@ -42,15 +42,15 @@ pub(super) fn draw_entity_hover_gizmo(
         let transl = global_transf.compute_transform().translation;
         let pos = vec2(transl.x - half_res.x, half_res.y - transl.y);
 
-        let Ok(node) = q_node.get(entity) else { continue };
-        let size = node.size();
+        let Ok(computed_node) = q_computed_node.get(entity) else { continue };
+        let size = computed_node.size();
 
         const GIZMO_COLOR: Srgba = Srgba::RED;
 
         if size == Vec2::ZERO {
             gizmos.circle_2d(pos, 1.0, GIZMO_COLOR);
         } else {
-            gizmos.rect_2d(pos, 0.0, size, GIZMO_COLOR);
+            gizmos.rect_2d(pos, size, GIZMO_COLOR);
         }
     }
 }

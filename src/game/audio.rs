@@ -30,6 +30,9 @@ impl Command for PlayGameAudio {
             Self::MoveSelf => "audio/move-self.flac",
             Self::Promote => "audio/promote.flac",
         });
-        world.spawn(AudioBundle { source, settings: PlaybackSettings::DESPAWN });
+        world.spawn(AudioBundle {
+            source: AudioPlayer(source),
+            settings: PlaybackSettings::DESPAWN,
+        });
     }
 }

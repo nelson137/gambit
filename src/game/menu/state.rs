@@ -54,11 +54,11 @@ pub(super) fn on_enter_menu_state_fen_input(mut fen_popup_state: ResMut<PopupSta
     fen_popup_state.reset();
 }
 
-pub(super) fn on_enter_menu_state_menu(mut q_menu: Query<&mut Style, With<GameMenuDimLayer>>) {
+pub(super) fn on_enter_menu_state_menu(mut q_menu: Query<&mut Node, With<GameMenuDimLayer>>) {
     set_menu_display(q_menu.transmute_lens(), Display::Flex);
 }
 
-pub(super) fn on_enter_menu_state_game(mut q_menu: Query<&mut Style, With<GameMenuDimLayer>>) {
+pub(super) fn on_enter_menu_state_game(mut q_menu: Query<&mut Node, With<GameMenuDimLayer>>) {
     set_menu_display(q_menu.transmute_lens(), Display::None);
 }
 
@@ -66,8 +66,8 @@ pub(super) fn on_enter_menu_state_do_game_over(mut game_over_timer: ResMut<GameO
     *game_over_timer = default();
 }
 
-fn set_menu_display(mut q_lens_menu: QueryLens<&mut Style>, display: Display) {
-    q_lens_menu.query().iter_mut().for_each(|mut style| style.display = display);
+fn set_menu_display(mut q_lens_menu: QueryLens<&mut Node>, display: Display) {
+    q_lens_menu.query().iter_mut().for_each(|mut node| node.display = display);
 }
 
 #[derive(Resource)]

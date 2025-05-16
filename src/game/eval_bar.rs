@@ -32,7 +32,7 @@ pub struct EvaluationUpdate(pub f32);
 pub fn spawn_eval_bar(mut commands: Commands) {
     const SPACER_H: Val = Val::Px(CAPTURES_PANEL_HEIGHT);
     let spacer_bundle = || NodeBundle {
-        style: Style { height: SPACER_H, flex_shrink: 0.0, ..default() },
+        node: Node { height: SPACER_H, flex_shrink: 0.0, ..default() },
         ..default()
     };
 
@@ -44,7 +44,7 @@ pub fn spawn_eval_bar(mut commands: Commands) {
             debug_name!("Evaluation Bar Background (black)"),
             NodeBundle {
                 background_color: BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
-                style: Style {
+                node: Node {
                     position_type: PositionType::Relative,
                     width: Val::Px(20.0),
                     flex_grow: 1.0,
@@ -60,7 +60,7 @@ pub fn spawn_eval_bar(mut commands: Commands) {
                 debug_name!("Evaluation Bar (white)"),
                 NodeBundle {
                     background_color: BackgroundColor(Color::WHITE),
-                    style: Style {
+                    node: Node {
                         position_type: PositionType::Absolute,
                         bottom: Val::Px(0.0),
                         width: Val::Percent(100.0),
@@ -81,13 +81,13 @@ pub fn spawn_eval_bar(mut commands: Commands) {
 
 pub fn update_eval_bar(
     mut reader: EventReader<EvaluationUpdate>,
-    mut q_bar: Query<&mut Style, With<EvaluationBar>>,
+    mut q_bar: Query<&mut Node, With<EvaluationBar>>,
 ) {
-    let Ok(mut bar_style) = q_bar.get_single_mut() else { return };
+    let Ok(mut bar_node) = q_bar.get_single_mut() else { return };
 
     for update in reader.read() {
         // Map eval stat in [-10.0,10.0] to [0.0,100.0]
         let percent = (update.0 + 10.0).clamp(0.0, 20.0) * 5.0;
-        bar_style.height = Val::Percent(percent);
+        bar_node.height = Val::Percent(percent);
     }
 }

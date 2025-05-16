@@ -26,8 +26,8 @@ impl Plugin for SelectionPlugin {
             .add_event::<MouseSelectionEvent>()
             .add_event::<SelectionEvent>()
             // Observers
-            .observe(unset_selections_on_load_game)
-            .observe(handle_selection_events)
+            .add_observer(unset_selections_on_load_game)
+            .add_observer(handle_selection_events)
             // Systems
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
             .noop();
@@ -339,7 +339,7 @@ impl Component for ShowingIndicator {
 }
 
 fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
-    world.commands().add(move |world: &mut World| {
+    world.commands().queue(move |world: &mut World| {
         let mut entity = world.entity_mut(entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Visible;
@@ -347,7 +347,7 @@ fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: Comp
 }
 
 fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
-    world.commands().add(move |world: &mut World| {
+    world.commands().queue(move |world: &mut World| {
         let mut entity = world.entity_mut(entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Hidden;
@@ -435,7 +435,7 @@ mod tests {
             fn set_piece_to_drag_container(&mut self, square: Square) {
                 let parent = get_tagged_entity::<DragContainer>(self);
                 let child = self.board_state().piece(square);
-                PushChild { parent, child }.apply(self.world_mut());
+                AddChild { parent, child }.apply(self.world_mut());
             }
 
             fn assert_state(&self, expected: SelectionState) {

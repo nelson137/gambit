@@ -11,7 +11,7 @@ pub fn spawn_board(mut commands: Commands) {
             UiBoard,
             debug_name!("Board"),
             NodeBundle {
-                style: Style {
+                node: Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
                     aspect_ratio: Some(1.0),

@@ -3,7 +3,8 @@ use bevy_egui::egui::{
     text::{CCursor, CCursorRange},
     text_edit::TextEditOutput,
     vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, FontId, Frame, Key, Layout,
-    Response, RichText, Sense, Stroke, TextEdit, Ui, Vec2, WidgetInfo, WidgetType, Window,
+    Response, RichText, Sense, Stroke, StrokeKind, TextEdit, Ui, Vec2, WidgetInfo, WidgetType,
+    Window,
 };
 use chess::ALL_FILES;
 use egui_extras::{Size, StripBuilder};
@@ -220,7 +221,7 @@ fn players_turn_toggle(ui: &mut Ui, value: &mut bool) -> Response {
 
         let rect = rect.expand(visuals.expansion);
         let radius = 0.5 * rect.height();
-        ui.painter().rect(rect, radius, fill_color, stroke);
+        ui.painter().rect(rect, radius, fill_color, stroke, StrokeKind::Inside);
         let how_on = ui.ctx().animate_bool(response.id, *value);
         let circle_x = lerp((rect.left() + radius)..=(rect.right() - radius), how_on);
         let center = pos2(circle_x, rect.center().y);

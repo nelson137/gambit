@@ -48,7 +48,7 @@ pub fn spawn_ui(mut commands: Commands) {
         .spawn((
             debug_name!("Ui Wrapper"),
             NodeBundle {
-                style: Style {
+                node: Node {
                     width: Val::Percent(100.0),
                     height: Val::Percent(100.0),
                     position_type: PositionType::Absolute,
@@ -66,7 +66,7 @@ pub fn spawn_ui(mut commands: Commands) {
                 Ui,
                 debug_name!("Ui"),
                 NodeBundle {
-                    style: Style {
+                    node: Node {
                         height: Val::Percent(100.0),
                         padding: UiRect::all(UI_GAP_VAL),
                         flex_direction: FlexDirection::Row,
@@ -80,7 +80,7 @@ pub fn spawn_ui(mut commands: Commands) {
                     EvaluationBarContainer,
                     debug_name!("Evaluation Bar Container"),
                     NodeBundle {
-                        style: Style {
+                        node: Node {
                             margin: UiRect::right(UI_GAP_VAL),
                             display: Display::Flex,
                             flex_direction: FlexDirection::Column,
@@ -95,7 +95,7 @@ pub fn spawn_ui(mut commands: Commands) {
                     BoardAndPanelsContainer,
                     debug_name!("Board and Panels Container"),
                     NodeBundle {
-                        style: Style { flex_direction: FlexDirection::Column, ..default() },
+                        node: Node { flex_direction: FlexDirection::Column, ..default() },
                         ..default()
                     },
                 ))
@@ -105,7 +105,7 @@ pub fn spawn_ui(mut commands: Commands) {
                         debug_name!("Board Container"),
                         SortIndex(1),
                         NodeBundle {
-                            style: Style {
+                            node: Node {
                                 flex_grow: 1.0,
                                 min_width: MIN_BOARD_SIZE,
                                 min_height: MIN_BOARD_SIZE,

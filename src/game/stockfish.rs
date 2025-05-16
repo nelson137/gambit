@@ -43,9 +43,9 @@ impl Plugin for StockfishPlugin {
             .init_resource::<SfCommunications>()
             .init_resource::<StockfishPlayerColor>()
             // Observers
-            .observe(update_eval_bar)
-            .observe(set_stockfish_player_color_on_load_game)
-            .observe(stockfish_move)
+            .add_observer(update_eval_bar)
+            .add_observer(set_stockfish_player_color_on_load_game)
+            .add_observer(stockfish_move)
             // Systems
             .add_systems(PostStartup, initialize_stockfish)
             .add_systems(PostUpdate, stockfish_update)

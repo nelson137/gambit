@@ -43,7 +43,7 @@ fn spawn_panels(mut commands: Commands) {
         margin: UiRect::bottom(UI_GAP_VAL),
     };
     let black_panel_entity = commands.spawn(black_panel.as_bundle()).id();
-    commands.add(black_panel.build(black_panel_entity));
+    commands.queue(black_panel.build(black_panel_entity));
 
     let white_panel = PanelBuilder {
         name: "Bottom Panel",
@@ -54,7 +54,7 @@ fn spawn_panels(mut commands: Commands) {
         margin: UiRect::top(UI_GAP_VAL),
     };
     let white_panel_entity = commands.spawn(white_panel.as_bundle()).id();
-    commands.add(white_panel.build(white_panel_entity));
+    commands.queue(white_panel.build(white_panel_entity));
 
     commands.reparent_in_tag::<BoardAndPanelsContainer>([black_panel_entity, white_panel_entity]);
 }
@@ -76,7 +76,7 @@ impl PanelBuilder {
             UiPanel,
             SortIndex(self.index),
             NodeBundle {
-                style: Style {
+                node: Node {
                     width: Val::Percent(100.0),
                     height: Val::Px(CAPTURES_PANEL_HEIGHT),
                     min_height: Val::Px(CAPTURES_PANEL_HEIGHT),
@@ -126,8 +126,8 @@ impl Command for PanelBuilderCmd {
                 ProfileImage,
                 debug_name!("Profile Image"),
                 ImageBundle {
-                    image: UiImage::new(profile_image_handle),
-                    style: Style {
+                    image: ImageNode::new(profile_image_handle),
+                    node: Node {
                         width: PROFILE_IMAGE_SIZE_VAL,
                         height: PROFILE_IMAGE_SIZE_VAL,
                         ..default()
@@ -140,7 +140,7 @@ impl Command for PanelBuilderCmd {
                 PanelInnerContainer,
                 debug_name!("Panel Inner Container"),
                 NodeBundle {
-                    style: Style {
+                    node: Node {
                         height: Val::Percent(100.0),
                         margin: UiRect::left(UI_GAP_VAL),
                         flex_direction: FlexDirection::Column,
@@ -152,18 +152,15 @@ impl Command for PanelBuilderCmd {
                 },
             ))
             .with_children(|cmds| {
-                let label_style =
-                    TextStyle { color: Color::WHITE, font: font.clone(), font_size: 14.0 };
                 cmds.spawn((
                     debug_name!("Profile Label"),
-                    TextBundle {
-                        text: Text::from_section(self.data.profile_label, label_style),
-                        ..default()
-                    },
+                    Text(self.data.profile_label.to_string()),
+                    TextFont { font: font.clone(), font_size: 14.0, ..default() },
+                    TextColor(Color::WHITE),
                 ));
 
                 cmds.spawn(NodeBundle {
-                    style: Style {
+                    node: Node {
                         width: Val::Percent(100.0),
                         height: Val::Percent(100.0),
                         margin: UiRect::top(UI_GAP_VAL),
@@ -178,8 +175,8 @@ impl Command for PanelBuilderCmd {
                             .spawn((
                                 CapturesImage,
                                 ImageBundle {
-                                    image: UiImage::new(handle),
-                                    style: Style {
+                                    image: ImageNode::new(handle),
+                                    node: Node {
                                         display: Display::None,
                                         margin: UiRect::right(UI_GAP_VAL),
                                         ..default()
@@ -190,15 +187,12 @@ impl Command for PanelBuilderCmd {
                             .id();
                     }
 
-                    let adv_color = Color::srgba(1.0, 1.0, 1.0, 0.5);
-                    let adv_style = TextStyle { color: adv_color, font, font_size: 12.0 };
                     cmds.spawn((
                         MaterialAdvantageLabel(color),
-                        TextBundle {
-                            text: Text::from_section("+6", adv_style),
-                            visibility: Visibility::Hidden,
-                            ..default()
-                        },
+                        Text("+6".to_string()),
+                        TextFont { font, font_size: 12.0, ..default() },
+                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.5)),
+                        Visibility::Hidden,
                     ));
                 });
             });
@@ -213,14 +207,14 @@ pub struct MaterialAdvantageLabel(PieceColor);
 
 fn captures_images_sizes(
     image_assets: Res<Assets<Image>>,
-    mut q_captures_images: Query<(&UiImage, &Node, &mut Style), With<CapturesImage>>,
+    mut q_captures_images: Query<(&ImageNode, &mut Node, &ComputedNode), With<CapturesImage>>,
 ) {
-    for (ui_image, node, mut style) in &mut q_captures_images {
-        if let Some(img) = image_assets.get(&ui_image.texture) {
+    for (ui_image, mut node, computed_node) in &mut q_captures_images {
+        if let Some(img) = image_assets.get(&ui_image.image) {
             let image_size = img.size();
-            let size = node.size();
+            let size = computed_node.size();
             let scale = size.y / image_size.y as f32;
-            style.width = Val::Px(image_size.x as f32 * scale);
+            node.width = Val::Px(image_size.x as f32 * scale);
         }
     }
 }

@@ -38,15 +38,15 @@ pub(super) fn mouse_screen_position_to_world(
 pub(super) struct MouseBoardSquare(pub Option<Square>);
 
 pub(super) fn mouse_world_position_to_square(
-    q_board: Query<(&GlobalTransform, &Node), With<UiBoard>>,
+    q_board: Query<(&GlobalTransform, &ComputedNode), With<UiBoard>>,
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_sq: ResMut<MouseBoardSquare>,
 ) {
     let mouse_pos = **mouse_world_pos;
 
-    let Ok((board_global_transf, board_node)) = q_board.get_single() else { return };
+    let Ok((board_global_transf, board_computed_node)) = q_board.get_single() else { return };
     let board_pos = board_global_transf.translation();
-    let board_size = board_node.size();
+    let board_size = board_computed_node.size();
     let tile_size = board_size / 8.0;
 
     let board_top_left = board_pos.truncate() - (board_size / 2.0);

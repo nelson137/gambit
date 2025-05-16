@@ -23,7 +23,7 @@ impl Plugin for MovePlugin {
             .add_event::<MovePiece>()
             .add_event::<MovePieceCompleted>()
             // Observers
-            .observe(move_piece)
+            .add_observer(move_piece)
             .noop();
     }
 }
@@ -52,7 +52,7 @@ pub fn move_piece(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     board_state: Res<BoardState>,
-    mut q_info: Query<(&PieceMeta, &mut UiImage)>,
+    mut q_info: Query<(&PieceMeta, &mut ImageNode)>,
 ) {
     let entity = trigger.entity();
     let &MovePiece { from_sq, to_sq, promotion, animate } = trigger.event();
@@ -63,7 +63,7 @@ pub fn move_piece(
     if let Some(promo_typ) = promotion {
         // Update the piece texture
         let new_asset_path = PieceMeta::new(color, promo_typ).asset_path();
-        image.texture = asset_server.load(new_asset_path);
+        image.image = asset_server.load(new_asset_path);
     } else if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
         // Start promotion
         commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
@@ -75,11 +75,11 @@ pub fn move_piece(
     commands.trigger(SelectionEvent::UpdateLastMove(from_sq, to_sq));
 
     // Update piece maps
-    commands.add(UpdatePieceState::new(color, from_sq, to_sq));
+    commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
 
     // Move UI piece
     commands.entity(entity).remove::<Dragging>();
-    commands.add(MoveUiPiece::new(entity, from_sq, to_sq, animate));
+    commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, animate));
 
     let is_capture = board_state.has_piece_at(to_sq);
     let is_en_passant = board_state.move_is_en_passant(color, to_sq);
@@ -96,23 +96,23 @@ pub fn move_piece(
             let from_sq = Square::from_coords(back_rank, File::H);
             let to_sq = Square::from_coords(back_rank, File::F);
             let entity = board_state.piece(from_sq);
-            commands.add(UpdatePieceState::new(color, from_sq, to_sq));
-            commands.add(MoveUiPiece::new(entity, from_sq, to_sq, true));
+            commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
+            commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, true));
             is_castle = true;
         } else if castle_rights.has_queenside() && to_sq == queenside_sq {
             let from_sq = Square::from_coords(back_rank, File::A);
             let to_sq = Square::from_coords(back_rank, File::D);
             let entity = board_state.piece(from_sq);
-            commands.add(UpdatePieceState::new(color, from_sq, to_sq));
-            commands.add(MoveUiPiece::new(entity, from_sq, to_sq, true));
+            commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
+            commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, true));
             is_castle = true;
         }
     }
 
-    commands.add(UpdateBoardState::new(from_sq, to_sq, color, typ, promotion, is_capture));
+    commands.queue(UpdateBoardState::new(from_sq, to_sq, color, typ, promotion, is_capture));
 
     // Play audio
-    commands.add(if promotion.is_some() {
+    commands.queue(if promotion.is_some() {
         PlayGameAudio::Promote
     } else if is_capture || is_en_passant {
         PlayGameAudio::Capture
@@ -125,7 +125,7 @@ pub fn move_piece(
         }
     });
 
-    commands.add(|world: &mut World| {
+    commands.queue(|world: &mut World| {
         TriggerEvent { event: MovePieceCompleted, targets: () }.apply(world);
     });
 }
@@ -156,7 +156,7 @@ impl Command for MoveUiPiece {
             AnimatePiece::new(entity, from_sq, to_sq).apply(world);
         } else {
             let to_tile_entity = world.resource::<BoardState>().tile(to_sq);
-            world.entity_mut(to_tile_entity).push_children(&[entity]);
+            world.entity_mut(to_tile_entity).add_children(&[entity]);
         }
     }
 }

@@ -202,8 +202,8 @@ pub(super) fn spawn_pieces_on_load_game(
                 debug_name_f!("Piece ({} {}) ({square})", info.color, info.typ),
                 square,
                 ImageBundle {
-                    image: UiImage::new(asset_server.load(image_path)),
-                    style: Style {
+                    image: ImageNode::new(asset_server.load(image_path)),
+                    node: Node {
                         position_type: PositionType::Absolute,
                         top: Val::Px(0.0),
                         left: Val::Px(0.0),
@@ -211,9 +211,9 @@ pub(super) fn spawn_pieces_on_load_game(
                         height: Val::Percent(100.0),
                         ..default()
                     },
-                    z_index: ZIndex::Global(Z_PIECE),
                     ..default()
                 },
+                GlobalZIndex(Z_PIECE),
             ))
             .id();
 
@@ -245,16 +245,16 @@ fn spawn_animation_layer(mut commands: Commands) {
         Name::new("Animation Layer"),
         AnimationLayer,
         NodeBundle {
-            style: Style {
+            node: Node {
                 top: Val::Px(0.0),
                 left: Val::Px(0.0),
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
                 ..default()
             },
-            z_index: ZIndex::Global(Z_PIECE_SELECTED),
             ..default()
         },
+        GlobalZIndex(Z_PIECE_SELECTED),
     ));
 }
 
@@ -296,18 +296,18 @@ impl Command for AnimatePiece {
 
         entity.set_parent(animation_layer);
 
-        let size = entity.get::<Node>().unwrap().size();
+        let size = entity.get::<ComputedNode>().unwrap().size();
         let ui_world_offset = size / 2.0;
 
         let transl = entity.get::<GlobalTransform>().unwrap().translation();
         let from_pos = transl.truncate() - ui_world_offset;
         let to_pos = to_transl - ui_world_offset;
 
-        let mut style = entity.get_mut::<Style>().unwrap();
-        style.left = Val::Px(from_pos.x);
-        style.top = Val::Px(from_pos.y);
-        style.width = Val::Px(size.x);
-        style.height = Val::Px(size.y);
+        let mut node = entity.get_mut::<Node>().unwrap();
+        node.left = Val::Px(from_pos.x);
+        node.top = Val::Px(from_pos.y);
+        node.width = Val::Px(size.x);
+        node.height = Val::Px(size.y);
 
         entity.insert(Animating::new(from_pos, to_pos, to_entity));
     }
@@ -350,9 +350,9 @@ impl Animating {
 fn animate_pieces(
     mut commands: Commands,
     time: Res<Time>,
-    mut q_animating: Query<(Entity, &mut Animating, &mut Style)>,
+    mut q_animating: Query<(Entity, &mut Animating, &mut Node)>,
 ) {
-    for (entity, mut animating, mut style) in &mut q_animating {
+    for (entity, mut animating, mut node) in &mut q_animating {
         if animating.timer.finished() {
             continue;
         }
@@ -365,21 +365,21 @@ fn animate_pieces(
 
         let t = animating.interpolater.ease(animating.timer.fraction());
         let Vec2 { x, y } = animating.from.lerp(animating.to, t);
-        style.left = Val::Px(x);
-        style.top = Val::Px(y);
+        node.left = Val::Px(x);
+        node.top = Val::Px(y);
     }
 }
 
 fn on_remove_animating(
     In((entity, animating)): In<(Entity, Animating)>,
     mut commands: Commands,
-    mut q_style: Query<&mut Style>,
+    mut q_node: Query<&mut Node>,
 ) {
     commands.entity(entity).set_parent(animating.to_entity);
 
-    let mut style = q_style.get_mut(entity).unwrap();
-    style.left = Val::Px(0.0);
-    style.top = Val::Px(0.0);
-    style.width = Val::Percent(100.0);
-    style.height = Val::Percent(100.0);
+    let mut node = q_node.get_mut(entity).unwrap();
+    node.left = Val::Px(0.0);
+    node.top = Val::Px(0.0);
+    node.width = Val::Percent(100.0);
+    node.height = Val::Percent(100.0);
 }

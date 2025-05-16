@@ -36,7 +36,7 @@ impl Plugin for GameMenuLogicPlugin {
             // States
             .init_state::<MenuState>()
             // Observers
-            .observe(set_state_to_game_on_load)
+            .add_observer(set_state_to_game_on_load)
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
             .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))

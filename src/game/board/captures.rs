@@ -26,8 +26,8 @@ impl Plugin for CapturePlugin {
             // Resources
             .init_resource::<CaptureState>()
             // Observers
-            .observe(load_capture_state)
-            .observe(captures)
+            .add_observer(load_capture_state)
+            .add_observer(captures)
             .noop();
     }
 }
@@ -244,7 +244,7 @@ fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands) {
             let opponent_pieces_of_type = opponent_pieces_bb & *board.pieces(typ.into());
             let captured_count = typ.num_pieces() - opponent_pieces_of_type.popcnt() as u8;
             let diff = CapStateDiff::Set(captured_count);
-            commands.add(CapStateUpdate::new(color, typ, diff));
+            commands.queue(CapStateUpdate::new(color, typ, diff));
         }
     }
 }
@@ -278,15 +278,15 @@ impl Command for CapStateUpdate {
         let image_entity = cap.image_entity;
         let handle = cap.handle();
 
-        if let Some(mut image_entity) = world.get_entity_mut(image_entity) {
-            if let Some(mut style) = image_entity.get_mut::<Style>() {
-                style.display = match count {
+        if let Ok(mut image_entity) = world.get_entity_mut(image_entity) {
+            if let Some(mut node) = image_entity.get_mut::<Node>() {
+                node.display = match count {
                     0 => Display::None,
                     _ => Display::Flex,
                 };
             }
-            if let Some(mut image) = image_entity.get_mut::<UiImage>() {
-                image.texture = handle;
+            if let Some(mut image) = image_entity.get_mut::<ImageNode>() {
+                image.image = handle;
             }
         }
 
@@ -295,7 +295,7 @@ impl Command for CapStateUpdate {
             for (label, mut vis, mut text) in q.iter_mut(world) {
                 if **label == color_with_adv {
                     *vis = Visibility::Visible;
-                    text.sections[0].value = format!("+{adv}");
+                    text.0 = format!("+{adv}");
                 } else {
                     *vis = Visibility::Hidden;
                 }
@@ -328,7 +328,7 @@ pub fn captures(
     // i.e. the one whose color is the opposite of that of the captured piece.
     color = !color;
 
-    commands.add(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
+    commands.queue(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
 }
 
 pub struct ResetCapturesUi;
@@ -347,8 +347,8 @@ impl Command for ResetCapturesUi {
             .collect();
 
         for img_entity in image_entities {
-            if let Some(mut style) = world.entity_mut(img_entity).get_mut::<Style>() {
-                style.display = Display::None;
+            if let Some(mut node) = world.entity_mut(img_entity).get_mut::<Node>() {
+                node.display = Display::None;
             }
         }
 

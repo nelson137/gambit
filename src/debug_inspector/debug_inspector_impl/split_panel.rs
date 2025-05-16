@@ -20,7 +20,7 @@ struct SplitPanelStyle {
 impl Default for SplitPanelStyle {
     fn default() -> Self {
         Self {
-            padding: Some(Margin::same(8.0)),
+            padding: Some(Margin::same(8)),
             border_stroke: Stroke::new(0.0, Color32::BLACK),
             pane_min_size: 64.0,
             separator_width: 2.0,

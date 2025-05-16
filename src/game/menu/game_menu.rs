@@ -23,7 +23,7 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
         debug_name!("Game Menu Dim Layer"),
         NodeBundle {
             background_color: MENU_DIM_LAYER_COLOR.into(),
-            style: Style {
+            node: Node {
                 position_type: PositionType::Absolute,
                 top: Val::Px(0.0),
                 left: Val::Px(0.0),
@@ -33,9 +33,9 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
                 align_items: AlignItems::Center,
                 ..default()
             },
-            z_index: ZIndex::Global(Z_MENU),
             ..default()
         },
+        GlobalZIndex(Z_MENU),
     ));
 }
 
@@ -59,7 +59,7 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
             debug_name!("Game Menu"),
             NodeBundle {
                 background_color: MENU_COLOR.into(),
-                style: Style {
+                node: Node {
                     width: Val::Px(INIT_MENU_WIDTH),
                     height: Val::Px(INIT_MENU_HEIGHT),
                     flex_direction: FlexDirection::Column,
@@ -76,10 +76,10 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
 
 pub fn menu_size(
     q_window: Query<&Window, With<PrimaryWindow>>,
-    mut q_menu: Query<&mut Style, With<GameMenu>>,
+    mut q_menu: Query<&mut Node, With<GameMenu>>,
 ) {
     let Ok(win) = q_window.get_single() else { return };
-    let Ok(mut menu_style) = q_menu.get_single_mut() else { return };
+    let Ok(mut menu_node) = q_menu.get_single_mut() else { return };
 
     let win_width_scale = win.width() / INIT_WIN_WIDTH;
     let win_height_scale = win.height() / INIT_WIN_HEIGHT;
@@ -95,8 +95,8 @@ pub fn menu_size(
     let width_stepped = width.round_to_nearest(MENU_SIZE_STEP);
     let height_stepped = height.round_to_nearest(MENU_SIZE_STEP);
 
-    menu_style.width = Val::Px(width_stepped as f32);
-    menu_style.height = Val::Px(height_stepped as f32);
+    menu_node.width = Val::Px(width_stepped as f32);
+    menu_node.height = Val::Px(height_stepped as f32);
 }
 
 #[derive(Component)]
@@ -134,17 +134,14 @@ pub fn spawn_menu_elements(
     q_menu: Query<Entity, With<GameMenu>>,
 ) {
     let font = asset_server.load(TITLE_FONT_PATH);
-    let title_style = TextStyle { font, font_size: INIT_MENU_TITLE_SIZE, color: Color::WHITE };
-    let margin = UiRect::top(Val::Percent(4.0));
     let title_entity = commands
         .spawn((
             GameMenuTitle,
             debug_name!("Game Menu Title"),
-            TextBundle {
-                text: Text::from_section("Gambit", title_style),
-                style: Style { margin, ..default() },
-                ..default()
-            },
+            Text("Gambit".to_string()),
+            TextFont { font, font_size: INIT_MENU_TITLE_SIZE, ..default() },
+            TextColor(Color::WHITE),
+            Node { margin: UiRect::top(Val::Percent(4.0)), ..default() },
         ))
         .id();
 
@@ -153,7 +150,7 @@ pub fn spawn_menu_elements(
             GameMenuButtonsContainer,
             debug_name!("Game Menu Buttons Container"),
             NodeBundle {
-                style: Style {
+                node: Node {
                     width: Val::Percent(100.0),
                     flex_grow: 1.0,
                     flex_direction: FlexDirection::Column,
@@ -166,7 +163,7 @@ pub fn spawn_menu_elements(
         ))
         .id();
 
-    commands.entity(q_menu.single()).push_children(&[title_entity, buttons_container_entity]);
+    commands.entity(q_menu.single()).add_children(&[title_entity, buttons_container_entity]);
 }
 
 pub fn spawn_menu_buttons(
@@ -174,7 +171,7 @@ pub fn spawn_menu_buttons(
     asset_server: Res<AssetServer>,
     q_menu_buttons_container: Query<Entity, With<GameMenuButtonsContainer>>,
 ) {
-    let button_style = Style {
+    let button_node = Node {
         width: Val::Percent(50.0),
         padding: UiRect::vertical(Val::Px(8.0)),
         justify_content: JustifyContent::Center,
@@ -183,7 +180,7 @@ pub fn spawn_menu_buttons(
     };
 
     let font = asset_server.load(FONT_PATH);
-    let text_style = TextStyle { font, font_size: 48.0, color: Color::WHITE };
+    let text_font = TextFont { font, font_size: 48.0, ..default() };
 
     let start_button_entity = commands
         .spawn((
@@ -191,7 +188,7 @@ pub fn spawn_menu_buttons(
             debug_name!("Start Game Button"),
             ButtonBundle {
                 background_color: BUTTON_COLOR_DEFAULT.into(),
-                style: button_style.clone(),
+                node: button_node.clone(),
                 ..default()
             },
         ))
@@ -199,7 +196,9 @@ pub fn spawn_menu_buttons(
             cmds.spawn((
                 debug_name!("Start Game Button Text"),
                 GameMenuButtonsText,
-                TextBundle { text: Text::from_section("Start", text_style.clone()), ..default() },
+                Text("Start".to_string()),
+                text_font.clone(),
+                TextColor(Color::WHITE),
             ));
         })
         .id();
@@ -210,7 +209,7 @@ pub fn spawn_menu_buttons(
             debug_name!("Load FEN Button"),
             ButtonBundle {
                 background_color: BUTTON_COLOR_DEFAULT.into(),
-                style: button_style,
+                node: button_node,
                 ..default()
             },
         ))
@@ -218,34 +217,33 @@ pub fn spawn_menu_buttons(
             cmds.spawn((
                 debug_name!("Load FEN Button Text"),
                 GameMenuButtonsText,
-                TextBundle { text: Text::from_section("Load FEN", text_style), ..default() },
+                Text("Load FEN".to_string()),
+                text_font,
             ));
         })
         .id();
 
     commands
         .entity(q_menu_buttons_container.single())
-        .push_children(&[start_button_entity, fen_button_entity]);
+        .add_children(&[start_button_entity, fen_button_entity]);
 }
 
 pub(super) fn game_menu_elements_sizes(
-    q_menu: Query<&Node, With<GameMenu>>,
+    q_menu: Query<&ComputedNode, With<GameMenu>>,
     mut q_text: ParamSet<(
-        Query<&mut Text, With<GameMenuTitle>>,
-        Query<&mut Text, With<GameMenuButtonsText>>,
+        Query<&mut TextFont, With<GameMenuTitle>>,
+        Query<&mut TextFont, With<GameMenuButtonsText>>,
     )>,
 ) {
-    let Ok(menu_node) = q_menu.get_single() else { return };
+    let Ok(menu_computed_node) = q_menu.get_single() else { return };
 
-    let menu_width = menu_node.size().x;
+    let menu_width = menu_computed_node.size().x;
     let scale = menu_width / INIT_MENU_WIDTH;
 
-    fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<Text>) {
+    fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<TextFont>) {
         let stepped_font_size = (font_size as u32).round_to_nearest(8) as f32;
-        move |mut text: Mut<Text>| {
-            for section in &mut text.sections {
-                section.style.font_size = stepped_font_size;
-            }
+        move |mut text_font: Mut<TextFont>| {
+            text_font.font_size = stepped_font_size;
         }
     }
 
@@ -268,14 +266,17 @@ pub(super) fn game_menu_buttons_hover(
 
 pub(super) fn game_menu_buttons(
     mut pressed_button: Local<Option<(GameMenuButton, Rect)>>,
-    q_button: Query<(&GameMenuButton, &Interaction, &Node, &GlobalTransform), Changed<Interaction>>,
+    q_button: Query<
+        (&GameMenuButton, &Interaction, &ComputedNode, &GlobalTransform),
+        Changed<Interaction>,
+    >,
     q_window: Query<&Window, With<PrimaryWindow>>,
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mut next_menu_state: ResMut<NextState<MenuState>>,
 ) {
-    for (&button, &interaction, node, global_transf) in &q_button {
+    for (&button, &interaction, computed_node, global_transf) in &q_button {
         if let Interaction::Pressed = interaction {
-            let size = node.size();
+            let size = computed_node.size();
             let pos = global_transf.translation().truncate() - size / 2.0;
             let button_area = Rect { min: pos, max: pos + size };
             *pressed_button = Some((button, button_area));

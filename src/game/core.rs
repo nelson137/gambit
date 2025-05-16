@@ -51,9 +51,14 @@ impl Plugin for GameHeadPlugin {
             .add_plugins(bevy::render::texture::ImagePlugin::default())
             .add_plugins(bevy::render::pipelined_rendering::PipelinedRenderingPlugin)
             .add_plugins(bevy::core_pipeline::CorePipelinePlugin)
-            .add_plugins(bevy::sprite::SpritePlugin)
+            .add_event::<bevy::picking::backend::PointerHits>()
+            // Rather than try to mark all current and future backends as ambiguous with each other,
+            // we allow them to send their hits in any order. These are later sorted, so submission
+            // order doesn't matter. See `PointerHits` docs for caveats.
+            .allow_ambiguous_resource::<bevy::ecs::event::Events<bevy::picking::backend::PointerHits>>()
+            .add_plugins(bevy::sprite::SpritePlugin { add_picking: true })
             .add_plugins(bevy::text::TextPlugin)
-            .add_plugins(bevy::ui::UiPlugin)
+            .add_plugins(bevy::ui::UiPlugin { enable_rendering: true, add_picking: false })
             .noop();
     }
 }
@@ -62,9 +67,6 @@ pub struct GameTestPlugin;
 
 impl Plugin for GameTestPlugin {
     fn build(&self, app: &mut App) {
-        app.noop()
-            .init_asset::<bevy::render::texture::Image>()
-            .init_asset::<bevy::text::Font>()
-            .noop();
+        app.add_plugins(bevy::prelude::ImagePlugin::default()).init_asset::<bevy::text::Font>();
     }
 }
