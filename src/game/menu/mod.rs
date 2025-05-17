@@ -45,11 +45,7 @@ impl Plugin for GameMenuLogicPlugin {
             .add_systems(OnEnter(MenuState::Game), on_enter_menu_state_game)
             .add_systems(OnEnter(MenuState::DoGameOver), on_enter_menu_state_do_game_over)
             .add_systems(Update, fen_menu.run_if(in_state(MenuState::FenInput)))
-            .add_systems(
-                Update,
-                (game_menu_buttons, game_menu_buttons_hover, game_menu_elements_sizes)
-                    .run_if(in_state(MenuState::Menu)),
-            )
+            .add_systems(Update, game_menu_elements_sizes.run_if(in_state(MenuState::Menu)))
             .add_systems(Update, game_over.run_if(in_state(MenuState::DoGameOver)))
             .noop();
     }

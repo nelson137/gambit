@@ -25,13 +25,9 @@ pub(super) fn mouse_screen_position_to_world(
     // Convert mouse position on screen [0..resolution] to ndc [0..2] (gpu coordinates)
     let ndc = 2.0 * screen_pos / window_size;
 
-    // Matrix for undoing the projection and camera transform
-    let ndc_to_world = camera_transf.compute_matrix() * camera.clip_from_view().inverse();
-
-    // Convert ndc to world-space coordinates
-    let world_pos = ndc_to_world.project_point3(ndc.extend(-1.0));
-
-    **mouse_world_pos = world_pos.truncate();
+    if let Some(ndc_to_world) = camera.ndc_to_world(camera_transf, ndc.extend(0.)) {
+        **mouse_world_pos = ndc_to_world.truncate();
+    };
 }
 
 #[derive(Default, Deref, DerefMut, Resource)]
@@ -45,11 +41,12 @@ pub(super) fn mouse_world_position_to_square(
     let mouse_pos = **mouse_world_pos;
 
     let Ok((board_global_transf, board_computed_node)) = q_board.get_single() else { return };
-    let board_pos = board_global_transf.translation();
-    let board_size = board_computed_node.size();
+    let inverse_scale_factor = board_computed_node.inverse_scale_factor();
+    let board_pos = board_global_transf.translation().truncate() * inverse_scale_factor;
+    let board_size = board_computed_node.size() * inverse_scale_factor;
     let tile_size = board_size / 8.0;
 
-    let board_top_left = board_pos.truncate() - (board_size / 2.0);
+    let board_top_left = board_pos - (board_size / 2.0);
     let mouse_board_pos = mouse_pos - board_top_left;
 
     let mouse_in_board = 0.0 < mouse_board_pos.x

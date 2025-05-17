@@ -56,9 +56,10 @@ impl Plugin for GameHeadPlugin {
             // we allow them to send their hits in any order. These are later sorted, so submission
             // order doesn't matter. See `PointerHits` docs for caveats.
             .allow_ambiguous_resource::<bevy::ecs::event::Events<bevy::picking::backend::PointerHits>>()
-            .add_plugins(bevy::sprite::SpritePlugin { add_picking: true })
+            .add_plugins(bevy::sprite::SpritePlugin { add_picking: false })
             .add_plugins(bevy::text::TextPlugin)
-            .add_plugins(bevy::ui::UiPlugin { enable_rendering: true, add_picking: false })
+            .add_plugins(bevy::ui::UiPlugin { enable_rendering: true, add_picking: true })
+            .add_plugins(bevy::picking::DefaultPickingPlugins)
             .noop();
     }
 }

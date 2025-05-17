@@ -155,7 +155,7 @@ impl Command for PanelBuilderCmd {
                 cmds.spawn((
                     debug_name!("Profile Label"),
                     Text(self.data.profile_label.to_string()),
-                    TextFont { font: font.clone(), font_size: 14.0, ..default() },
+                    TextFont { font: font.clone(), font_size: 12.0, ..default() },
                     TextColor(Color::WHITE),
                 ));
 
@@ -174,13 +174,10 @@ impl Command for PanelBuilderCmd {
                         cap_state.image_entity = cmds
                             .spawn((
                                 CapturesImage,
-                                ImageBundle {
-                                    image: ImageNode::new(handle),
-                                    node: Node {
-                                        display: Display::None,
-                                        margin: UiRect::right(UI_GAP_VAL),
-                                        ..default()
-                                    },
+                                ImageNode::new(handle),
+                                Node {
+                                    display: Display::None,
+                                    margin: UiRect::right(UI_GAP_VAL),
                                     ..default()
                                 },
                             ))
@@ -209,10 +206,10 @@ fn captures_images_sizes(
     image_assets: Res<Assets<Image>>,
     mut q_captures_images: Query<(&ImageNode, &mut Node, &ComputedNode), With<CapturesImage>>,
 ) {
-    for (ui_image, mut node, computed_node) in &mut q_captures_images {
-        if let Some(img) = image_assets.get(&ui_image.image) {
+    for (ImageNode { image, .. }, mut node, computed_node) in &mut q_captures_images {
+        if let Some(img) = image_assets.get(image) {
             let image_size = img.size();
-            let size = computed_node.size();
+            let size = computed_node.size() * computed_node.inverse_scale_factor();
             let scale = size.y / image_size.y as f32;
             node.width = Val::Px(image_size.x as f32 * scale);
         }

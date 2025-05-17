@@ -244,7 +244,7 @@ fn promotion_ui_sizes(
     mut q_cancel_buttons: Query<(), With<PromotionCancelButton>>,
 ) {
     let Some(tile_computed_node) = q_tile.iter().next() else { return };
-    let tile_size = tile_computed_node.size();
+    let tile_size = tile_computed_node.size() * tile_computed_node.inverse_scale_factor();
 
     let mut lens = q_promo_button.join::<PromoButtonD, PromoButtonD>(&mut q_node);
     for (_, mut node) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {

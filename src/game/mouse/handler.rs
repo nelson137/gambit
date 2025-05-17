@@ -36,7 +36,12 @@ pub(super) fn mouse_handler(
 pub struct DragContainer;
 
 pub(super) fn spawn_drag_container(mut commands: Commands) {
-    commands.spawn((DragContainer, debug_name!("Drag Container"), GlobalZIndex(Z_PIECE_SELECTED)));
+    commands.spawn((
+        DragContainer,
+        debug_name!("Drag Container"),
+        Node::DEFAULT,
+        GlobalZIndex(Z_PIECE_SELECTED),
+    ));
 }
 
 pub(super) fn update_drag_container(
@@ -45,12 +50,14 @@ pub(super) fn update_drag_container(
     mut q_container: Query<&mut Node, With<DragContainer>>,
 ) {
     let Some(tile_computed_node) = q_tiles.iter().next() else { return };
-    let Vec2 { x: width, y: height } = tile_computed_node.size();
-    let mut node = q_container.single_mut();
-    node.width = Val::Px(width);
-    node.height = Val::Px(height);
-    node.top = Val::Px(mouse_world_pos.y - height / 2.0);
-    node.left = Val::Px(mouse_world_pos.x - width / 2.0);
+    let inverse_scale_factor = tile_computed_node.inverse_scale_factor();
+    let Vec2 { x: width, y: height } = tile_computed_node.size() * inverse_scale_factor;
+    if let Ok(mut node) = q_container.get_single_mut() {
+        node.width = Val::Px(width);
+        node.height = Val::Px(height);
+        node.top = Val::Px(mouse_world_pos.y - height / 2.0);
+        node.left = Val::Px(mouse_world_pos.x - width / 2.0);
+    }
 }
 
 #[derive(Clone)]

@@ -62,7 +62,7 @@ pub fn spawn_tiles(
                 GlobalZIndex(Z_TILE),
             ))
             .with_children(|cmds| {
-                pub const BOARD_TEXT_FONT_SIZE: f32 = 20.0;
+                pub const BOARD_TEXT_FONT_SIZE: f32 = 16.0;
 
                 let text_font = TextFont {
                     font_size: BOARD_TEXT_FONT_SIZE,

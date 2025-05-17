@@ -283,9 +283,10 @@ impl Command for AnimatePiece {
         }
 
         let to_entity = world.resource::<BoardState>().tile(self.to);
-        let to_transl = if let Ok(transf) = world.query::<&GlobalTransform>().get(world, to_entity)
+        let to_transl = if let Ok((transf, computed_node)) =
+            world.query::<(&GlobalTransform, &ComputedNode)>().get(world, to_entity)
         {
-            transf.translation().truncate()
+            transf.translation().truncate() * computed_node.inverse_scale_factor()
         } else {
             return;
         };
@@ -296,11 +297,14 @@ impl Command for AnimatePiece {
 
         entity.set_parent(animation_layer);
 
-        let size = entity.get::<ComputedNode>().unwrap().size();
+        let computed_node = entity.get::<ComputedNode>().unwrap();
+        let inverse_scale_factor = computed_node.inverse_scale_factor();
+        let size = computed_node.size() * inverse_scale_factor;
         let ui_world_offset = size / 2.0;
 
-        let transl = entity.get::<GlobalTransform>().unwrap().translation();
-        let from_pos = transl.truncate() - ui_world_offset;
+        let transl = entity.get::<GlobalTransform>().unwrap().translation().truncate()
+            * inverse_scale_factor;
+        let from_pos = transl - ui_world_offset;
         let to_pos = to_transl - ui_world_offset;
 
         let mut node = entity.get_mut::<Node>().unwrap();

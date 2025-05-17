@@ -184,7 +184,7 @@ pub(super) fn end_game_icon_size(
     mut q_end_game_icons: Query<&mut Node, With<EndGameIcon>>,
 ) {
     let Some(tile_computed_node) = q_tiles.iter().next() else { return };
-    let tile_size = tile_computed_node.size().x;
+    let tile_size = tile_computed_node.size().x * tile_computed_node.inverse_scale_factor();
     let icon_size = Val::Px(tile_size * 0.4);
     for mut node in &mut q_end_game_icons {
         node.width = icon_size;

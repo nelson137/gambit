@@ -1,4 +1,4 @@
-use bevy::{ecs::component::ComponentHooks, prelude::*, utils::HashSet};
+use bevy::{ecs, prelude::*, state, utils::HashSet};
 
 pub trait NoopExts {
     fn noop(&mut self) -> &mut Self {
@@ -8,7 +8,7 @@ pub trait NoopExts {
 
 impl NoopExts for App {}
 impl NoopExts for World {}
-impl NoopExts for ComponentHooks {}
+impl NoopExts for ecs::component::ComponentHooks {}
 
 #[macro_export]
 macro_rules! __hook {
@@ -108,4 +108,22 @@ fn sort_sortable_entities(
     for mut children in &mut q_sortable {
         children.sort_by_key(|entity| q_index.get(*entity).unwrap_or(&CHILD_INDEX_MIN))
     }
+}
+
+pub fn recolor_on<E: 'static>(color: Color) -> impl ecs::system::ObserverSystem<E, ()> {
+    let system = move |mut trigger: Trigger<E>, mut commands: Commands| {
+        trigger.propagate(false);
+        commands.entity(trigger.entity()).insert(BackgroundColor(color));
+    };
+    ecs::system::IntoObserverSystem::into_system(system)
+}
+
+pub fn set_state_on<S: state::state::FreelyMutableState, E: 'static>(
+    state: S,
+) -> impl ecs::system::ObserverSystem<E, ()> {
+    let system = move |mut trigger: Trigger<E>, mut next_state: ResMut<NextState<S>>| {
+        trigger.propagate(false);
+        next_state.set(state.clone());
+    };
+    ecs::system::IntoObserverSystem::into_system(system)
 }

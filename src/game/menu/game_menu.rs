@@ -7,7 +7,7 @@ use crate::{
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
         TITLE_FONT_PATH, Z_MENU,
     },
-    utils::RoundToNearest,
+    utils::{recolor_on, set_state_on, RoundToNearest},
 };
 
 use super::MenuState;
@@ -192,6 +192,9 @@ pub fn spawn_menu_buttons(
                 ..default()
             },
         ))
+        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::Game))
         .with_children(|cmds| {
             cmds.spawn((
                 debug_name!("Start Game Button Text"),
@@ -213,6 +216,9 @@ pub fn spawn_menu_buttons(
                 ..default()
             },
         ))
+        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::FenInput))
         .with_children(|cmds| {
             cmds.spawn((
                 debug_name!("Load FEN Button Text"),
@@ -237,7 +243,7 @@ pub(super) fn game_menu_elements_sizes(
 ) {
     let Ok(menu_computed_node) = q_menu.get_single() else { return };
 
-    let menu_width = menu_computed_node.size().x;
+    let menu_width = menu_computed_node.size().x * menu_computed_node.inverse_scale_factor();
     let scale = menu_width / INIT_MENU_WIDTH;
 
     fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<TextFont>) {
@@ -250,48 +256,4 @@ pub(super) fn game_menu_elements_sizes(
     q_text.p0().iter_mut().for_each(set_text_font_size_impl(scale * INIT_MENU_TITLE_SIZE));
 
     q_text.p1().iter_mut().for_each(set_text_font_size_impl(scale * INIT_MENU_BUTTON_TEXT_SIZE));
-}
-
-pub(super) fn game_menu_buttons_hover(
-    mut q_button: Query<(&Interaction, &mut BackgroundColor), Changed<Interaction>>,
-) {
-    for (&interaction, mut bg_color) in &mut q_button {
-        match interaction {
-            Interaction::Hovered => bg_color.0 = BUTTON_COLOR_HOVER,
-            Interaction::None => bg_color.0 = BUTTON_COLOR_DEFAULT,
-            _ => {}
-        }
-    }
-}
-
-pub(super) fn game_menu_buttons(
-    mut pressed_button: Local<Option<(GameMenuButton, Rect)>>,
-    q_button: Query<
-        (&GameMenuButton, &Interaction, &ComputedNode, &GlobalTransform),
-        Changed<Interaction>,
-    >,
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    mouse_buttons: Res<ButtonInput<MouseButton>>,
-    mut next_menu_state: ResMut<NextState<MenuState>>,
-) {
-    for (&button, &interaction, computed_node, global_transf) in &q_button {
-        if let Interaction::Pressed = interaction {
-            let size = computed_node.size();
-            let pos = global_transf.translation().truncate() - size / 2.0;
-            let button_area = Rect { min: pos, max: pos + size };
-            *pressed_button = Some((button, button_area));
-        }
-    }
-
-    let Ok(win) = q_window.get_single() else { return };
-    let Some(mouse_pos) = win.cursor_position() else { return };
-    let true = mouse_buttons.just_released(MouseButton::Left) else { return };
-    let Some((pressed_button, pressed_button_area)) = pressed_button.take() else { return };
-
-    if pressed_button_area.contains(mouse_pos) {
-        next_menu_state.set(match pressed_button {
-            GameMenuButton::Start => MenuState::Game,
-            GameMenuButton::LoadFen => MenuState::FenInput,
-        });
-    }
 }
