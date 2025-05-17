@@ -38,11 +38,8 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon,
             WinnerIcon,
             debug_name!("Winner Icon"),
-            ImageBundle {
-                image: asset_server.load("images/checkmate/winner.png").into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            ImageNode::new(asset_server.load("images/checkmate/winner.png")),
+            Visibility::Hidden,
             GlobalZIndex(Z_END_GAME_ICONS),
         ))
         .id();
@@ -53,11 +50,8 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon,
             LoserIconBlack,
             debug_name!("Black Loser Icon"),
-            ImageBundle {
-                image: asset_server.load("images/checkmate/loser-black.png").into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            ImageNode::new(asset_server.load("images/checkmate/loser-black.png")),
+            Visibility::Hidden,
             GlobalZIndex(Z_END_GAME_ICONS),
         ))
         .id();
@@ -68,11 +62,8 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon,
             LoserIconWhite,
             debug_name!("White Loser Icon"),
-            ImageBundle {
-                image: asset_server.load("images/checkmate/loser-white.png").into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            ImageNode::new(asset_server.load("images/checkmate/loser-white.png")),
+            Visibility::Hidden,
             GlobalZIndex(Z_END_GAME_ICONS),
         ))
         .id();
@@ -82,11 +73,8 @@ pub(super) fn spawn_end_game_icons(
         .spawn((
             EndGameIcon,
             DrawIconBlack,
-            ImageBundle {
-                image: asset_server.load("images/draw/draw-black.png").into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            ImageNode::new(asset_server.load("images/draw/draw-black.png")),
+            Visibility::Hidden,
             GlobalZIndex(Z_END_GAME_ICONS),
         ))
         .id();
@@ -96,11 +84,8 @@ pub(super) fn spawn_end_game_icons(
         .spawn((
             EndGameIcon,
             DrawIconWhite,
-            ImageBundle {
-                image: asset_server.load("images/draw/draw-white.png").into(),
-                visibility: Visibility::Hidden,
-                ..default()
-            },
+            ImageNode::new(asset_server.load("images/draw/draw-white.png")),
+            Visibility::Hidden,
             GlobalZIndex(Z_END_GAME_ICONS),
         ))
         .id();

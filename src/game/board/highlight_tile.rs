@@ -22,19 +22,16 @@ pub fn spawn_highlight_tiles(mut commands: Commands, mut board_state: ResMut<Boa
                 HighlightTile,
                 debug_name_f!("Highlight Tile ({square})"),
                 square,
-                NodeBundle {
-                    background_color: COLOR_HIGHLIGHT.into(),
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        top,
-                        left,
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
-                    visibility: Visibility::Hidden,
+                Node {
+                    position_type: PositionType::Absolute,
+                    top,
+                    left,
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..default()
                 },
+                BackgroundColor(COLOR_HIGHLIGHT),
+                Visibility::Hidden,
                 GlobalZIndex(Z_HIGHLIGHT_TILE),
             ))
             .id();

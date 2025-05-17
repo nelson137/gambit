@@ -49,16 +49,13 @@ pub fn spawn_tiles(
                 Tile,
                 debug_name_f!("Tile ({square})"),
                 square,
-                NodeBundle {
-                    background_color: color.into(),
-                    node: Node {
-                        position_type: PositionType::Relative,
-                        width: Val::Percent(100.0 / 8.0),
-                        height: Val::Percent(100.0 / 8.0),
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Relative,
+                    width: Val::Percent(100.0 / 8.0),
+                    height: Val::Percent(100.0 / 8.0),
                     ..default()
                 },
+                BackgroundColor(color),
                 GlobalZIndex(Z_TILE),
             ))
             .with_children(|cmds| {

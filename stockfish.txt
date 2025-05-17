@@ -1,0 +1,7 @@
+Stockfish
+
+Set skill level:
+{"UCI_LimitStrength": "false", "Skill Level": skill_level}
+setoption name UCI_LimitStrength value false
+setoption name Skill Level value <Skill Level>
+https://github.com/zhelyabuzhsky/stockfish/blob/eba2eb56460e8251b51c5231a1f47baae7d1ca8c/stockfish/models.py#L83

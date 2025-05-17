@@ -201,16 +201,13 @@ pub(super) fn spawn_pieces_on_load_game(
                 info,
                 debug_name_f!("Piece ({} {}) ({square})", info.color, info.typ),
                 square,
-                ImageBundle {
-                    image: ImageNode::new(asset_server.load(image_path)),
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(0.0),
-                        left: Val::Px(0.0),
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
+                ImageNode::new(asset_server.load(image_path)),
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..default()
                 },
                 GlobalZIndex(Z_PIECE),
@@ -244,14 +241,11 @@ fn spawn_animation_layer(mut commands: Commands) {
     commands.spawn((
         Name::new("Animation Layer"),
         AnimationLayer,
-        NodeBundle {
-            node: Node {
-                top: Val::Px(0.0),
-                left: Val::Px(0.0),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                ..default()
-            },
+        Node {
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
             ..default()
         },
         GlobalZIndex(Z_PIECE_SELECTED),

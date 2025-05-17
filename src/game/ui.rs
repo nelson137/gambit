@@ -47,17 +47,14 @@ pub fn spawn_ui(mut commands: Commands) {
     commands
         .spawn((
             debug_name!("Ui Wrapper"),
-            NodeBundle {
-                node: Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    position_type: PositionType::Absolute,
-                    left: Val::Percent(0.0),
-                    top: Val::Percent(0.0),
-                    flex_direction: FlexDirection::Row,
-                    justify_content: JustifyContent::Center,
-                    ..default()
-                },
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Percent(100.0),
+                position_type: PositionType::Absolute,
+                left: Val::Percent(0.0),
+                top: Val::Percent(0.0),
+                flex_direction: FlexDirection::Row,
+                justify_content: JustifyContent::Center,
                 ..default()
             },
         ))
@@ -65,13 +62,10 @@ pub fn spawn_ui(mut commands: Commands) {
             cmds.spawn((
                 Ui,
                 debug_name!("Ui"),
-                NodeBundle {
-                    node: Node {
-                        height: Val::Percent(100.0),
-                        padding: UiRect::all(UI_GAP_VAL),
-                        flex_direction: FlexDirection::Row,
-                        ..default()
-                    },
+                Node {
+                    height: Val::Percent(100.0),
+                    padding: UiRect::all(UI_GAP_VAL),
+                    flex_direction: FlexDirection::Row,
                     ..default()
                 },
             ))
@@ -79,14 +73,11 @@ pub fn spawn_ui(mut commands: Commands) {
                 cmds.spawn((
                     EvaluationBarContainer,
                     debug_name!("Evaluation Bar Container"),
-                    NodeBundle {
-                        node: Node {
-                            margin: UiRect::right(UI_GAP_VAL),
-                            display: Display::Flex,
-                            flex_direction: FlexDirection::Column,
-                            row_gap: UI_GAP_VAL,
-                            ..default()
-                        },
+                    Node {
+                        margin: UiRect::right(UI_GAP_VAL),
+                        display: Display::Flex,
+                        flex_direction: FlexDirection::Column,
+                        row_gap: UI_GAP_VAL,
                         ..default()
                     },
                 ));
@@ -94,23 +85,17 @@ pub fn spawn_ui(mut commands: Commands) {
                 cmds.spawn((
                     BoardAndPanelsContainer,
                     debug_name!("Board and Panels Container"),
-                    NodeBundle {
-                        node: Node { flex_direction: FlexDirection::Column, ..default() },
-                        ..default()
-                    },
+                    Node { flex_direction: FlexDirection::Column, ..default() },
                 ))
                 .with_children(|cmds| {
                     cmds.spawn((
                         BoardContainer,
                         debug_name!("Board Container"),
                         SortIndex(1),
-                        NodeBundle {
-                            node: Node {
-                                flex_grow: 1.0,
-                                min_width: MIN_BOARD_SIZE,
-                                min_height: MIN_BOARD_SIZE,
-                                ..default()
-                            },
+                        Node {
+                            flex_grow: 1.0,
+                            min_width: MIN_BOARD_SIZE,
+                            min_height: MIN_BOARD_SIZE,
                             ..default()
                         },
                     ));

@@ -22,7 +22,7 @@ impl Command for PlayGameAudio {
 
         let checkers = *world.resource::<BoardState>().board().checkers();
 
-        let source = world.resource::<AssetServer>().load(match self {
+        let source = world.resource::<AssetServer>().load::<AudioSource>(match self {
             _ if checkers != BitBoard::new(0) => "audio/move-check.flac",
             Self::Capture => "audio/capture.flac",
             Self::Castle => "audio/castle.flac",
@@ -30,9 +30,6 @@ impl Command for PlayGameAudio {
             Self::MoveSelf => "audio/move-self.flac",
             Self::Promote => "audio/promote.flac",
         });
-        world.spawn(AudioBundle {
-            source: AudioPlayer(source),
-            settings: PlaybackSettings::DESPAWN,
-        });
+        world.spawn((AudioPlayer(source), PlaybackSettings::DESPAWN));
     }
 }

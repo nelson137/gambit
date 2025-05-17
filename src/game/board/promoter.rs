@@ -63,18 +63,15 @@ pub fn spawn_promoters(
             .spawn((
                 PromotionUi(color),
                 debug_name_f!("Promoter ({color})"),
-                NodeBundle {
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        left,
-                        top,
-                        bottom,
-                        flex_direction,
-                        ..default()
-                    },
-                    visibility: Visibility::Hidden,
+                Node {
+                    position_type: PositionType::Absolute,
+                    left,
+                    top,
+                    bottom,
+                    flex_direction,
                     ..default()
                 },
+                Visibility::Hidden,
                 GlobalZIndex(Z_PROMOTER),
             ))
             .with_children(|cmds| {
@@ -87,25 +84,20 @@ pub fn spawn_promoters(
                     cmds.spawn((
                         debug_name_f!("Promotion Button ({color}) ({typ})"),
                         PromotionButton(typ),
-                        ButtonBundle {
-                            background_color: PROMO_TILE_COLOR.into(),
-                            focus_policy: FocusPolicy::Block,
-                            ..default()
-                        },
+                        Button,
+                        FocusPolicy::Block,
+                        BackgroundColor(PROMO_TILE_COLOR),
                     ))
                     .with_children(|cmds| {
                         cmds.spawn((
                             debug_name_f!("Promotion Piece ({color}) ({typ})"),
-                            ImageBundle {
-                                image: ImageNode::new(asset_server.load(asset_path)),
-                                focus_policy: FocusPolicy::Pass,
-                                node: Node {
-                                    width: Val::Percent(100.0),
-                                    height: Val::Percent(100.0),
-                                    ..default()
-                                },
+                            ImageNode::new(asset_server.load(asset_path)),
+                            Node {
+                                width: Val::Percent(100.0),
+                                height: Val::Percent(100.0),
                                 ..default()
                             },
+                            FocusPolicy::Pass,
                         ));
                     });
                 }
@@ -120,23 +112,21 @@ pub fn spawn_promoters(
 
                 cmds.spawn((
                     debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
-                    NodeBundle { node: Node { flex_direction, ..default() }, ..default() },
+                    Node { flex_direction, ..default() },
                 ))
                 .with_children(|cmds| {
                     cmds.spawn((
                         debug_name_f!("Promotion Cancel Button ({color})"),
                         PromotionCancelButton,
-                        ButtonBundle {
-                            background_color: CANCEL_BUTTON_BG_COLOR.into(),
-                            focus_policy: FocusPolicy::Block,
-                            node: Node {
-                                justify_content: JustifyContent::Center,
-                                align_items: AlignItems::Center,
-                                width: Val::Percent(100.0),
-                                ..default()
-                            },
+                        Button,
+                        Node {
+                            justify_content: JustifyContent::Center,
+                            align_items: AlignItems::Center,
+                            width: Val::Percent(100.0),
                             ..default()
                         },
+                        BackgroundColor(CANCEL_BUTTON_BG_COLOR),
+                        FocusPolicy::Block,
                     ))
                     .with_children(|cmds| {
                         let font = asset_server.load(FONT_PATH);

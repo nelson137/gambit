@@ -5,7 +5,7 @@ use bevy::{
 };
 use bevy_egui::egui::{
     collapsing_header::CollapsingState, emath::Rot2, remap, vec2, Align, FontFamily, FontId, Key,
-    Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit, TextWrapMode, Ui,
+    Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit, TextWrapMode, Ui, UiBuilder,
 };
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
@@ -212,7 +212,9 @@ impl<'a> InspectorPaneViewer<'a> {
             ui.add_space(4.0);
 
             let layout = Layout::top_down(Align::Min);
-            let ui = &mut ui.child_ui(ui.available_rect_before_wrap(), layout, None);
+            let ui = &mut ui.new_child(
+                UiBuilder::new().max_rect(ui.available_rect_before_wrap()).layout(layout),
+            );
 
             let font_id = FontId::new(10.0, FontFamily::Monospace);
             let text_height = ui.fonts(|f| f.row_height(&font_id));

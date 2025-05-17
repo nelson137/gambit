@@ -21,20 +21,17 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
     commands.spawn((
         GameMenuDimLayer,
         debug_name!("Game Menu Dim Layer"),
-        NodeBundle {
-            background_color: MENU_DIM_LAYER_COLOR.into(),
-            node: Node {
-                position_type: PositionType::Absolute,
-                top: Val::Px(0.0),
-                left: Val::Px(0.0),
-                width: Val::Percent(100.0),
-                height: Val::Percent(100.0),
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                ..default()
-            },
+        Node {
+            position_type: PositionType::Absolute,
+            top: Val::Px(0.0),
+            left: Val::Px(0.0),
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            justify_content: JustifyContent::Center,
+            align_items: AlignItems::Center,
             ..default()
         },
+        BackgroundColor(MENU_DIM_LAYER_COLOR),
         GlobalZIndex(Z_MENU),
     ));
 }
@@ -57,18 +54,15 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
         .spawn((
             GameMenu,
             debug_name!("Game Menu"),
-            NodeBundle {
-                background_color: MENU_COLOR.into(),
-                node: Node {
-                    width: Val::Px(INIT_MENU_WIDTH),
-                    height: Val::Px(INIT_MENU_HEIGHT),
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceEvenly,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
+            Node {
+                width: Val::Px(INIT_MENU_WIDTH),
+                height: Val::Px(INIT_MENU_HEIGHT),
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::SpaceEvenly,
+                align_items: AlignItems::Center,
                 ..default()
             },
+            BackgroundColor(MENU_COLOR),
         ))
         .id();
     commands.entity(parent_entity).add_child(menu_entity);
@@ -149,15 +143,12 @@ pub fn spawn_menu_elements(
         .spawn((
             GameMenuButtonsContainer,
             debug_name!("Game Menu Buttons Container"),
-            NodeBundle {
-                node: Node {
-                    width: Val::Percent(100.0),
-                    flex_grow: 1.0,
-                    flex_direction: FlexDirection::Column,
-                    justify_content: JustifyContent::SpaceEvenly,
-                    align_items: AlignItems::Center,
-                    ..default()
-                },
+            Node {
+                width: Val::Percent(100.0),
+                flex_grow: 1.0,
+                flex_direction: FlexDirection::Column,
+                justify_content: JustifyContent::SpaceEvenly,
+                align_items: AlignItems::Center,
                 ..default()
             },
         ))
@@ -186,11 +177,9 @@ pub fn spawn_menu_buttons(
         .spawn((
             GameMenuButton::Start,
             debug_name!("Start Game Button"),
-            ButtonBundle {
-                background_color: BUTTON_COLOR_DEFAULT.into(),
-                node: button_node.clone(),
-                ..default()
-            },
+            Button,
+            button_node.clone(),
+            BackgroundColor(BUTTON_COLOR_DEFAULT),
         ))
         .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
         .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
@@ -210,11 +199,9 @@ pub fn spawn_menu_buttons(
         .spawn((
             GameMenuButton::LoadFen,
             debug_name!("Load FEN Button"),
-            ButtonBundle {
-                background_color: BUTTON_COLOR_DEFAULT.into(),
-                node: button_node,
-                ..default()
-            },
+            Button,
+            button_node,
+            BackgroundColor(BUTTON_COLOR_DEFAULT),
         ))
         .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
         .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))

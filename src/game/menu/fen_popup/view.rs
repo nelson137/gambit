@@ -3,8 +3,8 @@ use bevy_egui::egui::{
     text::{CCursor, CCursorRange},
     text_edit::TextEditOutput,
     vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, FontId, Frame, Key, Layout,
-    Response, RichText, Sense, Stroke, StrokeKind, TextEdit, Ui, Vec2, WidgetInfo, WidgetType,
-    Window,
+    Response, RichText, Sense, Stroke, StrokeKind, TextEdit, Ui, UiBuilder, Vec2, WidgetInfo,
+    WidgetType, Window,
 };
 use chess::ALL_FILES;
 use egui_extras::{Size, StripBuilder};
@@ -31,7 +31,7 @@ pub(super) fn fen_window(ctx: &Context, state: &mut PopupState) -> FenPopupInter
                 ui.separator();
 
                 ui.set_min_size(vec2(626.0, 0.0));
-                Frame::none().outer_margin(12.0).show(ui, |ui| {
+                Frame::NONE.outer_margin(12.0).show(ui, |ui| {
                     const SPACING: f32 = 24.0;
                     ui.horizontal(|ui| state.fen_control(ui, &mut interaction));
                     ui.add_space(SPACING);
@@ -116,7 +116,9 @@ impl PopupState {
 
             ui.checkbox(&mut self.has_en_passant_target, "");
 
-            ui.add_visible_ui(self.has_en_passant_target, |ui| {
+            let mut en_passant_ui_builder = UiBuilder::new();
+            en_passant_ui_builder.invisible = !self.has_en_passant_target;
+            ui.scope_builder(en_passant_ui_builder, |ui| {
                 let text = en_passant_label(
                     self.black_to_move,
                     self.en_passant_target_file,

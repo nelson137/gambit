@@ -3,7 +3,7 @@ use std::iter;
 use bevy::utils::default;
 use bevy_egui::egui::{
     panel::Side, pos2, vec2, Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Rect,
-    ScrollArea, Sense, SidePanel, Stroke, Ui,
+    ScrollArea, Sense, SidePanel, Stroke, Ui, UiBuilder,
 };
 
 struct SplitPanelStyle {
@@ -127,7 +127,7 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
                 ui.allocate_rect(content_rect, Sense::hover());
 
                 let layout = Layout::top_down_justified(Align::Min);
-                let ui = &mut ui.child_ui(content_rect, layout, None);
+                let ui = &mut ui.new_child(UiBuilder::new().max_rect(content_rect).layout(layout));
 
                 self.compute_rects(content_rect);
 
@@ -172,9 +172,9 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
     fn show_panes(&mut self, ui: &mut Ui, pane_viewer: &mut impl PaneViewer<Pane = Pane>) {
         for (i, pane) in self.state.panes.iter_mut().enumerate() {
             let layout = Layout::top_down(Align::Min);
-            let ui = &mut ui.child_ui(pane.content_rect, layout, None);
+            let ui = &mut ui.new_child(UiBuilder::new().max_rect(pane.content_rect).layout(layout));
             ui.set_clip_rect(pane.rect);
-            ScrollArea::both().id_source(("split_panel", "pane", i)).show(ui, |ui| {
+            ScrollArea::both().id_salt(("split_panel", "pane", i)).show(ui, |ui| {
                 ui.expand_to_include_rect(ui.available_rect_before_wrap());
                 pane_viewer.ui(ui, &mut pane.pane);
             });

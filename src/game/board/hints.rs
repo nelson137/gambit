@@ -30,32 +30,28 @@ pub fn spawn_hints(
                 Hint,
                 debug_name_f!("Move Hint ({square})"),
                 square,
-                NodeBundle {
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(0.0),
-                        left: Val::Px(0.0),
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        justify_content: JustifyContent::Center,
-                        align_items: AlignItems::Center,
-                        ..default()
-                    },
-                    visibility: Visibility::Hidden,
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
                     ..default()
                 },
+                Visibility::Hidden,
                 GlobalZIndex(Z_MOVE_HINT),
             ))
             .with_children(|cmds| {
-                cmds.spawn(ImageBundle {
-                    image: ImageNode::new(move_hint_texture.clone()),
-                    node: Node {
+                cmds.spawn((
+                    ImageNode::new(move_hint_texture.clone()),
+                    Node {
                         width: Val::Percent(100.0 / 3.0),
                         height: Val::Percent(100.0 / 3.0),
                         ..default()
                     },
-                    ..default()
-                });
+                ));
             })
             .id();
 
@@ -65,19 +61,16 @@ pub fn spawn_hints(
                 Hint,
                 debug_name_f!("Capture Hint ({square})"),
                 square,
-                ImageBundle {
-                    image: ImageNode::new(capture_hint_texture.clone()),
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        top: Val::Px(0.0),
-                        left: Val::Px(0.0),
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        ..default()
-                    },
-                    visibility: Visibility::Hidden,
+                ImageNode::new(capture_hint_texture.clone()),
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: Val::Px(0.0),
+                    left: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
                     ..default()
                 },
+                Visibility::Hidden,
                 GlobalZIndex(Z_MOVE_HINT),
             ))
             .id();

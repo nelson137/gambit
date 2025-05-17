@@ -31,10 +31,7 @@ pub struct EvaluationUpdate(pub f32);
 
 pub fn spawn_eval_bar(mut commands: Commands) {
     const SPACER_H: Val = Val::Px(CAPTURES_PANEL_HEIGHT);
-    let spacer_bundle = || NodeBundle {
-        node: Node { height: SPACER_H, flex_shrink: 0.0, ..default() },
-        ..default()
-    };
+    let spacer_bundle = || Node { height: SPACER_H, flex_shrink: 0.0, ..default() };
 
     let spacer_top =
         commands.spawn((debug_name!("Evaluation Bar Spacer (Top)"), spacer_bundle())).id();
@@ -42,33 +39,27 @@ pub fn spawn_eval_bar(mut commands: Commands) {
     let bar = commands
         .spawn((
             debug_name!("Evaluation Bar Background (black)"),
-            NodeBundle {
-                background_color: BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
-                node: Node {
-                    position_type: PositionType::Relative,
-                    width: Val::Px(20.0),
-                    flex_grow: 1.0,
-                    min_height: MIN_BOARD_SIZE,
-                    ..default()
-                },
+            Node {
+                position_type: PositionType::Relative,
+                width: Val::Px(20.0),
+                flex_grow: 1.0,
+                min_height: MIN_BOARD_SIZE,
                 ..default()
             },
+            BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
         ))
         .with_children(|cmds| {
             cmds.spawn((
                 EvaluationBar,
                 debug_name!("Evaluation Bar (white)"),
-                NodeBundle {
-                    background_color: BackgroundColor(Color::WHITE),
-                    node: Node {
-                        position_type: PositionType::Absolute,
-                        bottom: Val::Px(0.0),
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(50.0),
-                        ..default()
-                    },
+                Node {
+                    position_type: PositionType::Absolute,
+                    bottom: Val::Px(0.0),
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(50.0),
                     ..default()
                 },
+                BackgroundColor(Color::WHITE),
             ));
         })
         .id();

@@ -75,14 +75,11 @@ impl PanelBuilder {
             debug_name!(_name),
             UiPanel,
             SortIndex(self.index),
-            NodeBundle {
-                node: Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Px(CAPTURES_PANEL_HEIGHT),
-                    min_height: Val::Px(CAPTURES_PANEL_HEIGHT),
-                    margin: self.margin,
-                    ..default()
-                },
+            Node {
+                width: Val::Percent(100.0),
+                height: Val::Px(CAPTURES_PANEL_HEIGHT),
+                min_height: Val::Px(CAPTURES_PANEL_HEIGHT),
+                margin: self.margin,
                 ..default()
             },
         )
@@ -125,29 +122,19 @@ impl Command for PanelBuilderCmd {
             cmds.spawn((
                 ProfileImage,
                 debug_name!("Profile Image"),
-                ImageBundle {
-                    image: ImageNode::new(profile_image_handle),
-                    node: Node {
-                        width: PROFILE_IMAGE_SIZE_VAL,
-                        height: PROFILE_IMAGE_SIZE_VAL,
-                        ..default()
-                    },
-                    ..default()
-                },
+                ImageNode::new(profile_image_handle),
+                Node { width: PROFILE_IMAGE_SIZE_VAL, height: PROFILE_IMAGE_SIZE_VAL, ..default() },
             ));
 
             cmds.spawn((
                 PanelInnerContainer,
                 debug_name!("Panel Inner Container"),
-                NodeBundle {
-                    node: Node {
-                        height: Val::Percent(100.0),
-                        margin: UiRect::left(UI_GAP_VAL),
-                        flex_direction: FlexDirection::Column,
-                        align_items: AlignItems::FlexStart,
-                        flex_grow: 1.0,
-                        ..default()
-                    },
+                Node {
+                    height: Val::Percent(100.0),
+                    margin: UiRect::left(UI_GAP_VAL),
+                    flex_direction: FlexDirection::Column,
+                    align_items: AlignItems::FlexStart,
+                    flex_grow: 1.0,
                     ..default()
                 },
             ))
@@ -159,13 +146,10 @@ impl Command for PanelBuilderCmd {
                     TextColor(Color::WHITE),
                 ));
 
-                cmds.spawn(NodeBundle {
-                    node: Node {
-                        width: Val::Percent(100.0),
-                        height: Val::Percent(100.0),
-                        margin: UiRect::top(UI_GAP_VAL),
-                        ..default()
-                    },
+                cmds.spawn(Node {
+                    width: Val::Percent(100.0),
+                    height: Val::Percent(100.0),
+                    margin: UiRect::top(UI_GAP_VAL),
                     ..default()
                 })
                 .with_children(|cmds| {
