@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::component::{ComponentHooks, StorageType},
+    ecs::component::{ComponentHooks, Mutable, StorageType},
     prelude::*,
 };
 
@@ -9,7 +9,7 @@ use crate::{
         board::{BoardState, MouseSelectionEvent, Square, Tile},
         consts::Z_PIECE_SELECTED,
     },
-    utils::{hook, NoopExts},
+    utils::{NoopExts, hook},
 };
 
 use super::position::{MouseBoardSquare, MouseWorldPosition};
@@ -21,13 +21,13 @@ pub(super) fn mouse_handler(
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left) {
         if let Some(square) = **mouse_sq {
-            event_writer.send(MouseSelectionEvent::MouseDown(square));
+            event_writer.write(MouseSelectionEvent::MouseDown(square));
         }
     }
 
     if mouse_buttons.just_released(MouseButton::Left) {
         if let Some(square) = **mouse_sq {
-            event_writer.send(MouseSelectionEvent::MouseUp(square));
+            event_writer.write(MouseSelectionEvent::MouseUp(square));
         }
     }
 }
@@ -52,7 +52,7 @@ pub(super) fn update_drag_container(
     let Some(tile_computed_node) = q_tiles.iter().next() else { return };
     let inverse_scale_factor = tile_computed_node.inverse_scale_factor();
     let Vec2 { x: width, y: height } = tile_computed_node.size() * inverse_scale_factor;
-    if let Ok(mut node) = q_container.get_single_mut() {
+    if let Ok(mut node) = q_container.single_mut() {
         node.width = Val::Px(width);
         node.height = Val::Px(height);
         node.top = Val::Px(mouse_world_pos.y - height / 2.0);
@@ -66,6 +66,7 @@ pub struct Dragging {
 }
 
 impl Component for Dragging {
+    type Mutability = Mutable;
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
@@ -82,7 +83,7 @@ fn on_add_dragging_piece(
     mut commands: Commands,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
-    commands.entity(piece).set_parent(q_drag_container.single());
+    commands.entity(piece).insert(ChildOf(q_drag_container.single().unwrap()));
 }
 
 fn on_remove_dragging_piece(
@@ -91,5 +92,5 @@ fn on_remove_dragging_piece(
     board_state: Res<BoardState>,
 ) {
     let original_tile = board_state.tile(dragging.original_square);
-    commands.entity(piece).set_parent(original_tile);
+    commands.entity(piece).insert(ChildOf(original_tile));
 }

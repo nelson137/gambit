@@ -2,7 +2,7 @@ use std::fmt::{self, Write};
 
 use bevy::{
     ecs::{
-        component::{ComponentHooks, ComponentId, StorageType},
+        component::{ComponentHooks, HookContext, Mutable, StorageType},
         world::DeferredWorld,
     },
     prelude::*,
@@ -331,6 +331,7 @@ fn handle_selection_events(
 struct ShowingIndicator;
 
 impl Component for ShowingIndicator {
+    type Mutability = Mutable;
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
@@ -338,17 +339,17 @@ impl Component for ShowingIndicator {
     }
 }
 
-fn on_add_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
+fn on_add_showing_indicator(mut world: DeferredWorld, ctx: HookContext) {
     world.commands().queue(move |world: &mut World| {
-        let mut entity = world.entity_mut(entity);
+        let mut entity = world.entity_mut(ctx.entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Visible;
     });
 }
 
-fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: ComponentId) {
+fn on_remove_showing_indicator(mut world: DeferredWorld, ctx: HookContext) {
     world.commands().queue(move |world: &mut World| {
-        let mut entity = world.entity_mut(entity);
+        let mut entity = world.entity_mut(ctx.entity);
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Hidden;
     });
@@ -356,14 +357,12 @@ fn on_remove_showing_indicator(mut world: DeferredWorld, entity: Entity, _cid: C
 
 #[cfg(test)]
 mod tests {
-    use bevy::ecs::world::Command;
-
     use crate::game::board::{PieceColor, PieceType};
 
     use super::*;
 
     mod utils {
-        use bevy::utils::HashSet;
+        use bevy::platform::collections::HashSet;
 
         use crate::game::{
             board::{MovePlugin, PieceMeta},
@@ -389,7 +388,7 @@ mod tests {
         }
 
         pub fn get_tagged_entity<Tag: Component>(app: &mut App) -> Entity {
-            app.world_mut().query_filtered::<Entity, With<Tag>>().single(app.world())
+            app.world_mut().query_filtered::<Entity, With<Tag>>().single(app.world()).unwrap()
         }
 
         #[allow(dead_code)]
@@ -435,7 +434,7 @@ mod tests {
             fn set_piece_to_drag_container(&mut self, square: Square) {
                 let parent = get_tagged_entity::<DragContainer>(self);
                 let child = self.board_state().piece(square);
-                AddChild { parent, child }.apply(self.world_mut());
+                self.world_mut().entity_mut(parent).add_child(child);
             }
 
             fn assert_state(&self, expected: SelectionState) {
@@ -446,17 +445,17 @@ mod tests {
             fn assert_drag_container_empty(&mut self) {
                 let drag_container = get_tagged_entity::<DragContainer>(self);
                 let children = self.world().entity(drag_container).get::<Children>();
-                let actual = children.map(|c| HashSet::from_iter(c.iter().copied()));
+                let actual = children.map(|c| HashSet::<Entity>::from_iter(c.iter()));
                 assert_eq!(actual, None, "drag container not empty");
             }
 
             fn assert_piece_in_drag_container(&mut self, piece: Square) {
                 let piece = self.board_state().piece(piece);
-                let expected = Some(HashSet::from_iter([piece]));
+                let expected = Some(HashSet::<Entity>::from_iter([piece]));
 
                 let drag_container = get_tagged_entity::<DragContainer>(self);
                 let children = self.world().entity(drag_container).get::<Children>();
-                let actual = children.map(|c| HashSet::from_iter(c.iter().copied()));
+                let actual = children.map(|c| HashSet::from_iter(c.iter()));
 
                 assert_eq!(actual, expected);
             }
@@ -506,7 +505,7 @@ mod tests {
                     Some(&PieceMeta::new(color, typ)),
                     "piece at square {sq} in piece state is not a {color} {typ}"
                 );
-                let piece_parent = piece.get::<Parent>().map(Parent::get);
+                let piece_parent = piece.get::<ChildOf>().map(ChildOf::parent);
                 assert_eq!(
                     piece_parent,
                     Some(tile),

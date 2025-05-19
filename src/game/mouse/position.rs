@@ -15,10 +15,10 @@ pub(super) fn mouse_screen_position_to_world(
     q_camera: Query<(&Camera, &GlobalTransform), With<MainCamera>>,
     mut mouse_world_pos: ResMut<MouseWorldPosition>,
 ) {
-    let Ok(win) = q_window.get_single() else { return };
+    let Ok(win) = q_window.single() else { return };
     let Some(screen_pos) = win.cursor_position() else { return };
 
-    let (camera, camera_transf) = q_camera.single();
+    let (camera, camera_transf) = q_camera.single().unwrap();
 
     let window_size = Vec2::new(win.width(), win.height());
 
@@ -40,7 +40,7 @@ pub(super) fn mouse_world_position_to_square(
 ) {
     let mouse_pos = **mouse_world_pos;
 
-    let Ok((board_global_transf, board_computed_node)) = q_board.get_single() else { return };
+    let Ok((board_global_transf, board_computed_node)) = q_board.single() else { return };
     let inverse_scale_factor = board_computed_node.inverse_scale_factor();
     let board_pos = board_global_transf.translation().truncate() * inverse_scale_factor;
     let board_size = board_computed_node.size() * inverse_scale_factor;

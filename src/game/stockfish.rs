@@ -374,7 +374,7 @@ fn stockfish_update(
                         }
                     };
 
-                    eval_bar_writer.send(EvaluationUpdate(value));
+                    eval_bar_writer.write(EvaluationUpdate(value));
 
                     break 'is_waiting;
                 }

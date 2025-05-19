@@ -29,7 +29,7 @@ fn main() {
         .add_plugins((GameHeadlessPlugin, GameHeadPlugin))
         // Game
         .add_plugins(CliPlugin)
-        .add_plugins(EguiPlugin)
+        .add_plugins(EguiPlugin { enable_multipass_for_primary_context: false })
         .add_plugins(GameLogicPlugin)
         .add_plugins(DebugInspectorPlugin)
         // Resources

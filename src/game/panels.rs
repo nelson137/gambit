@@ -1,8 +1,4 @@
-use bevy::{
-    ecs::{system::SystemState, world::Command},
-    prelude::*,
-    ui::UiSystem,
-};
+use bevy::{ecs::system::SystemState, prelude::*, ui::UiSystem};
 
 use crate::{
     debug_name,

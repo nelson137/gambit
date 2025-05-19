@@ -1,10 +1,7 @@
 use std::{fmt, ops::Not};
 
 use bevy::{
-    ecs::{
-        component::{ComponentHooks, StorageType},
-        world::Command,
-    },
+    ecs::component::{ComponentHooks, Mutable, StorageType},
     prelude::*,
 };
 use chess::{Piece, Rank};
@@ -190,7 +187,7 @@ pub(super) fn spawn_pieces_on_load_game(
 ) {
     // Despawn all pieces
     board_state.clear_pieces();
-    q_pieces.iter().for_each(|e| commands.entity(e).despawn_recursive());
+    q_pieces.iter().for_each(|e| commands.entity(e).despawn());
 
     for square in chess::ALL_SQUARES.map(Square::new) {
         let Some(info) = trigger.event().board.get_piece_meta(square) else { continue };
@@ -285,11 +282,12 @@ impl Command for AnimatePiece {
             return;
         };
 
-        let animation_layer = world.query_filtered::<Entity, With<AnimationLayer>>().single(world);
+        let animation_layer =
+            world.query_filtered::<Entity, With<AnimationLayer>>().single(world).unwrap();
 
         let mut entity = world.entity_mut(self.entity);
 
-        entity.set_parent(animation_layer);
+        entity.insert(ChildOf(animation_layer));
 
         let computed_node = entity.get::<ComputedNode>().unwrap();
         let inverse_scale_factor = computed_node.inverse_scale_factor();
@@ -326,6 +324,7 @@ struct Animating {
 }
 
 impl Component for Animating {
+    type Mutability = Mutable;
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
@@ -337,7 +336,7 @@ impl Animating {
     fn new(from: Vec2, to: Vec2, to_entity: Entity) -> Self {
         Self {
             timer: Timer::from_seconds(0.07, TimerMode::Once),
-            interpolater: CubicSegment::new_bezier((0.42, 0.0), (0.58, 1.0)),
+            interpolater: CubicSegment::new_bezier_easing((0.42, 0.0), (0.58, 1.0)),
             from,
             to,
             to_entity,
@@ -373,7 +372,7 @@ fn on_remove_animating(
     mut commands: Commands,
     mut q_node: Query<&mut Node>,
 ) {
-    commands.entity(entity).set_parent(animating.to_entity);
+    commands.entity(entity).insert(ChildOf(animating.to_entity));
 
     let mut node = q_node.get_mut(entity).unwrap();
     node.left = Val::Px(0.0);

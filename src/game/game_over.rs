@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::prelude::*;
 
 use super::{
     board::{BoardState, GameStatus, ShowCheckmateIcons, ShowDrawIcons},

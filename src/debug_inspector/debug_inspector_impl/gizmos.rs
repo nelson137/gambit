@@ -1,5 +1,6 @@
 use bevy::{
-    math::vec2, prelude::*, render::camera::ClearColorConfig, utils::HashSet, window::PrimaryWindow,
+    math::vec2, platform::collections::HashSet, prelude::*, render::camera::ClearColorConfig,
+    window::PrimaryWindow,
 };
 
 use super::state::InspectorState;
@@ -11,7 +12,7 @@ pub(super) fn spawn_gizmo_camera(mut commands: Commands) {
 
 pub(super) fn configure_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
     let config = config_store.config_mut::<DefaultGizmoConfigGroup>().0;
-    config.line_width = 4.0;
+    config.line.width = 4.0;
 }
 
 pub(super) fn draw_entity_hover_gizmo(
@@ -22,7 +23,7 @@ pub(super) fn draw_entity_hover_gizmo(
     q_computed_node: Query<&ComputedNode>,
     mut gizmos: Gizmos,
 ) {
-    let Ok(win) = q_win.get_single() else { return };
+    let Ok(win) = q_win.single() else { return };
     let half_res = vec2(win.resolution.width(), win.resolution.height());
 
     drawn_entities.extend(inspector_state.panes_state.selected_entities.iter());

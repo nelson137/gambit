@@ -1,4 +1,4 @@
-use bevy::{ecs, prelude::*, state, utils::HashSet};
+use bevy::{ecs, platform::collections::HashSet, prelude::*, state};
 
 pub trait NoopExts {
     fn noop(&mut self) -> &mut Self {
@@ -14,23 +14,21 @@ impl NoopExts for ecs::component::ComponentHooks {}
 macro_rules! __hook {
     ($hook_system:path) => {
         |mut __world: ::bevy::ecs::world::DeferredWorld,
-         __entity: ::bevy::ecs::entity::Entity,
-         __cid: ::bevy::ecs::component::ComponentId| {
+         __ctx: ::bevy::ecs::component::HookContext| {
             __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
-                __world.run_system_cached_with($hook_system, __entity).expect("run hook");
+                __world.run_system_cached_with($hook_system, __ctx.entity).expect("run hook");
             });
         }
     };
 
     ($component:path => $hook_system:path) => {
         |mut __world: ::bevy::ecs::world::DeferredWorld,
-         __entity: ::bevy::ecs::entity::Entity,
-         __cid: ::bevy::ecs::component::ComponentId| {
+         __ctx: ::bevy::ecs::component::HookContext| {
             let __component =
-                __world.get::<$component>(__entity).expect("entity has hook component").clone();
+                __world.get::<$component>(__ctx.entity).expect("entity has hook component").clone();
             __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
                 __world
-                    .run_system_cached_with($hook_system, (__entity, __component))
+                    .run_system_cached_with($hook_system, (__ctx.entity, __component))
                     .expect("run hook");
             });
         }
@@ -51,7 +49,7 @@ impl ReparentInTag for Commands<'_, '_> {
         entities: impl IntoIterator<Item = Entity> + Send + 'static,
     ) {
         self.queue(move |world: &mut World| {
-            let parent = world.query_filtered::<Entity, With<Tag>>().single(world);
+            let parent = world.query_filtered::<Entity, With<Tag>>().single(world).unwrap();
             let mut parent = world.entity_mut(parent);
             for entity in entities {
                 parent.add_child(entity);
@@ -84,10 +82,10 @@ struct Sortable;
 
 fn collect_sortable_parents(
     mut sortable_parents: ResMut<SortableEntities>,
-    q_sortable_parents: Query<&Parent, With<SortIndex>>,
+    q_sortable_parents: Query<&ChildOf, With<SortIndex>>,
 ) {
     for parent in &q_sortable_parents {
-        sortable_parents.0.insert(parent.get());
+        sortable_parents.0.insert(parent.parent());
     }
 }
 
@@ -110,17 +108,17 @@ fn sort_sortable_entities(
     }
 }
 
-pub fn recolor_on<E: 'static>(color: Color) -> impl ecs::system::ObserverSystem<E, ()> {
+pub fn recolor_on<E: 'static>(color: Color) -> impl ecs::system::ObserverSystem<E, (), ()> {
     let system = move |mut trigger: Trigger<E>, mut commands: Commands| {
         trigger.propagate(false);
-        commands.entity(trigger.entity()).insert(BackgroundColor(color));
+        commands.entity(trigger.target()).insert(BackgroundColor(color));
     };
     ecs::system::IntoObserverSystem::into_system(system)
 }
 
 pub fn set_state_on<S: state::state::FreelyMutableState, E: 'static>(
     state: S,
-) -> impl ecs::system::ObserverSystem<E, ()> {
+) -> impl ecs::system::ObserverSystem<E, (), ()> {
     let system = move |mut trigger: Trigger<E>, mut next_state: ResMut<NextState<S>>| {
         trigger.propagate(false);
         next_state.set(state.clone());

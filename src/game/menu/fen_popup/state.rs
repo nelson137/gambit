@@ -7,7 +7,7 @@ use std::{
     sync::Arc,
 };
 
-use bevy::{ecs::system::Resource, utils::default};
+use bevy::{ecs::resource::Resource, utils::default};
 use bevy_egui::egui::{Context, FontId, TextStyle};
 use chess::{Board, BoardBuilder, CastleRights};
 
