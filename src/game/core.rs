@@ -16,11 +16,9 @@ pub struct GameHeadlessPlugin;
 impl Plugin for GameHeadlessPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            .add_plugins(bevy::core::TaskPoolPlugin::default())
-            .add_plugins(bevy::core::TypeRegistrationPlugin)
+            .add_plugins(bevy::app::TaskPoolPlugin::default())
             .add_plugins(bevy::time::TimePlugin)
             .add_plugins(bevy::transform::TransformPlugin)
-            .add_plugins(bevy::hierarchy::HierarchyPlugin)
             .add_plugins(bevy::input::InputPlugin)
             .add_plugins(bevy::asset::AssetPlugin::default())
             .add_plugins(bevy::audio::AudioPlugin::default())
@@ -35,7 +33,7 @@ pub struct GameHeadPlugin;
 impl Plugin for GameHeadPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            .add_plugins(bevy::core::FrameCountPlugin)
+            .add_plugins(bevy::diagnostic::FrameCountPlugin)
             .add_plugins(bevy::window::WindowPlugin {
                 primary_window: Some(Window {
                     title: "Gambit".into(),
@@ -56,9 +54,9 @@ impl Plugin for GameHeadPlugin {
             // we allow them to send their hits in any order. These are later sorted, so submission
             // order doesn't matter. See `PointerHits` docs for caveats.
             .allow_ambiguous_resource::<bevy::ecs::event::Events<bevy::picking::backend::PointerHits>>()
-            .add_plugins(bevy::sprite::SpritePlugin { add_picking: false })
+            .add_plugins(bevy::sprite::SpritePlugin )
             .add_plugins(bevy::text::TextPlugin)
-            .add_plugins(bevy::ui::UiPlugin { enable_rendering: true, add_picking: true })
+            .add_plugins(bevy::ui::UiPlugin { enable_rendering: true})
             .add_plugins(bevy::picking::DefaultPickingPlugins)
             .noop();
     }

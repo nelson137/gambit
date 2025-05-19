@@ -35,7 +35,7 @@ pub fn spawn_tiles(
     mut board_state: ResMut<BoardState>,
     q_board: Query<Entity, With<UiBoard>>,
 ) {
-    let board = q_board.single();
+    let board = q_board.single().unwrap();
 
     for square in chess::ALL_SQUARES.map(Square::new) {
         let file = square.get_file();

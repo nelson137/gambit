@@ -7,7 +7,7 @@ use crate::{
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
         TITLE_FONT_PATH, Z_MENU,
     },
-    utils::{recolor_on, set_state_on, RoundToNearest},
+    utils::{RoundToNearest, recolor_on, set_state_on},
 };
 
 use super::MenuState;
@@ -48,7 +48,7 @@ const MENU_COLOR: Color = Color::srgba(
 );
 
 pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<GameMenuDimLayer>>) {
-    let Ok(parent_entity) = q_parent.get_single() else { return };
+    let Ok(parent_entity) = q_parent.single() else { return };
 
     let menu_entity = commands
         .spawn((
@@ -72,8 +72,8 @@ pub fn menu_size(
     q_window: Query<&Window, With<PrimaryWindow>>,
     mut q_menu: Query<&mut Node, With<GameMenu>>,
 ) {
-    let Ok(win) = q_window.get_single() else { return };
-    let Ok(mut menu_node) = q_menu.get_single_mut() else { return };
+    let Ok(win) = q_window.single() else { return };
+    let Ok(mut menu_node) = q_menu.single_mut() else { return };
 
     let win_width_scale = win.width() / INIT_WIN_WIDTH;
     let win_height_scale = win.height() / INIT_WIN_HEIGHT;
@@ -154,7 +154,9 @@ pub fn spawn_menu_elements(
         ))
         .id();
 
-    commands.entity(q_menu.single()).add_children(&[title_entity, buttons_container_entity]);
+    commands
+        .entity(q_menu.single().unwrap())
+        .add_children(&[title_entity, buttons_container_entity]);
 }
 
 pub fn spawn_menu_buttons(
@@ -217,7 +219,7 @@ pub fn spawn_menu_buttons(
         .id();
 
     commands
-        .entity(q_menu_buttons_container.single())
+        .entity(q_menu_buttons_container.single().unwrap())
         .add_children(&[start_button_entity, fen_button_entity]);
 }
 
@@ -228,7 +230,7 @@ pub(super) fn game_menu_elements_sizes(
         Query<&mut TextFont, With<GameMenuButtonsText>>,
     )>,
 ) {
-    let Ok(menu_computed_node) = q_menu.get_single() else { return };
+    let Ok(menu_computed_node) = q_menu.single() else { return };
 
     let menu_width = menu_computed_node.size().x * menu_computed_node.inverse_scale_factor();
     let scale = menu_width / INIT_MENU_WIDTH;

@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::{observer::TriggerEvent, world::Command},
-    prelude::*,
-};
+use bevy::prelude::*;
 use chess::File;
 
 use crate::{
@@ -54,7 +51,7 @@ pub fn move_piece(
     board_state: Res<BoardState>,
     mut q_info: Query<(&PieceMeta, &mut ImageNode)>,
 ) {
-    let entity = trigger.entity();
+    let entity = trigger.target();
     let &MovePiece { from_sq, to_sq, promotion, animate } = trigger.event();
     let Ok((&PieceMeta { color, typ }, mut image)) = q_info.get_mut(entity) else { return };
 
@@ -125,9 +122,7 @@ pub fn move_piece(
         }
     });
 
-    commands.queue(|world: &mut World| {
-        TriggerEvent { event: MovePieceCompleted, targets: () }.apply(world);
-    });
+    commands.trigger_targets(MovePieceCompleted, ());
 }
 
 pub struct MoveUiPiece {

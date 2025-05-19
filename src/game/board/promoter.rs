@@ -1,5 +1,5 @@
 use bevy::{
-    ecs::component::{ComponentHooks, StorageType},
+    ecs::component::{ComponentHooks, Mutable, StorageType},
     prelude::*,
     ui::{FocusPolicy, UiSystem},
 };
@@ -158,6 +158,7 @@ impl PromotingPiece {
 }
 
 impl Component for PromotingPiece {
+    type Mutability = Mutable;
     const STORAGE_TYPE: StorageType = StorageType::SparseSet;
 
     fn register_component_hooks(hooks: &mut ComponentHooks) {
@@ -191,7 +192,7 @@ pub fn start_promotion(
 
     // Show the promoter UI
     if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
-        commands.entity(entity).set_parent(board_state.tile(to_sq));
+        commands.entity(entity).insert(ChildOf(board_state.tile(to_sq)));
         if let Ok(mut vis) = q_visibility.get_mut(entity) {
             *vis = Visibility::Visible;
         }
@@ -287,7 +288,7 @@ pub fn promotion_result_handler(
     let Some(result) = promotion_result else { return };
 
     let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq })) =
-        q_promo.get_single()
+        q_promo.single()
     else {
         warn!("Ignoring promotion event as no piece is awaiting promotion");
         return;

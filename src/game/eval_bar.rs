@@ -74,7 +74,7 @@ pub fn update_eval_bar(
     mut reader: EventReader<EvaluationUpdate>,
     mut q_bar: Query<&mut Node, With<EvaluationBar>>,
 ) {
-    let Ok(mut bar_node) = q_bar.get_single_mut() else { return };
+    let Ok(mut bar_node) = q_bar.single_mut() else { return };
 
     for update in reader.read() {
         // Map eval stat in [-10.0,10.0] to [0.0,100.0]

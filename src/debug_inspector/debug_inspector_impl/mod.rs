@@ -44,7 +44,7 @@ impl Plugin for DebugInspectorPlugin {
 
 fn debug_inspector_update(world: &mut World) {
     let mut q = world.query_filtered::<&mut EguiContext, With<PrimaryWindow>>();
-    let Ok(context) = q.get_single_mut(world) else { return };
+    let Ok(context) = q.single_mut(world) else { return };
     let mut context = EguiContext::clone(&context);
 
     world

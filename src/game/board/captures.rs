@@ -1,6 +1,6 @@
 use std::ops::{Index, IndexMut};
 
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::prelude::*;
 
 use crate::{
     game::{
@@ -317,7 +317,7 @@ pub fn captures(
     mut commands: Commands,
     mut q_data: Query<(&PieceMeta, &mut Visibility)>,
 ) {
-    let Ok((&PieceMeta { mut color, typ }, mut vis)) = q_data.get_mut(trigger.entity()) else {
+    let Ok((&PieceMeta { mut color, typ }, mut vis)) = q_data.get_mut(trigger.target()) else {
         return;
     };
     trace!(?color, ?typ, "Capture piece");

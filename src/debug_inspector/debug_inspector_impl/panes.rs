@@ -1,8 +1,4 @@
-use bevy::{
-    ecs::prelude::*,
-    hierarchy::{Children, Parent},
-    reflect::TypeRegistryArc,
-};
+use bevy::{ecs::prelude::*, reflect::TypeRegistryArc};
 use bevy_egui::egui::{
     collapsing_header::CollapsingState, emath::Rot2, remap, vec2, Align, FontFamily, FontId, Key,
     Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit, TextWrapMode, Ui, UiBuilder,
@@ -62,7 +58,7 @@ impl<'a> InspectorPaneViewer<'a> {
         ui.heading("Hierarchy");
         ui.separator();
 
-        let mut q = self.world.query_filtered::<Entity, Without<Parent>>();
+        let mut q = self.world.query_filtered::<Entity, Without<ChildOf>>();
         let mut entities: Vec<_> = q.iter(self.world).collect();
         entities.sort();
 

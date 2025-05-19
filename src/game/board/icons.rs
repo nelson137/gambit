@@ -1,4 +1,4 @@
-use bevy::{ecs::world::Command, prelude::*};
+use bevy::prelude::*;
 use chess::{File, Rank};
 
 use crate::{
@@ -145,8 +145,8 @@ fn set_end_game_icon<IconMarker: Component>(
     square: Square,
 ) {
     let (icon_entity, icon_parent) =
-        world.query_filtered::<(Entity, &Parent), With<IconMarker>>().single(world);
-    if icon_parent.get() != tile_entity {
+        world.query_filtered::<(Entity, &ChildOf), With<IconMarker>>().single(world).unwrap();
+    if icon_parent.parent() != tile_entity {
         world.entity_mut(tile_entity).add_children(&[icon_entity]);
     }
     let mut icon = world.entity_mut(icon_entity);
