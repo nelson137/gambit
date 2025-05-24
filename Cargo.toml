@@ -38,5 +38,5 @@ bevy-inspector-egui = { version = "0.31", optional = true }
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 crossbeam-channel = "0.5"
-dirs = "5.0"
+dirs = "6.0"
 egui_extras = "0.31"
