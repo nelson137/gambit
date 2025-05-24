@@ -9,13 +9,13 @@ use chess::{Piece, Rank};
 use crate::{
     debug_name_f,
     game::{
-        consts::{Z_PIECE, Z_PIECE_SELECTED},
         LoadGame,
+        consts::{Z_PIECE, Z_PIECE_SELECTED},
     },
-    utils::{hook, NoopExts},
+    utils::{NoopExts, hook},
 };
 
-use super::{square::Square, BoardState, ChessBoardExts};
+use super::{BoardState, ChessBoardExts, square::Square};
 
 macro_rules! asset_path {
     ($color:literal, $type:literal) => {

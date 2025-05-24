@@ -10,7 +10,7 @@ use std::{
 };
 
 use bevy::{prelude::*, tasks::IoTaskPool};
-use crossbeam_channel::{unbounded, Receiver, TryRecvError};
+use crossbeam_channel::{Receiver, TryRecvError, unbounded};
 
 use crate::{
     game::{
@@ -21,8 +21,8 @@ use crate::{
 };
 
 use super::{
-    board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin},
     LoadGame,
+    board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin},
 };
 
 const STOCKFISH_EXECUTABLE: &[u8] =

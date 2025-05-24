@@ -2,8 +2,8 @@ use std::iter;
 
 use bevy::utils::default;
 use bevy_egui::egui::{
-    panel::Side, pos2, vec2, Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Rect,
-    ScrollArea, Sense, SidePanel, Stroke, Ui, UiBuilder,
+    Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Rect, ScrollArea, Sense,
+    SidePanel, Stroke, Ui, UiBuilder, panel::Side, pos2, vec2,
 };
 
 struct SplitPanelStyle {

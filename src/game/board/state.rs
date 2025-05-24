@@ -1,11 +1,11 @@
 use std::{
-    collections::{hash_map::Entry, HashMap},
+    collections::{HashMap, hash_map::Entry},
     fmt::Write,
     str::FromStr,
 };
 
 use bevy::prelude::*;
-use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, MoveGen, EMPTY};
+use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, EMPTY, MoveGen};
 
 use crate::{cli::CliArgs, game::LoadGame};
 

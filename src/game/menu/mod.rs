@@ -1,5 +1,5 @@
 use bevy::{prelude::*, ui::UiSystem};
-use bevy_startup_tree::{startup_tree, AddStartupTree};
+use bevy_startup_tree::{AddStartupTree, startup_tree};
 
 use crate::utils::NoopExts;
 

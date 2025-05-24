@@ -3,7 +3,7 @@ use chess::{File, Rank};
 
 use crate::{
     debug_name,
-    game::{consts::Z_END_GAME_ICONS, LoadGame},
+    game::{LoadGame, consts::Z_END_GAME_ICONS},
 };
 
 use super::{BoardState, PieceColor, Square, Tile};

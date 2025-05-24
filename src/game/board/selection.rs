@@ -9,7 +9,7 @@ use bevy::{
 };
 
 use crate::{
-    game::{board::MovePiece, menu::MenuState, mouse::Dragging, LoadGame},
+    game::{LoadGame, board::MovePiece, menu::MenuState, mouse::Dragging},
     utils::NoopExts,
 };
 

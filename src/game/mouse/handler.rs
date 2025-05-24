@@ -19,16 +19,16 @@ pub(super) fn mouse_handler(
     mouse_sq: Res<MouseBoardSquare>,
     mut event_writer: EventWriter<MouseSelectionEvent>,
 ) {
-    if mouse_buttons.just_pressed(MouseButton::Left) {
-        if let Some(square) = **mouse_sq {
-            event_writer.write(MouseSelectionEvent::MouseDown(square));
-        }
+    if mouse_buttons.just_pressed(MouseButton::Left)
+        && let Some(square) = **mouse_sq
+    {
+        event_writer.write(MouseSelectionEvent::MouseDown(square));
     }
 
-    if mouse_buttons.just_released(MouseButton::Left) {
-        if let Some(square) = **mouse_sq {
-            event_writer.write(MouseSelectionEvent::MouseUp(square));
-        }
+    if mouse_buttons.just_released(MouseButton::Left)
+        && let Some(square) = **mouse_sq
+    {
+        event_writer.write(MouseSelectionEvent::MouseUp(square));
     }
 }
 

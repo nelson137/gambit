@@ -1,7 +1,7 @@
 use bevy::{ecs::prelude::*, reflect::TypeRegistryArc};
 use bevy_egui::egui::{
-    collapsing_header::CollapsingState, emath::Rot2, remap, vec2, Align, FontFamily, FontId, Key,
-    Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit, TextWrapMode, Ui, UiBuilder,
+    Align, FontFamily, FontId, Key, Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit,
+    TextWrapMode, Ui, UiBuilder, collapsing_header::CollapsingState, emath::Rot2, remap, vec2,
 };
 use bevy_inspector_egui::bevy_inspector::{
     by_type_id::ui_for_resource,
