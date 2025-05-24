@@ -7,8 +7,8 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
-reqwest = { version = "0.11", features = ["blocking"] }
+reqwest = { version = "0.12", features = ["blocking"] }
 shell-escape = "0.1"
 tracing = "0.1"
 tracing-subscriber = { version = "0.3", features = ["local-time", "time"] }
-zip = "0.6"
+zip = "4.0"
