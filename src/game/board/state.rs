@@ -1,6 +1,5 @@
 use std::{
     collections::{HashMap, hash_map::Entry},
-    fmt::Write,
     str::FromStr,
 };
 
@@ -108,7 +107,9 @@ impl BoardState {
         )
     }
 
+    #[cfg(feature = "stockfish-player")]
     pub fn fen(&self) -> String {
+        use std::fmt::Write;
         let mut fen = self.board.to_string();
         fen.truncate(fen.len() - 3);
         let half_move = self.half_move_clock;
