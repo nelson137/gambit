@@ -1,17 +1,17 @@
 use bevy_egui::egui::{
-    lerp, pos2,
+    Align, Align2, Button, Color32, ComboBox, Context, DragValue, FontId, Frame, Key, Layout,
+    Response, RichText, Sense, Stroke, StrokeKind, TextEdit, Ui, UiBuilder, Vec2, WidgetInfo,
+    WidgetType, Window, lerp, pos2,
     text::{CCursor, CCursorRange},
     text_edit::TextEditOutput,
-    vec2, Align, Align2, Button, Color32, ComboBox, Context, DragValue, FontId, Frame, Key, Layout,
-    Response, RichText, Sense, Stroke, StrokeKind, TextEdit, Ui, UiBuilder, Vec2, WidgetInfo,
-    WidgetType, Window,
+    vec2,
 };
 use chess::ALL_FILES;
 use egui_extras::{Size, StripBuilder};
 
 use crate::game::consts::DEFAULT_FEN;
 
-use super::{state::PopupState, FenPopupInteraction};
+use super::{FenPopupInteraction, state::PopupState};
 
 pub(super) fn fen_window(ctx: &Context, state: &mut PopupState) -> FenPopupInteraction {
     let mut interaction = FenPopupInteraction::None;

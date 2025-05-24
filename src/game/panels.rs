@@ -8,7 +8,7 @@ use crate::{
 use super::{
     board::{CapturePlugin, CaptureState, PieceColor},
     consts::{CAPTURES_PANEL_HEIGHT, FONT_PATH, UI_GAP_VAL},
-    ui::{spawn_ui, BoardAndPanelsContainer},
+    ui::{BoardAndPanelsContainer, spawn_ui},
 };
 
 pub struct UiPanelsPlugin;

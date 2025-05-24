@@ -7,9 +7,9 @@ use self::{
     cli::CliPlugin,
     debug_inspector::DebugInspectorPlugin,
     game::{
+        GameLogicPlugin,
         consts::{COLOR_BG, LOG_FILTER, LOG_LEVEL},
         core::{GameHeadPlugin, GameHeadlessPlugin},
-        GameLogicPlugin,
     },
 };
 

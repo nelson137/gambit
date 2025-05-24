@@ -1,11 +1,11 @@
 use std::{
-    fs::{remove_dir_all, File},
+    fs::{File, remove_dir_all},
     io::{Cursor, Read, Seek, Write},
     path::{Path, PathBuf},
     thread::available_parallelism,
 };
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use tracing::{error, info};
 use zip::ZipArchive;
 
@@ -103,9 +103,9 @@ impl StockfishBuilder {
             .with_context(|| {
                 format!("Failed to extract source code archive into directory: {WORKING_DIR}")
             })
-            .map_err(|err| {
+            .inspect_err(|_err| {
                 if !self.repo_dir_p.exists() {
-                    return err;
+                    return;
                 }
 
                 match remove_dir_all(&self.repo_dir_p) {
@@ -118,8 +118,6 @@ impl StockfishBuilder {
                         "Failed to remove partially-extracted source code repository ({err:#})",
                     ),
                 }
-
-                err
             })?;
 
         Ok(())

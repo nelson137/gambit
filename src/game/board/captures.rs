@@ -4,9 +4,9 @@ use bevy::prelude::*;
 
 use crate::{
     game::{
+        LoadGame,
         board::{PieceColor, PieceType},
         panels::MaterialAdvantageLabel,
-        LoadGame,
     },
     utils::NoopExts,
 };

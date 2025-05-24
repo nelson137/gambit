@@ -10,7 +10,7 @@ use crate::{
         board::{MovePiece, SelectionEvent},
         consts::{FONT_PATH, Z_PROMOTER},
     },
-    utils::{hook, NoopExts},
+    utils::{NoopExts, hook},
 };
 
 use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};
@@ -215,10 +215,10 @@ pub fn end_promotion(
     *piece_vis = Visibility::Visible;
 
     // Hide the promoter UI
-    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
-        if let Ok(mut vis) = q_visibility.get_mut(entity) {
-            *vis = Visibility::Hidden;
-        }
+    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color)
+        && let Ok(mut vis) = q_visibility.get_mut(entity)
+    {
+        *vis = Visibility::Hidden;
     }
 }
 
