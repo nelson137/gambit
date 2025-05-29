@@ -42,17 +42,15 @@ pub fn spawn_hints(
                 },
                 Visibility::Hidden,
                 GlobalZIndex(Z_MOVE_HINT),
-            ))
-            .with_children(|cmds| {
-                cmds.spawn((
+                children![(
                     ImageNode::new(move_hint_texture.clone()),
                     Node {
                         width: Val::Percent(100.0 / 3.0),
                         height: Val::Percent(100.0 / 3.0),
                         ..default()
                     },
-                ));
-            })
+                )],
+            ))
             .id();
 
         // Capture hint

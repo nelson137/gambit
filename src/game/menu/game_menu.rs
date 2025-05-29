@@ -182,19 +182,17 @@ pub fn spawn_menu_buttons(
             Button,
             button_node.clone(),
             BackgroundColor(BUTTON_COLOR_DEFAULT),
-        ))
-        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
-        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
-        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::Game))
-        .with_children(|cmds| {
-            cmds.spawn((
+            children![(
                 debug_name!("Start Game Button Text"),
                 GameMenuButtonsText,
                 Text("Start".to_string()),
                 text_font.clone(),
                 TextColor(Color::WHITE),
-            ));
-        })
+            )],
+        ))
+        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::Game))
         .id();
 
     let fen_button_entity = commands
@@ -204,18 +202,16 @@ pub fn spawn_menu_buttons(
             Button,
             button_node,
             BackgroundColor(BUTTON_COLOR_DEFAULT),
-        ))
-        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
-        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
-        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::FenInput))
-        .with_children(|cmds| {
-            cmds.spawn((
+            children![(
                 debug_name!("Load FEN Button Text"),
                 GameMenuButtonsText,
                 Text("Load FEN".to_string()),
                 text_font,
-            ));
-        })
+            )],
+        ))
+        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::FenInput))
         .id();
 
     commands

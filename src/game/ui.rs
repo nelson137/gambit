@@ -44,33 +44,29 @@ pub struct BoardAndPanelsContainer;
 pub struct BoardContainer;
 
 pub fn spawn_ui(mut commands: Commands) {
-    commands
-        .spawn((
-            debug_name!("Ui Wrapper"),
+    commands.spawn((
+        debug_name!("Ui Wrapper"),
+        Node {
+            width: Val::Percent(100.0),
+            height: Val::Percent(100.0),
+            position_type: PositionType::Absolute,
+            left: Val::Percent(0.0),
+            top: Val::Percent(0.0),
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::Center,
+            ..default()
+        },
+        children![(
+            Ui,
+            debug_name!("Ui"),
             Node {
-                width: Val::Percent(100.0),
                 height: Val::Percent(100.0),
-                position_type: PositionType::Absolute,
-                left: Val::Percent(0.0),
-                top: Val::Percent(0.0),
+                padding: UiRect::all(UI_GAP_VAL),
                 flex_direction: FlexDirection::Row,
-                justify_content: JustifyContent::Center,
                 ..default()
             },
-        ))
-        .with_children(|cmds| {
-            cmds.spawn((
-                Ui,
-                debug_name!("Ui"),
-                Node {
-                    height: Val::Percent(100.0),
-                    padding: UiRect::all(UI_GAP_VAL),
-                    flex_direction: FlexDirection::Row,
-                    ..default()
-                },
-            ))
-            .with_children(|cmds| {
-                cmds.spawn((
+            children![
+                (
                     EvaluationBarContainer,
                     debug_name!("Evaluation Bar Container"),
                     Node {
@@ -80,15 +76,12 @@ pub fn spawn_ui(mut commands: Commands) {
                         row_gap: UI_GAP_VAL,
                         ..default()
                     },
-                ));
-
-                cmds.spawn((
+                ),
+                (
                     BoardAndPanelsContainer,
                     debug_name!("Board and Panels Container"),
                     Node { flex_direction: FlexDirection::Column, ..default() },
-                ))
-                .with_children(|cmds| {
-                    cmds.spawn((
+                    children![(
                         BoardContainer,
                         debug_name!("Board Container"),
                         SortIndex(1),
@@ -98,8 +91,9 @@ pub fn spawn_ui(mut commands: Commands) {
                             min_height: MIN_BOARD_SIZE,
                             ..default()
                         },
-                    ));
-                });
-            });
-        });
+                    )],
+                )
+            ],
+        )],
+    ));
 }

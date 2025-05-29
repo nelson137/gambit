@@ -47,9 +47,7 @@ pub fn spawn_eval_bar(mut commands: Commands) {
                 ..default()
             },
             BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
-        ))
-        .with_children(|cmds| {
-            cmds.spawn((
+            children![(
                 EvaluationBar,
                 debug_name!("Evaluation Bar (white)"),
                 Node {
@@ -60,8 +58,8 @@ pub fn spawn_eval_bar(mut commands: Commands) {
                     ..default()
                 },
                 BackgroundColor(Color::WHITE),
-            ));
-        })
+            )],
+        ))
         .id();
 
     let spacer_bot =

@@ -87,9 +87,7 @@ pub fn spawn_promoters(
                         Button,
                         FocusPolicy::Block,
                         BackgroundColor(PROMO_TILE_COLOR),
-                    ))
-                    .with_children(|cmds| {
-                        cmds.spawn((
+                        children![(
                             debug_name_f!("Promotion Piece ({color}) ({typ})"),
                             ImageNode::new(asset_server.load(asset_path)),
                             Node {
@@ -98,8 +96,8 @@ pub fn spawn_promoters(
                                 ..default()
                             },
                             FocusPolicy::Pass,
-                        ));
-                    });
+                        )],
+                    ));
                 }
 
                 /// `#f1f1f1`
@@ -113,9 +111,7 @@ pub fn spawn_promoters(
                 cmds.spawn((
                     debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
                     Node { flex_direction, ..default() },
-                ))
-                .with_children(|cmds| {
-                    cmds.spawn((
+                    children![(
                         debug_name_f!("Promotion Cancel Button ({color})"),
                         PromotionCancelButton,
                         Button,
@@ -127,16 +123,16 @@ pub fn spawn_promoters(
                         },
                         BackgroundColor(CANCEL_BUTTON_BG_COLOR),
                         FocusPolicy::Block,
-                    ))
-                    .with_children(|cmds| {
-                        let font = asset_server.load(FONT_PATH);
-                        cmds.spawn((
-                            Text("x".to_string()),
-                            TextFont { font, font_size: 24.0, ..default() },
-                            TextColor(CANCEL_BUTTON_FG_COLOR),
-                        ));
-                    });
-                });
+                        {
+                            let font = asset_server.load(FONT_PATH);
+                            children![(
+                                Text("x".to_string()),
+                                TextFont { font, font_size: 24.0, ..default() },
+                                TextColor(CANCEL_BUTTON_FG_COLOR),
+                            )]
+                        },
+                    )],
+                ));
             })
             .id();
 
