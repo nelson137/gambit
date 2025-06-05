@@ -188,7 +188,7 @@ pub fn start_promotion(
 
     // Show the promoter UI
     if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
-        commands.entity(entity).insert(ChildOf(board_state.tile(to_sq)));
+        commands.entity(board_state.tile(to_sq)).add_child(entity);
         if let Ok(mut vis) = q_visibility.get_mut(entity) {
             *vis = Visibility::Visible;
         }

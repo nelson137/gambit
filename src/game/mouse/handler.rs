@@ -83,7 +83,7 @@ fn on_add_dragging_piece(
     mut commands: Commands,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
-    commands.entity(piece).insert(ChildOf(q_drag_container.single().unwrap()));
+    commands.entity(q_drag_container.single().unwrap()).add_child(piece);
 }
 
 fn on_remove_dragging_piece(
@@ -92,5 +92,5 @@ fn on_remove_dragging_piece(
     board_state: Res<BoardState>,
 ) {
     let original_tile = board_state.tile(dragging.original_square);
-    commands.entity(piece).insert(ChildOf(original_tile));
+    commands.entity(original_tile).add_child(piece);
 }

@@ -372,7 +372,7 @@ fn on_remove_animating(
     mut commands: Commands,
     mut q_node: Query<&mut Node>,
 ) {
-    commands.entity(entity).insert(ChildOf(animating.to_entity));
+    commands.entity(animating.to_entity).add_child(entity);
 
     let mut node = q_node.get_mut(entity).unwrap();
     node.left = Val::Px(0.0);
