@@ -9,11 +9,11 @@ use bevy::{
 };
 
 use crate::{
-    game::{LoadGame, board::MovePiece, menu::MenuState, mouse::Dragging},
+    game::{LoadGame, menu::MenuState, mouse::Dragging},
     utils::NoopExts,
 };
 
-use super::{BoardState, HighlightTile, Hint, Square};
+use super::{BoardState, HighlightTile, Hint, MovePiece, Square, StartPromotion};
 
 pub struct SelectionPlugin;
 
@@ -24,10 +24,31 @@ impl Plugin for SelectionPlugin {
             .init_resource::<SelectionState>()
             // Events
             .add_event::<MouseSelectionEvent>()
-            .add_event::<SelectionEvent>()
             // Observers
-            .add_observer(unset_selections_on_load_game)
-            .add_observer(handle_selection_events)
+            .add_observer(Select::handle)
+            .add_observer(Unselect::handle)
+            .add_observer(EnableSelectionHighlight::handle)
+            .add_observer(EnableHints::handle)
+            .add_observer(EnableLastMove::handle)
+            .add_observer(DisableSelectionHighlight::handle)
+            .add_observer(DisableHints::handle)
+            .add_observer(DisableLastMove::handle)
+            // Observers - LoadGame
+            .add_observer(|_trigger: Trigger<LoadGame>, mut commands: Commands| {
+                commands.trigger(Unselect);
+                commands.trigger(DisableLastMove);
+            })
+            // Observers - MovePiece
+            .add_observer(|trigger: Trigger<MovePiece>, mut commands: Commands| {
+                let &MovePiece { from_sq, to_sq, .. } = trigger.event();
+                commands.trigger(Unselect);
+                commands.trigger(DisableLastMove);
+                commands.trigger(EnableLastMove(from_sq, to_sq));
+            })
+            // Observers - StartPromotion
+            .add_observer(|_trigger: Trigger<StartPromotion>, mut commands: Commands| {
+                commands.trigger(Unselect);
+            })
             // Systems
             .add_systems(Update, handle_mouse_selection_events.run_if(in_state(MenuState::Game)))
             .noop();
@@ -35,7 +56,7 @@ impl Plugin for SelectionPlugin {
 }
 
 #[derive(Clone, Copy, Default, Debug, PartialEq, Eq, Resource)]
-pub enum SelectionState {
+enum SelectionState {
     #[default]
     Unselected,
     SelectingDragging(Square),
@@ -44,7 +65,7 @@ pub enum SelectionState {
 }
 
 #[derive(Clone, Debug)]
-pub enum SelectionStateAction {
+enum SelectionStateAction {
     ChangeSelection(Square),
     DropSelect(Square),
     Move { from_sq: Square, to_sq: Square, animate: bool },
@@ -169,7 +190,7 @@ fn handle_mouse_selection_events(
                 // Update selection & hints
                 let hl_tile = board_state.highlight(to_sq);
                 let hints = board_state.calculate_valid_moves(to_sq);
-                commands.trigger(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
+                commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(to_sq);
             }
@@ -200,7 +221,7 @@ fn handle_mouse_selection_events(
                 // Update selection & hints
                 let hl_tile = board_state.highlight(square);
                 let hints = board_state.calculate_valid_moves(square);
-                commands.trigger(SelectionEvent::UpdateSelection { highlight: hl_tile, hints });
+                commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(square);
             }
@@ -209,7 +230,7 @@ fn handle_mouse_selection_events(
                 let piece = board_state.piece(square);
                 commands.entity(piece).remove::<Dragging>();
                 // Unselect square & remove hints
-                commands.trigger(SelectionEvent::Unselect);
+                commands.trigger(Unselect);
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
@@ -218,115 +239,13 @@ fn handle_mouse_selection_events(
 }
 
 #[derive(Component)]
-pub struct Selected;
+struct Selected;
 
 #[derive(Component)]
-pub struct EnabledHint;
+struct EnabledHint;
 
 #[derive(Component)]
-pub struct LastMove;
-
-#[derive(Clone, Debug, Event)]
-#[allow(dead_code)]
-pub enum SelectionEvent {
-    UpdateSelection { highlight: Entity, hints: Vec<Entity> },
-    Unselect,
-    UpdateLastMove(Square, Square),
-    UnsetLastMove,
-    UnsetAll,
-}
-
-impl fmt::Display for SelectionEvent {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        match self {
-            Self::UpdateSelection { highlight, hints } => {
-                f.write_fmt(format_args!("UpdateSelection(highlight={highlight}, hints="))?;
-                if !hints.is_empty() {
-                    f.write_fmt(format_args!("{}", hints[0]))?;
-                    if hints.len() > 1 {
-                        for e in &hints[1..] {
-                            f.write_fmt(format_args!(",{e}"))?;
-                        }
-                    }
-                }
-                f.write_char(')')?;
-                Ok(())
-            }
-            Self::Unselect => f.write_str("Unselect"),
-            Self::UpdateLastMove(from_sq, to_sq) => {
-                f.write_fmt(format_args!("UpdateLastMove({from_sq} => {to_sq})"))
-            }
-            Self::UnsetLastMove => f.write_str("UnsetLastMove"),
-            Self::UnsetAll => f.write_str("UnsetAll"),
-        }
-    }
-}
-
-fn unset_selections_on_load_game(_trigger: Trigger<LoadGame>, mut commands: Commands) {
-    commands.trigger(SelectionEvent::UnsetAll);
-}
-
-fn handle_selection_events(
-    trigger: Trigger<SelectionEvent>,
-    mut commands: Commands,
-    board_state: Res<BoardState>,
-    q_selection: Query<Entity, (With<HighlightTile>, With<Selected>)>,
-    q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
-    q_selected_hints: Query<Entity, (With<Hint>, With<EnabledHint>)>,
-) {
-    let unset_selection = |commands: &mut Commands| {
-        for entity in &q_selection {
-            let mut entity_cmds = commands.entity(entity);
-            entity_cmds.remove::<Selected>();
-            if !q_last_move.contains(entity) {
-                entity_cmds.remove::<ShowingIndicator>();
-            }
-        }
-    };
-
-    let unset_last_move = |commands: &mut Commands| {
-        for entity in &q_last_move {
-            commands.entity(entity).remove::<(ShowingIndicator, LastMove)>();
-        }
-    };
-
-    let unset_hints = |commands: &mut Commands| {
-        for entity in &q_selected_hints {
-            commands.entity(entity).remove::<(ShowingIndicator, EnabledHint)>();
-        }
-    };
-
-    let event = trigger.event();
-    trace!(%event, "Processing piece selection");
-
-    match event {
-        SelectionEvent::UpdateSelection { highlight, hints } => {
-            unset_selection(&mut commands);
-            unset_hints(&mut commands);
-            commands.entity(*highlight).insert((ShowingIndicator, Selected));
-            for &entity in hints {
-                commands.entity(entity).insert((ShowingIndicator, EnabledHint));
-            }
-        }
-        SelectionEvent::Unselect => {
-            unset_selection(&mut commands);
-            unset_hints(&mut commands);
-        }
-        &SelectionEvent::UpdateLastMove(from_sq, to_sq) => {
-            unset_last_move(&mut commands);
-            let e1 = board_state.highlight(from_sq);
-            let e2 = board_state.highlight(to_sq);
-            commands.entity(e1).insert((ShowingIndicator, LastMove));
-            commands.entity(e2).insert((ShowingIndicator, LastMove));
-        }
-        SelectionEvent::UnsetLastMove => unset_last_move(&mut commands),
-        SelectionEvent::UnsetAll => {
-            unset_selection(&mut commands);
-            unset_hints(&mut commands);
-            unset_last_move(&mut commands);
-        }
-    }
-}
+struct LastMove;
 
 struct ShowingIndicator;
 
@@ -353,6 +272,142 @@ fn on_remove_showing_indicator(mut world: DeferredWorld, ctx: HookContext) {
         let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
         *vis = Visibility::Hidden;
     });
+}
+
+#[derive(Event, Debug)]
+struct Select {
+    highlight: Entity,
+    hints: Vec<Entity>,
+}
+
+impl fmt::Display for Select {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Select(")?;
+        f.write_fmt(format_args!("highlight={}, hints=", self.highlight))?;
+        if !self.hints.is_empty() {
+            f.write_fmt(format_args!("{}", self.hints[0]))?;
+            if self.hints.len() > 1 {
+                for e in &self.hints[1..] {
+                    f.write_fmt(format_args!(",{e}"))?;
+                }
+            }
+        }
+        f.write_char(')')?;
+        Ok(())
+    }
+}
+
+impl Select {
+    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
+        let event = trigger.event();
+        commands.trigger(Unselect);
+        commands.trigger(EnableSelectionHighlight(event.highlight));
+        commands.trigger(EnableHints(event.hints.clone()));
+    }
+}
+
+#[derive(Event, Debug)]
+struct Unselect;
+
+impl fmt::Display for Unselect {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_fmt(format_args!("{self:?}"))
+    }
+}
+
+impl Unselect {
+    fn handle(_trigger: Trigger<Self>, mut commands: Commands) {
+        commands.trigger(DisableSelectionHighlight);
+        commands.trigger(DisableHints);
+    }
+}
+
+#[derive(Event)]
+struct EnableSelectionHighlight(Entity);
+
+impl EnableSelectionHighlight {
+    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
+        commands.entity(trigger.event().0).insert((ShowingIndicator, Selected));
+    }
+}
+
+#[derive(Event)]
+struct EnableHints(Vec<Entity>);
+
+impl EnableHints {
+    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
+        for &entity in &trigger.event().0 {
+            commands.entity(entity).insert((ShowingIndicator, EnabledHint));
+        }
+    }
+}
+
+#[derive(Event, Debug)]
+struct EnableLastMove(Square, Square);
+
+impl fmt::Display for EnableLastMove {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let Self(from_sq, to_sq) = *self;
+        f.write_fmt(format_args!("UpdateLastMove({from_sq} => {to_sq})"))
+    }
+}
+
+impl EnableLastMove {
+    fn handle(trigger: Trigger<Self>, mut commands: Commands, board_state: Res<BoardState>) {
+        let &Self(from_sq, to_sq) = trigger.event();
+        let [e1, e2] = board_state.highlights([from_sq, to_sq]);
+        commands.entity(e1).insert((ShowingIndicator, LastMove));
+        commands.entity(e2).insert((ShowingIndicator, LastMove));
+    }
+}
+
+#[derive(Event)]
+struct DisableSelectionHighlight;
+
+impl DisableSelectionHighlight {
+    fn handle(
+        _trigger: Trigger<Self>,
+        mut commands: Commands,
+        q_selection: Query<(Entity, Has<LastMove>), (With<HighlightTile>, With<Selected>)>,
+    ) {
+        for (entity, is_last_move) in &q_selection {
+            let mut entity_cmds = commands.entity(entity);
+            entity_cmds.remove::<Selected>();
+            if !is_last_move {
+                entity_cmds.remove::<ShowingIndicator>();
+            }
+        }
+    }
+}
+
+#[derive(Event)]
+struct DisableHints;
+
+impl DisableHints {
+    fn handle(
+        _trigger: Trigger<Self>,
+        mut commands: Commands,
+        q_selected_hints: Query<Entity, (With<Hint>, With<EnabledHint>)>,
+    ) {
+        for entity in &q_selected_hints {
+            commands.entity(entity).remove::<(ShowingIndicator, EnabledHint)>();
+        }
+    }
+}
+
+#[derive(Event)]
+struct DisableLastMove;
+
+impl DisableLastMove {
+    fn handle(
+        _trigger: Trigger<Self>,
+        mut commands: Commands,
+        q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
+    ) {
+        for entity in &q_last_move {
+            commands.entity(entity).remove::<(ShowingIndicator, LastMove)>();
+        }
+    }
 }
 
 #[cfg(test)]

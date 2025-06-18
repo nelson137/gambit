@@ -202,6 +202,10 @@ impl BoardState {
         self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
     }
 
+    pub fn highlights<const N: usize>(&self, squares: [Square; N]) -> [Entity; N] {
+        squares.map(|s| self.highlight(s))
+    }
+
     pub fn set_highlight(&mut self, square: Square, entity: Entity) {
         match self.highlights.entry(square) {
             Entry::Occupied(_) => panic!("highlight already in the state at {square}"),

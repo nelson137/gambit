@@ -7,7 +7,7 @@ use bevy::{
 use crate::{
     debug_name_f,
     game::{
-        board::{MovePiece, SelectionEvent},
+        board::MovePiece,
         consts::{FONT_PATH, Z_PROMOTER},
     },
     utils::{NoopExts, hook},
@@ -181,7 +181,7 @@ pub fn start_promotion(
     trace!(?color, %from_sq, %to_sq, "Start promotion");
 
     // Clear selection & hints
-    commands.trigger(SelectionEvent::Unselect);
+    commands.trigger(StartPromotion);
 
     // Hide the piece
     *vis = Visibility::Hidden;
@@ -194,6 +194,9 @@ pub fn start_promotion(
         }
     }
 }
+
+#[derive(Event)]
+pub struct StartPromotion;
 
 pub fn end_promotion(
     In((piece, promoting)): In<(Entity, PromotingPiece)>,

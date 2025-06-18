@@ -6,9 +6,7 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{
-    BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, SelectionEvent, Square,
-};
+use super::{BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, Square};
 
 #[derive(Debug)]
 pub struct MovePlugin;
@@ -27,10 +25,10 @@ impl Plugin for MovePlugin {
 
 #[derive(Event, Debug, PartialEq, Eq)]
 pub struct MovePiece {
-    from_sq: Square,
-    to_sq: Square,
-    promotion: Option<PieceType>,
-    animate: bool,
+    pub from_sq: Square,
+    pub to_sq: Square,
+    pub promotion: Option<PieceType>,
+    pub animate: bool,
 }
 
 impl MovePiece {
@@ -66,10 +64,6 @@ pub fn move_piece(
         commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
         return;
     }
-
-    // Clear selection & hints, update last move highlights
-    commands.trigger(SelectionEvent::Unselect);
-    commands.trigger(SelectionEvent::UpdateLastMove(from_sq, to_sq));
 
     // Update piece maps
     commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
