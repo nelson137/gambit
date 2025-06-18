@@ -38,8 +38,6 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(MovePlugin)
             .add_plugins(PieceAnimationPlugin)
             .add_plugins(StockfishPlugin)
-            // Events
-            .add_event::<LoadGame>()
             // Startup
             .add_systems(Startup, setup_camera)
             .add_systems(PostStartup, load_game_on_startup)

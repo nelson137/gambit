@@ -37,8 +37,6 @@ impl Plugin for StockfishPlugin {
         }
 
         app.noop()
-            // Events
-            .add_event::<SfCommand>()
             // Resources
             .init_resource::<SfCommunications>()
             .init_resource::<StockfishPlayerColor>()

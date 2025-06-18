@@ -14,9 +14,6 @@ pub struct MovePlugin;
 impl Plugin for MovePlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            // Events
-            .add_event::<MovePiece>()
-            .add_event::<MovePieceCompleted>()
             // Observers
             .add_observer(move_piece)
             .noop();
@@ -116,7 +113,7 @@ pub fn move_piece(
         }
     });
 
-    commands.trigger_targets(MovePieceCompleted, ());
+    commands.trigger(MovePieceCompleted);
 }
 
 pub struct MoveUiPiece {
