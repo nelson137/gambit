@@ -1,12 +1,6 @@
 use std::fmt::{self, Write};
 
-use bevy::{
-    ecs::{
-        component::{ComponentHooks, HookContext, Mutable, StorageType},
-        world::DeferredWorld,
-    },
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{
     game::{LoadGame, menu::MenuState, mouse::Dragging},
@@ -33,6 +27,8 @@ impl Plugin for SelectionPlugin {
             .add_observer(DisableSelectionHighlight::handle)
             .add_observer(DisableHints::handle)
             .add_observer(DisableLastMove::handle)
+            .add_observer(on_add_showing_indicator)
+            .add_observer(on_remove_showing_indicator)
             // Observers - LoadGame
             .add_observer(|_trigger: Trigger<LoadGame>, mut commands: Commands| {
                 commands.trigger(Unselect);
@@ -247,31 +243,26 @@ struct EnabledHint;
 #[derive(Component)]
 struct LastMove;
 
+#[derive(Component)]
+#[component(storage = "SparseSet")]
 struct ShowingIndicator;
 
-impl Component for ShowingIndicator {
-    type Mutability = Mutable;
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.on_add(on_add_showing_indicator).on_remove(on_remove_showing_indicator);
+fn on_add_showing_indicator(
+    trigger: Trigger<OnAdd, ShowingIndicator>,
+    mut q_vis: Query<&mut Visibility>,
+) {
+    if let Ok(mut vis) = q_vis.get_mut(trigger.target()) {
+        *vis = Visibility::Visible;
     }
 }
 
-fn on_add_showing_indicator(mut world: DeferredWorld, ctx: HookContext) {
-    world.commands().queue(move |world: &mut World| {
-        let mut entity = world.entity_mut(ctx.entity);
-        let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
-        *vis = Visibility::Visible;
-    });
-}
-
-fn on_remove_showing_indicator(mut world: DeferredWorld, ctx: HookContext) {
-    world.commands().queue(move |world: &mut World| {
-        let mut entity = world.entity_mut(ctx.entity);
-        let Some(mut vis) = entity.get_mut::<Visibility>() else { return };
+fn on_remove_showing_indicator(
+    trigger: Trigger<OnRemove, ShowingIndicator>,
+    mut q_vis: Query<&mut Visibility>,
+) {
+    if let Ok(mut vis) = q_vis.get_mut(trigger.target()) {
         *vis = Visibility::Hidden;
-    });
+    }
 }
 
 #[derive(Event, Debug)]

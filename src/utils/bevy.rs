@@ -10,32 +10,6 @@ impl NoopExts for App {}
 impl NoopExts for World {}
 impl NoopExts for ecs::component::ComponentHooks {}
 
-#[macro_export]
-macro_rules! __hook {
-    ($hook_system:path) => {
-        |mut __world: ::bevy::ecs::world::DeferredWorld,
-         __ctx: ::bevy::ecs::component::HookContext| {
-            __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
-                __world.run_system_cached_with($hook_system, __ctx.entity).expect("run hook");
-            });
-        }
-    };
-
-    ($component:path => $hook_system:path) => {
-        |mut __world: ::bevy::ecs::world::DeferredWorld,
-         __ctx: ::bevy::ecs::component::HookContext| {
-            let __component =
-                __world.get::<$component>(__ctx.entity).expect("entity has hook component").clone();
-            __world.commands().queue(move |__world: &mut ::bevy::ecs::world::World| {
-                __world
-                    .run_system_cached_with($hook_system, (__ctx.entity, __component))
-                    .expect("run hook");
-            });
-        }
-    };
-}
-pub use crate::__hook as hook;
-
 pub trait ReparentInTag {
     fn reparent_in_tag<Tag: Component>(
         &mut self,

@@ -1,9 +1,6 @@
 use std::{fmt, ops::Not};
 
-use bevy::{
-    ecs::component::{ComponentHooks, Mutable, StorageType},
-    prelude::*,
-};
+use bevy::prelude::*;
 use chess::{Piece, Rank};
 
 use crate::{
@@ -12,7 +9,7 @@ use crate::{
         LoadGame,
         consts::{Z_PIECE, Z_PIECE_SELECTED},
     },
-    utils::{NoopExts, hook},
+    utils::NoopExts,
 };
 
 use super::{BoardState, ChessBoardExts, square::Square};
@@ -309,8 +306,9 @@ impl Command for AnimatePiece {
     }
 }
 
-#[derive(Clone)]
-struct Animating {
+#[derive(Component, Clone)]
+#[component(storage = "SparseSet")]
+pub(super) struct Animating {
     timer: Timer,
     /// The cubic bezier function that drives the animation.
     ///
@@ -321,15 +319,6 @@ struct Animating {
     from: Vec2,
     to: Vec2,
     to_entity: Entity,
-}
-
-impl Component for Animating {
-    type Mutability = Mutable;
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks.noop().on_remove(hook!(Animating => on_remove_animating)).noop();
-    }
 }
 
 impl Animating {
@@ -367,11 +356,15 @@ fn animate_pieces(
     }
 }
 
-fn on_remove_animating(
-    In((entity, animating)): In<(Entity, Animating)>,
+pub(super) fn on_remove_animating(
+    trigger: Trigger<OnRemove, Animating>,
     mut commands: Commands,
+    q_animating: Query<&Animating>,
     mut q_node: Query<&mut Node>,
 ) {
+    let entity = trigger.target();
+    let Ok(animating) = q_animating.get(entity) else { return };
+
     commands.entity(animating.to_entity).add_child(entity);
 
     let mut node = q_node.get_mut(entity).unwrap();

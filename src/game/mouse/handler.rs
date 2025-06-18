@@ -1,7 +1,4 @@
-use bevy::{
-    ecs::component::{ComponentHooks, Mutable, StorageType},
-    prelude::*,
-};
+use bevy::prelude::*;
 
 use crate::{
     debug_name,
@@ -9,7 +6,6 @@ use crate::{
         board::{BoardState, MouseSelectionEvent, Square, Tile},
         consts::Z_PIECE_SELECTED,
     },
-    utils::{NoopExts, hook},
 };
 
 use super::position::{MouseBoardSquare, MouseWorldPosition};
@@ -60,37 +56,29 @@ pub(super) fn update_drag_container(
     }
 }
 
-#[derive(Clone)]
+#[derive(Component, Clone)]
+#[component(storage = "SparseSet")]
 pub struct Dragging {
     pub original_square: Square,
 }
 
-impl Component for Dragging {
-    type Mutability = Mutable;
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks
-            .noop()
-            .on_add(hook!(on_add_dragging_piece))
-            .on_remove(hook!(Dragging => on_remove_dragging_piece))
-            .noop();
-    }
-}
-
-fn on_add_dragging_piece(
-    In(piece): In<Entity>,
+pub(super) fn on_add_dragging_piece(
+    trigger: Trigger<OnAdd, Dragging>,
     mut commands: Commands,
     q_drag_container: Query<Entity, With<DragContainer>>,
 ) {
+    let piece = trigger.target();
     commands.entity(q_drag_container.single().unwrap()).add_child(piece);
 }
 
-fn on_remove_dragging_piece(
-    In((piece, dragging)): In<(Entity, Dragging)>,
+pub(super) fn on_remove_dragging_piece(
+    trigger: Trigger<OnRemove, Dragging>,
     mut commands: Commands,
     board_state: Res<BoardState>,
+    q_dragging: Query<&Dragging>,
 ) {
+    let piece = trigger.target();
+    let Ok(dragging) = q_dragging.get(piece) else { return };
     let original_tile = board_state.tile(dragging.original_square);
     commands.entity(original_tile).add_child(piece);
 }

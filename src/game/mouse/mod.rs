@@ -25,6 +25,9 @@ impl Plugin for MouseLogicPlugin {
             // Resources
             .init_resource::<MouseWorldPosition>()
             .init_resource::<MouseBoardSquare>()
+            // Observers
+            .add_observer(on_add_dragging_piece)
+            .add_observer(on_remove_dragging_piece)
             // Systems
             .add_systems(
                 PreUpdate,

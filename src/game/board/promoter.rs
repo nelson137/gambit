@@ -1,5 +1,4 @@
 use bevy::{
-    ecs::component::{ComponentHooks, Mutable, StorageType},
     prelude::*,
     ui::{FocusPolicy, UiSystem},
 };
@@ -10,7 +9,7 @@ use crate::{
         board::MovePiece,
         consts::{FONT_PATH, Z_PROMOTER},
     },
-    utils::{NoopExts, hook},
+    utils::NoopExts,
 };
 
 use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};
@@ -20,6 +19,10 @@ pub struct PromotionPlugin;
 impl Plugin for PromotionPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
+            // Observers
+            .add_observer(on_add_promoting_piece)
+            .add_observer(on_remove_promoting_piece)
+            // Systems
             .add_systems(Update, promotion_ui_sizes)
             .add_systems(
                 PreUpdate,
@@ -141,7 +144,8 @@ pub fn spawn_promoters(
     }
 }
 
-#[derive(Clone, Copy)]
+#[derive(Component, Clone, Copy)]
+#[component(storage = "SparseSet")]
 pub struct PromotingPiece {
     from_sq: Square,
     to_sq: Square,
@@ -153,28 +157,17 @@ impl PromotingPiece {
     }
 }
 
-impl Component for PromotingPiece {
-    type Mutability = Mutable;
-    const STORAGE_TYPE: StorageType = StorageType::SparseSet;
-
-    fn register_component_hooks(hooks: &mut ComponentHooks) {
-        hooks
-            .noop()
-            .on_add(hook!(PromotingPiece => start_promotion))
-            .on_remove(hook!(PromotingPiece => end_promotion))
-            .noop();
-    }
-}
-
-pub fn start_promotion(
-    In((piece, promoting)): In<(Entity, PromotingPiece)>,
+pub fn on_add_promoting_piece(
+    trigger: Trigger<OnAdd, PromotingPiece>,
     mut commands: Commands,
     board_state: Res<BoardState>,
+    q_promoting: Query<&PromotingPiece>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
     mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
-    let PromotingPiece { from_sq, to_sq } = promoting;
+    let piece = trigger.target();
+    let Ok(&PromotingPiece { from_sq, to_sq }) = q_promoting.get(piece) else { return };
     let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
     let Ok(mut vis) = q_visibility.get_mut(piece) else { return };
 
@@ -198,13 +191,15 @@ pub fn start_promotion(
 #[derive(Event)]
 pub struct StartPromotion;
 
-pub fn end_promotion(
-    In((piece, promoting)): In<(Entity, PromotingPiece)>,
+pub fn on_remove_promoting_piece(
+    trigger: Trigger<OnRemove, PromotingPiece>,
+    q_promoting: Query<&PromotingPiece>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
     mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
-    let PromotingPiece { from_sq, to_sq } = promoting;
+    let piece = trigger.target();
+    let Ok(&PromotingPiece { from_sq, to_sq }) = q_promoting.get(piece) else { return };
     let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
     let Ok(mut piece_vis) = q_visibility.get_mut(piece) else { return };
 
