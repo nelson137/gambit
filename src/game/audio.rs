@@ -1,13 +1,26 @@
 use bevy::prelude::*;
-use chess::BitBoard;
 
-use crate::game::board::BoardState;
+use crate::utils::NoopExts;
+
+use super::board::{BoardState, MovePieceCompleted, PieceColor};
+
+pub struct GameAudioPlugin;
+
+impl Plugin for GameAudioPlugin {
+    fn build(&self, app: &mut App) {
+        app.noop()
+            // Observers
+            .add_observer(PlayGameAudio::handle)
+            .add_observer(PlayGameAudio::on_piece_move_completed)
+            .noop();
+    }
+}
 
 /// A `MoveCheck` variant is intentionally absent as the check audio should never be explicitly
 /// played. The variant for the the move type should be used; the board will be examined and if
 /// there are any checkers than the check audio will be played instead of the one specified.
-#[derive(Debug)]
-pub enum PlayGameAudio {
+#[derive(Event, Debug)]
+enum PlayGameAudio {
     Capture,
     Castle,
     // MoveCheck,
@@ -16,20 +29,47 @@ pub enum PlayGameAudio {
     Promote,
 }
 
-impl Command for PlayGameAudio {
-    fn apply(self, world: &mut World) {
-        trace!(action = ?self, "Play audio");
-
-        let checkers = *world.resource::<BoardState>().board().checkers();
-
-        let source = world.resource::<AssetServer>().load::<AudioSource>(match self {
-            _ if checkers != BitBoard::new(0) => "audio/move-check.flac",
-            Self::Capture => "audio/capture.flac",
-            Self::Castle => "audio/castle.flac",
-            Self::MoveOpponent => "audio/move-opponent.flac",
-            Self::MoveSelf => "audio/move-self.flac",
-            Self::Promote => "audio/promote.flac",
+impl PlayGameAudio {
+    fn on_piece_move_completed(trigger: Trigger<MovePieceCompleted>, mut commands: Commands) {
+        let event = trigger.event();
+        commands.trigger(if event.is_promotion {
+            PlayGameAudio::Promote
+        } else if event.is_capture {
+            PlayGameAudio::Capture
+        } else if event.is_castle {
+            PlayGameAudio::Castle
+        } else {
+            match event.color {
+                PieceColor::BLACK => PlayGameAudio::MoveOpponent,
+                PieceColor::WHITE => PlayGameAudio::MoveSelf,
+            }
         });
-        world.spawn((AudioPlayer(source), PlaybackSettings::DESPAWN));
+    }
+
+    fn handle(
+        trigger: Trigger<Self>,
+        mut commands: Commands,
+        board_state: Res<BoardState>,
+        asset_server: Res<AssetServer>,
+    ) {
+        let event = trigger.event();
+        trace!(action = ?event, "Play audio");
+
+        let checkers = *board_state.board().checkers();
+
+        let path = if checkers != chess::EMPTY {
+            "audio/move-check.flac"
+        } else {
+            match *event {
+                Self::Capture => "audio/capture.flac",
+                Self::Castle => "audio/castle.flac",
+                Self::MoveOpponent => "audio/move-opponent.flac",
+                Self::MoveSelf => "audio/move-self.flac",
+                Self::Promote => "audio/promote.flac",
+            }
+        };
+
+        let source = asset_server.load::<AudioSource>(path);
+        commands.spawn((AudioPlayer(source), PlaybackSettings::DESPAWN));
     }
 }

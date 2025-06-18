@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use chess::File;
 
 use crate::{
-    game::{audio::PlayGameAudio, board::AnimatePiece, game_over::GameOver, mouse::Dragging},
+    game::{board::AnimatePiece, game_over::GameOver, mouse::Dragging},
     utils::NoopExts,
 };
 
@@ -99,21 +99,12 @@ pub fn move_piece(
 
     commands.queue(UpdateBoardState::new(from_sq, to_sq, color, typ, promotion, is_capture));
 
-    // Play audio
-    commands.queue(if promotion.is_some() {
-        PlayGameAudio::Promote
-    } else if is_capture || is_en_passant {
-        PlayGameAudio::Capture
-    } else if is_castle {
-        PlayGameAudio::Castle
-    } else {
-        match color {
-            PieceColor::BLACK => PlayGameAudio::MoveOpponent,
-            PieceColor::WHITE => PlayGameAudio::MoveSelf,
-        }
+    commands.trigger(MovePieceCompleted {
+        is_promotion: promotion.is_some(),
+        is_capture: is_capture || is_en_passant,
+        is_castle,
+        color,
     });
-
-    commands.trigger(MovePieceCompleted);
 }
 
 pub struct MoveUiPiece {
@@ -218,4 +209,9 @@ impl Command for UpdateBoardState {
 }
 
 #[derive(Event)]
-pub struct MovePieceCompleted;
+pub struct MovePieceCompleted {
+    pub is_promotion: bool,
+    pub is_capture: bool,
+    pub is_castle: bool,
+    pub color: PieceColor,
+}
