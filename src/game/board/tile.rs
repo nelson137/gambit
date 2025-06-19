@@ -1,3 +1,5 @@
+use std::collections::{HashMap, hash_map::Entry};
+
 use bevy::prelude::*;
 use chess::{File, Rank};
 
@@ -6,7 +8,7 @@ use crate::{
     game::consts::{FONT_PATH, Z_TILE},
 };
 
-use super::{BoardState, Square, UiBoard};
+use super::{Square, UiBoard};
 
 #[derive(Component)]
 pub struct Tile;
@@ -32,7 +34,7 @@ pub const COLOR_WHITE: Color = Color::srgb(
 pub fn spawn_tiles(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    mut board_state: ResMut<BoardState>,
+    mut tiles_map: ResMut<TilesMap>,
     q_board: Query<Entity, With<UiBoard>>,
 ) {
     let board = q_board.single().unwrap();
@@ -102,6 +104,28 @@ pub fn spawn_tiles(
             .id();
 
         commands.entity(board).add_child(tile_entity);
-        board_state.set_tile(square, tile_entity);
+        tiles_map.set(square, tile_entity);
+    }
+}
+
+#[derive(Resource)]
+pub struct TilesMap(HashMap<Square, Entity>);
+
+impl Default for TilesMap {
+    fn default() -> Self {
+        Self(HashMap::with_capacity(64))
+    }
+}
+
+impl TilesMap {
+    fn set(&mut self, square: Square, entity: Entity) {
+        match self.0.entry(square) {
+            Entry::Occupied(_) => panic!("tile already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(entity),
+        };
+    }
+
+    pub fn at(&self, square: Square) -> Entity {
+        self.0.get(&square).copied().unwrap_or_else(|| panic!("no tile at {square}"))
     }
 }

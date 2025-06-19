@@ -12,7 +12,7 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{BoardState, PieceColor, PieceMeta, PieceType, Square, Tile};
+use super::{PieceColor, PieceMeta, PieceType, Square, Tile, TilesMap};
 
 pub struct PromotionPlugin;
 
@@ -51,7 +51,7 @@ pub struct PromotionCancelButton;
 pub fn spawn_promoters(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    board_state: Res<BoardState>,
+    tiles_map: Res<TilesMap>,
 ) {
     for (color, flex_direction) in [
         (PieceColor::WHITE, FlexDirection::Column),
@@ -139,7 +139,7 @@ pub fn spawn_promoters(
             })
             .id();
 
-        let tile_entity = board_state.tile(Square::H8);
+        let tile_entity = tiles_map.at(Square::H8);
         commands.entity(tile_entity).add_child(promo_entity);
     }
 }
@@ -160,7 +160,7 @@ impl PromotingPiece {
 pub fn on_add_promoting_piece(
     trigger: Trigger<OnAdd, PromotingPiece>,
     mut commands: Commands,
-    board_state: Res<BoardState>,
+    tiles_map: Res<TilesMap>,
     q_promoting: Query<&PromotingPiece>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
@@ -181,7 +181,7 @@ pub fn on_add_promoting_piece(
 
     // Show the promoter UI
     if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
-        commands.entity(board_state.tile(to_sq)).add_child(entity);
+        commands.entity(tiles_map.at(to_sq)).add_child(entity);
         if let Ok(mut vis) = q_visibility.get_mut(entity) {
             *vis = Visibility::Visible;
         }
@@ -276,7 +276,7 @@ pub fn promotion_click_handler(
 pub fn promotion_result_handler(
     In(promotion_result): In<Option<PromotionResult>>,
     mut commands: Commands,
-    board_state: Res<BoardState>,
+    tiles_map: Res<TilesMap>,
     q_promo: Query<(Entity, &PieceMeta, &PromotingPiece), Without<PromotionUi>>,
 ) {
     let Some(result) = promotion_result else { return };
@@ -300,7 +300,7 @@ pub fn promotion_result_handler(
         }
         PromotionResult::Cancel => {
             // Re-parent piece back to its original square
-            commands.entity(board_state.tile(from_sq)).add_children(&[entity]);
+            commands.entity(tiles_map.at(from_sq)).add_children(&[entity]);
         }
     }
 }

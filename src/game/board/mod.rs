@@ -30,6 +30,7 @@ impl Plugin for BoardPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
             // Resources
+            .init_resource::<TilesMap>()
             .init_resource::<BoardState>()
             // Observers
             .add_observer(set_board_on_load_game)

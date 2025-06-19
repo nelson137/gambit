@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
-use super::{BoardState, Square};
+use super::{BoardState, Square, TilesMap};
 
 #[derive(Component)]
 pub struct Hint;
@@ -16,6 +16,7 @@ pub struct TileHints {
 pub fn spawn_hints(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    tiles_map: Res<TilesMap>,
     mut board_state: ResMut<BoardState>,
 ) {
     let move_hint_texture = asset_server.load("images/hints/move.png");
@@ -74,6 +75,6 @@ pub fn spawn_hints(
             .id();
 
         board_state.set_tile_hints(square, TileHints { capture_entity, move_entity });
-        commands.entity(board_state.tile(square)).add_children(&[move_entity, capture_entity]);
+        commands.entity(tiles_map.at(square)).add_children(&[move_entity, capture_entity]);
     }
 }

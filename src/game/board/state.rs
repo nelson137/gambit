@@ -13,7 +13,6 @@ use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
 #[derive(Resource)]
 pub struct BoardState {
     status: GameStatus,
-    tiles: HashMap<Square, Entity>,
     pieces: HashMap<Square, Entity>,
     highlights: HashMap<Square, Entity>,
     tile_hints: HashMap<Square, TileHints>,
@@ -43,7 +42,6 @@ impl FromWorld for BoardState {
 
         Self {
             status: GameStatus::Ongoing,
-            tiles: HashMap::with_capacity(64),
             pieces: HashMap::with_capacity(32),
             highlights: HashMap::with_capacity(64),
             tile_hints: HashMap::with_capacity(64),
@@ -177,21 +175,6 @@ impl BoardState {
         self.board = *board;
         self.half_move_clock = half_move_clock;
         self.full_move_count = full_move_count;
-    }
-
-    //------------------------------
-    // Tiles
-    //------------------------------
-
-    pub fn tile(&self, square: Square) -> Entity {
-        self.tiles.get(&square).copied().unwrap_or_else(|| panic!("no tile at {square}"))
-    }
-
-    pub fn set_tile(&mut self, square: Square, entity: Entity) {
-        match self.tiles.entry(square) {
-            Entry::Occupied(_) => panic!("tile already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(entity),
-        };
     }
 
     //------------------------------

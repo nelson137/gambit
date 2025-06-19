@@ -6,7 +6,9 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, Square};
+use super::{
+    BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, Square, TilesMap,
+};
 
 #[derive(Debug)]
 pub struct MovePlugin;
@@ -132,7 +134,7 @@ impl Command for MoveUiPiece {
         if animate {
             AnimatePiece::new(entity, from_sq, to_sq).apply(world);
         } else {
-            let to_tile_entity = world.resource::<BoardState>().tile(to_sq);
+            let to_tile_entity = world.resource::<TilesMap>().at(to_sq);
             world.entity_mut(to_tile_entity).add_children(&[entity]);
         }
     }

@@ -411,7 +411,7 @@ mod tests {
         use bevy::platform::collections::HashSet;
 
         use crate::game::{
-            board::{MovePlugin, PieceMeta},
+            board::{MovePlugin, PieceMeta, TilesMap},
             core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
             mouse::DragContainer,
@@ -440,6 +440,7 @@ mod tests {
         #[allow(dead_code)]
         pub trait TestAppExts {
             fn board_state(&self) -> &BoardState;
+            fn tiles_map(&self) -> &TilesMap;
 
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
@@ -458,6 +459,10 @@ mod tests {
         impl TestAppExts for App {
             fn board_state(&self) -> &BoardState {
                 self.world().resource::<BoardState>()
+            }
+
+            fn tiles_map(&self) -> &TilesMap {
+                self.world().resource::<TilesMap>()
             }
 
             fn set_state(&mut self, state: SelectionState) {
@@ -541,9 +546,8 @@ mod tests {
             }
 
             fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType) {
-                let board_state = self.board_state();
-                let piece = board_state.piece(sq);
-                let tile = board_state.tile(sq);
+                let piece = self.board_state().piece(sq);
+                let tile = self.tiles_map().at(sq);
                 let piece = self.world().entity(piece);
                 let piece_typ = piece.get::<PieceMeta>();
                 assert_eq!(

@@ -6,7 +6,7 @@ use crate::{
     game::{LoadGame, consts::Z_END_GAME_ICONS},
 };
 
-use super::{BoardState, PieceColor, Square, Tile};
+use super::{BoardState, PieceColor, Square, Tile, TilesMap};
 
 #[derive(Component, Clone, Copy)]
 pub(super) enum EndGameIcon {
@@ -54,9 +54,9 @@ impl EndGameIcons {
 pub(super) fn spawn_end_game_icons(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    board_state: Res<BoardState>,
+    tiles_map: Res<TilesMap>,
 ) {
-    let parent = board_state.tile(Square::DEFAULT);
+    let parent = tiles_map.at(Square::DEFAULT);
 
     let winner = commands
         .spawn((
@@ -175,12 +175,12 @@ impl ShowEndGameIcon {
     pub(super) fn handle(
         trigger: Trigger<Self>,
         mut commands: Commands,
-        board_state: Res<BoardState>,
+        tiles_map: Res<TilesMap>,
         end_game_icons: Res<EndGameIcons>,
         mut q_icon: Query<(&mut Visibility, &mut Node)>,
     ) {
         let Self { icon, square } = *trigger.event();
-        let tile_entity = board_state.tile(square);
+        let tile_entity = tiles_map.at(square);
         let icon_entity = end_game_icons.entity(icon);
 
         commands.entity(icon_entity).insert(ChildOf(tile_entity));

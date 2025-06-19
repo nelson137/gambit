@@ -3,7 +3,7 @@ use bevy::prelude::*;
 use crate::{
     debug_name,
     game::{
-        board::{BoardState, MouseSelectionEvent, Square, Tile},
+        board::{MouseSelectionEvent, Square, Tile, TilesMap},
         consts::Z_PIECE_SELECTED,
     },
 };
@@ -74,11 +74,11 @@ pub(super) fn on_add_dragging_piece(
 pub(super) fn on_remove_dragging_piece(
     trigger: Trigger<OnRemove, Dragging>,
     mut commands: Commands,
-    board_state: Res<BoardState>,
+    tiles_map: Res<TilesMap>,
     q_dragging: Query<&Dragging>,
 ) {
     let piece = trigger.target();
     let Ok(dragging) = q_dragging.get(piece) else { return };
-    let original_tile = board_state.tile(dragging.original_square);
+    let original_tile = tiles_map.at(dragging.original_square);
     commands.entity(original_tile).add_child(piece);
 }

@@ -12,7 +12,7 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{BoardState, ChessBoardExts, square::Square};
+use super::{BoardState, ChessBoardExts, TilesMap, square::Square};
 
 macro_rules! asset_path {
     ($color:literal, $type:literal) => {
@@ -179,6 +179,7 @@ pub(super) fn spawn_pieces_on_load_game(
     trigger: Trigger<LoadGame>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    tiles_map: Res<TilesMap>,
     mut board_state: ResMut<BoardState>,
     q_pieces: Query<Entity, With<PieceMeta>>,
 ) {
@@ -208,7 +209,7 @@ pub(super) fn spawn_pieces_on_load_game(
             ))
             .id();
 
-        commands.entity(board_state.tile(square)).add_child(piece_entity);
+        commands.entity(tiles_map.at(square)).add_child(piece_entity);
         board_state.set_piece(square, piece_entity);
     }
 }
@@ -270,7 +271,7 @@ impl Command for AnimatePiece {
             return;
         }
 
-        let to_entity = world.resource::<BoardState>().tile(self.to);
+        let to_entity = world.resource::<TilesMap>().at(self.to);
         let to_transl = if let Ok((transf, computed_node)) =
             world.query::<(&GlobalTransform, &ComputedNode)>().get(world, to_entity)
         {
