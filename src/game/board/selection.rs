@@ -451,7 +451,6 @@ mod tests {
 
         #[allow(dead_code)]
         pub trait TestAppExts {
-            fn board_state(&self) -> &BoardState;
             fn tiles_map(&self) -> &TilesMap;
             fn highlights_map(&self) -> &HighlightTilesMap;
             fn hints_map(&self) -> &TileHintsMap;
@@ -472,10 +471,6 @@ mod tests {
         }
 
         impl TestAppExts for App {
-            fn board_state(&self) -> &BoardState {
-                self.world().resource::<BoardState>()
-            }
-
             fn tiles_map(&self) -> &TilesMap {
                 self.world().resource::<TilesMap>()
             }
