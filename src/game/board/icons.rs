@@ -101,21 +101,18 @@ impl Command for ShowCheckmateIcons {
 
         let loser_color = board_state.side_to_move();
         let loser_square = board_state.king_square(loser_color);
-        let loser_tile_entity = board_state.tile(loser_square);
 
         let winner_color = !loser_color;
         let winner_square = board_state.king_square(winner_color);
-        let winner_tile_entity = board_state.tile(winner_square);
 
         trace!(%winner_square, %loser_square, "Show checkmate icons");
 
-        #[rustfmt::skip]
         match loser_color {
-            PieceColor::BLACK => set_end_game_icon::<LoserIconBlack>(world, loser_tile_entity, loser_square),
-            PieceColor::WHITE => set_end_game_icon::<LoserIconWhite>(world, loser_tile_entity, loser_square),
+            PieceColor::BLACK => set_end_game_icon::<LoserIconBlack>(world, loser_square),
+            PieceColor::WHITE => set_end_game_icon::<LoserIconWhite>(world, loser_square),
         };
 
-        set_end_game_icon::<WinnerIcon>(world, winner_tile_entity, winner_square);
+        set_end_game_icon::<WinnerIcon>(world, winner_square);
     }
 }
 
@@ -126,29 +123,19 @@ impl Command for ShowDrawIcons {
         let board_state = world.resource::<BoardState>();
 
         let black_square = board_state.king_square(PieceColor::BLACK);
-        let black_tile_entity = board_state.tile(black_square);
-
         let white_square = board_state.king_square(PieceColor::WHITE);
-        let white_tile_entity = board_state.tile(white_square);
 
         trace!(%white_square, %black_square, "Show draw icons");
 
-        set_end_game_icon::<DrawIconBlack>(world, black_tile_entity, black_square);
-
-        set_end_game_icon::<DrawIconWhite>(world, white_tile_entity, white_square);
+        set_end_game_icon::<DrawIconBlack>(world, black_square);
+        set_end_game_icon::<DrawIconWhite>(world, white_square);
     }
 }
 
-fn set_end_game_icon<IconMarker: Component>(
-    world: &mut World,
-    tile_entity: Entity,
-    square: Square,
-) {
-    let (icon_entity, icon_parent) =
-        world.query_filtered::<(Entity, &ChildOf), With<IconMarker>>().single(world).unwrap();
-    if icon_parent.parent() != tile_entity {
-        world.entity_mut(tile_entity).add_children(&[icon_entity]);
-    }
+fn set_end_game_icon<IconMarker: Component>(world: &mut World, square: Square) {
+    let tile_entity = world.resource::<BoardState>().tile(square);
+    let icon_entity = world.query_filtered::<Entity, With<IconMarker>>().single(world).unwrap();
+    world.entity_mut(icon_entity).insert(ChildOf(tile_entity));
     let mut icon = world.entity_mut(icon_entity);
     *icon.get_mut::<Visibility>().unwrap() = Visibility::Visible;
     let mut node = icon.get_mut::<Node>().unwrap();
