@@ -1,4 +1,8 @@
-use std::{fmt, ops::Not};
+use std::{
+    collections::{HashMap, hash_map::Entry},
+    fmt,
+    ops::Not,
+};
 
 use bevy::prelude::*;
 use chess::{Piece, Rank};
@@ -12,7 +16,7 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{BoardState, ChessBoardExts, TilesMap, square::Square};
+use super::{ChessBoardExts, TilesMap, square::Square};
 
 macro_rules! asset_path {
     ($color:literal, $type:literal) => {
@@ -180,11 +184,11 @@ pub(super) fn spawn_pieces_on_load_game(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     tiles_map: Res<TilesMap>,
-    mut board_state: ResMut<BoardState>,
+    mut pieces_map: ResMut<PiecesMap>,
     q_pieces: Query<Entity, With<PieceMeta>>,
 ) {
     // Despawn all pieces
-    board_state.clear_pieces();
+    pieces_map.clear();
     q_pieces.iter().for_each(|e| commands.entity(e).despawn());
 
     for square in chess::ALL_SQUARES.map(Square::new) {
@@ -210,7 +214,55 @@ pub(super) fn spawn_pieces_on_load_game(
             .id();
 
         commands.entity(tiles_map.at(square)).add_child(piece_entity);
-        board_state.set_piece(square, piece_entity);
+        pieces_map.set(square, piece_entity);
+    }
+}
+
+#[derive(Resource)]
+pub struct PiecesMap(HashMap<Square, Entity>);
+
+impl Default for PiecesMap {
+    fn default() -> Self {
+        Self(HashMap::with_capacity(32))
+    }
+}
+
+impl PiecesMap {
+    fn set(&mut self, square: Square, entity: Entity) {
+        match self.0.entry(square) {
+            Entry::Occupied(_) => panic!("piece already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(entity),
+        };
+    }
+
+    pub fn has(&self, square: Square) -> bool {
+        self.0.contains_key(&square)
+    }
+
+    pub fn at(&self, square: Square) -> Entity {
+        self.0.get(&square).copied().unwrap_or_else(|| panic!("no piece at {square}"))
+    }
+
+    pub fn remove(&mut self, square: Square) -> Option<Entity> {
+        self.0.remove(&square)
+    }
+
+    pub fn move_en_passant(
+        &mut self,
+        to_sq: Square,
+        piece: Entity,
+        ep_sq: Square,
+    ) -> Option<Entity> {
+        self.0.insert(to_sq, piece);
+        self.0.remove(&ep_sq)
+    }
+
+    pub fn entry(&mut self, square: Square) -> Entry<Square, Entity> {
+        self.0.entry(square)
+    }
+
+    pub fn clear(&mut self) {
+        self.0.clear()
     }
 }
 

@@ -12,17 +12,11 @@ use std::{
 use bevy::{prelude::*, tasks::IoTaskPool};
 use crossbeam_channel::{Receiver, TryRecvError, unbounded};
 
-use crate::{
-    game::{
-        board::{PieceColor, Square},
-        eval_bar::EvaluationUpdate,
-    },
-    utils::NoopExts,
-};
+use crate::{game::eval_bar::EvaluationUpdate, utils::NoopExts};
 
 use super::{
     LoadGame,
-    board::{BoardState, MovePiece, MovePieceCompleted, MovePlugin},
+    board::{MovePiece, MovePieceCompleted, MovePlugin, PieceColor, PiecesMap, Square},
 };
 
 const STOCKFISH_EXECUTABLE: &[u8] =
@@ -282,7 +276,7 @@ enum SfState {
 fn stockfish_update(
     mut commands: Commands,
     time: Res<Time>,
-    board_state: Res<BoardState>,
+    pieces_map: Res<PiecesMap>,
     mut sf_comms: ResMut<SfCommunications>,
     mut response_cursor: Local<usize>,
     mut sleep_timer: Local<Option<Timer>>,
@@ -342,7 +336,7 @@ fn stockfish_update(
                         panic!("Invalid destination square in move from stockfish: {bestmove}")
                     });
 
-                    let piece = board_state.piece(from_sq);
+                    let piece = pieces_map.at(from_sq);
                     commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, true), piece);
 
                     break 'is_waiting;
@@ -446,7 +440,7 @@ fn set_stockfish_player_color_on_load_game(
 #[cfg(feature = "stockfish-player")]
 fn stockfish_move(
     _trigger: Trigger<MovePieceCompleted>,
-    board_state: Res<BoardState>,
+    board_state: Res<crate::game::board::BoardState>,
     sf_color: Res<StockfishPlayerColor>,
     mut stockfish: ResMut<Stockfish>,
 ) {

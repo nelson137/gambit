@@ -8,12 +8,11 @@ use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, EMPTY, MoveGe
 
 use crate::{cli::CliArgs, game::LoadGame};
 
-use super::{HintDescriptor, PieceColor, PieceMeta, PieceType, Square};
+use super::{HintDescriptor, PieceColor, PieceMeta, PieceType, PiecesMap, Square};
 
 #[derive(Resource)]
 pub struct BoardState {
     status: GameStatus,
-    pieces: HashMap<Square, Entity>,
     board: Board,
     half_move_clock: u8,
     full_move_count: u16,
@@ -40,7 +39,6 @@ impl FromWorld for BoardState {
 
         Self {
             status: GameStatus::Ongoing,
-            pieces: HashMap::with_capacity(32),
             board,
             half_move_clock,
             full_move_count,
@@ -137,28 +135,6 @@ impl BoardState {
         move_gen.any(|m| m.get_source() == source)
     }
 
-    #[cfg(debug_assertions)]
-    #[allow(dead_code)]
-    pub fn log_board(&self) {
-        let pretty_board = self.board().to_pretty_string();
-        let pretty_state = {
-            let mut bb = chess::BoardBuilder::new();
-            for &Square(sq) in self.pieces.keys() {
-                let typ = self.board.piece_on(sq);
-                let color = self.board.color_on(sq);
-                if let (Some(typ), Some(color)) = (typ, color) {
-                    bb.piece(sq, typ, color);
-                } else {
-                    warn!(square = %sq, ?color, ?typ, "Failed to get piece info");
-                }
-            }
-            bb.to_pretty_string()
-        };
-        const SEP: &str = "    ";
-        info!("{:15}{SEP}{:15}", "chess::Board:", "Piece State:");
-        pretty_board.lines().zip(pretty_state.lines()).for_each(|(a, b)| info!("{a}{SEP}{b}"));
-    }
-
     //------------------------------
     // Board
     //------------------------------
@@ -171,33 +147,6 @@ impl BoardState {
         self.board = *board;
         self.half_move_clock = half_move_clock;
         self.full_move_count = full_move_count;
-    }
-
-    //------------------------------
-    // Pieces
-    //------------------------------
-
-    pub fn has_piece_at(&self, square: Square) -> bool {
-        self.pieces.contains_key(&square)
-    }
-
-    pub fn piece(&self, square: Square) -> Entity {
-        self.get_piece(square).unwrap_or_else(|| panic!("no piece at {square}"))
-    }
-
-    pub fn get_piece(&self, square: Square) -> Option<Entity> {
-        self.pieces.get(&square).copied()
-    }
-
-    pub fn set_piece(&mut self, square: Square, piece: Entity) {
-        match self.pieces.entry(square) {
-            Entry::Occupied(_) => panic!("piece already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(piece),
-        };
-    }
-
-    pub fn clear_pieces(&mut self) {
-        self.pieces.clear();
     }
 }
 
@@ -293,11 +242,12 @@ impl BoardState {
     #[must_use]
     pub fn update_piece(
         &mut self,
+        pieces_map: &mut PiecesMap,
         color: PieceColor,
         from_sq: Square,
         to_sq: Square,
     ) -> Option<Entity> {
-        let (_old_square, piece) = self.pieces.remove_entry(&from_sq).unwrap_or_else(|| {
+        let piece = pieces_map.remove(from_sq).unwrap_or_else(|| {
             panic!("Failed to move board state piece: no piece found at source square {from_sq}")
         });
 
@@ -308,10 +258,9 @@ impl BoardState {
             // destination of the move is the square ahead of it (from the perspective of the
             // current player).
             Some(ep_sq) if ep_sq.forward(color) == Some(to_sq) => {
-                self.pieces.insert(to_sq, piece);
-                self.pieces.remove(&ep_sq)
+                pieces_map.move_en_passant(to_sq, piece, ep_sq)
             }
-            _ => match self.pieces.entry(to_sq) {
+            _ => match pieces_map.entry(to_sq) {
                 // Capture
                 Entry::Occupied(mut entry) => {
                     let value = entry.get_mut();

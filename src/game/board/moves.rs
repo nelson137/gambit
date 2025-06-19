@@ -7,7 +7,8 @@ use crate::{
 };
 
 use super::{
-    BoardState, Captured, PieceColor, PieceMeta, PieceType, PromotingPiece, Square, TilesMap,
+    BoardState, Captured, PieceColor, PieceMeta, PieceType, PiecesMap, PromotingPiece, Square,
+    TilesMap,
 };
 
 #[derive(Debug)]
@@ -45,6 +46,7 @@ pub fn move_piece(
     trigger: Trigger<MovePiece>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
+    pieces_map: Res<PiecesMap>,
     board_state: Res<BoardState>,
     mut q_info: Query<(&PieceMeta, &mut ImageNode)>,
 ) {
@@ -71,7 +73,7 @@ pub fn move_piece(
     commands.entity(entity).remove::<Dragging>();
     commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, animate));
 
-    let is_capture = board_state.has_piece_at(to_sq);
+    let is_capture = pieces_map.has(to_sq);
     let is_en_passant = board_state.move_is_en_passant(color, to_sq);
 
     let mut is_castle = false;
@@ -85,14 +87,14 @@ pub fn move_piece(
         if castle_rights.has_kingside() && to_sq == kingside_sq {
             let from_sq = Square::from_coords(back_rank, File::H);
             let to_sq = Square::from_coords(back_rank, File::F);
-            let entity = board_state.piece(from_sq);
+            let entity = pieces_map.at(from_sq);
             commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
             commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, true));
             is_castle = true;
         } else if castle_rights.has_queenside() && to_sq == queenside_sq {
             let from_sq = Square::from_coords(back_rank, File::A);
             let to_sq = Square::from_coords(back_rank, File::D);
-            let entity = board_state.piece(from_sq);
+            let entity = pieces_map.at(from_sq);
             commands.queue(UpdatePieceState::new(color, from_sq, to_sq));
             commands.queue(MoveUiPiece::new(entity, from_sq, to_sq, true));
             is_castle = true;
@@ -155,10 +157,13 @@ impl UpdatePieceState {
 impl Command for UpdatePieceState {
     fn apply(self, world: &mut World) {
         let Self { color, from_sq, to_sq } = self;
-        let captured = world.resource_mut::<BoardState>().update_piece(color, from_sq, to_sq);
-        if let Some(piece) = captured {
-            world.trigger_targets(Captured, piece);
-        }
+        world.resource_scope(|world, mut pieces_map: Mut<PiecesMap>| {
+            let mut board_state = world.resource_mut::<BoardState>();
+            let captured = board_state.update_piece(&mut pieces_map, color, from_sq, to_sq);
+            if let Some(piece) = captured {
+                world.trigger_targets(Captured, piece);
+            }
+        });
     }
 }
 

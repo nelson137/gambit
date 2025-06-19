@@ -8,8 +8,8 @@ use crate::{
 };
 
 use super::{
-    BoardState, HighlightTile, HighlightTilesMap, Hint, MovePiece, Square, StartPromotion,
-    TileHintsMap,
+    BoardState, HighlightTile, HighlightTilesMap, Hint, MovePiece, PiecesMap, Square,
+    StartPromotion, TileHintsMap,
 };
 
 pub struct SelectionPlugin;
@@ -115,6 +115,7 @@ fn handle_mouse_selection_events(
     mut selection_state: ResMut<SelectionState>,
     highlights_map: Res<HighlightTilesMap>,
     hints_map: Res<TileHintsMap>,
+    pieces_map: Res<PiecesMap>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
 ) {
@@ -123,7 +124,7 @@ fn handle_mouse_selection_events(
         let action = match *selection_state {
             SelectionState::Unselected => match event {
                 MouseSelectionEvent::MouseDown(square) => {
-                    if board_state.has_piece_at(square) {
+                    if pieces_map.has(square) {
                         SelectionStateAction::StartSelectingDragging(square)
                     } else {
                         SelectionStateAction::None
@@ -155,7 +156,7 @@ fn handle_mouse_selection_events(
                             to_sq: square,
                             animate: true,
                         }
-                    } else if board_state.has_piece_at(square) {
+                    } else if pieces_map.has(square) {
                         SelectionStateAction::ChangeSelection(square)
                     } else {
                         SelectionStateAction::Unselect(selected_sq)
@@ -186,7 +187,7 @@ fn handle_mouse_selection_events(
             SelectionStateAction::None => {}
             SelectionStateAction::ChangeSelection(to_sq) => {
                 // Start dragging piece
-                let piece = board_state.piece(to_sq);
+                let piece = pieces_map.at(to_sq);
                 commands.entity(piece).insert(Dragging { original_square: to_sq });
                 // Update selection & hints
                 let hl_tile = highlights_map.at(to_sq);
@@ -198,27 +199,27 @@ fn handle_mouse_selection_events(
             }
             SelectionStateAction::DropSelect(square) => {
                 // Drop piece
-                let piece = board_state.piece(square);
+                let piece = pieces_map.at(square);
                 commands.entity(piece).remove::<Dragging>();
                 // Set state to Selected
                 *selection_state = SelectionState::Selected(square);
             }
             SelectionStateAction::Move { from_sq, to_sq, animate } => {
-                let piece = board_state.piece(from_sq);
+                let piece = pieces_map.at(from_sq);
                 commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, animate), piece);
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
             SelectionStateAction::StartSelectedDragging(square) => {
                 // Start dragging piece
-                let piece = board_state.piece(square);
+                let piece = pieces_map.at(square);
                 commands.entity(piece).insert(Dragging { original_square: square });
                 // Set state to SelectedDragging
                 *selection_state = SelectionState::SelectedDragging(square);
             }
             SelectionStateAction::StartSelectingDragging(square) => {
                 // Start dragging piece
-                let piece = board_state.piece(square);
+                let piece = pieces_map.at(square);
                 commands.entity(piece).insert(Dragging { original_square: square });
                 // Update selection & hints
                 let hl_tile = highlights_map.at(square);
@@ -230,7 +231,7 @@ fn handle_mouse_selection_events(
             }
             SelectionStateAction::Unselect(square) => {
                 // Drop piece
-                let piece = board_state.piece(square);
+                let piece = pieces_map.at(square);
                 commands.entity(piece).remove::<Dragging>();
                 // Unselect square & remove hints
                 commands.trigger(Unselect);
@@ -454,6 +455,7 @@ mod tests {
             fn tiles_map(&self) -> &TilesMap;
             fn highlights_map(&self) -> &HighlightTilesMap;
             fn hints_map(&self) -> &TileHintsMap;
+            fn pieces_map(&self) -> &PiecesMap;
 
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
@@ -486,6 +488,10 @@ mod tests {
                 self.world().resource::<TileHintsMap>()
             }
 
+            fn pieces_map(&self) -> &PiecesMap {
+                self.world().resource::<PiecesMap>()
+            }
+
             fn set_state(&mut self, state: SelectionState) {
                 *self.world_mut().resource_mut::<SelectionState>() = state;
             }
@@ -505,7 +511,7 @@ mod tests {
 
             fn set_piece_to_drag_container(&mut self, square: Square) {
                 let parent = get_tagged_entity::<DragContainer>(self);
-                let child = self.board_state().piece(square);
+                let child = self.pieces_map().at(square);
                 self.world_mut().entity_mut(parent).add_child(child);
             }
 
@@ -522,7 +528,7 @@ mod tests {
             }
 
             fn assert_piece_in_drag_container(&mut self, piece: Square) {
-                let piece = self.board_state().piece(piece);
+                let piece = self.pieces_map().at(piece);
                 let expected = Some(HashSet::<Entity>::from_iter([piece]));
 
                 let drag_container = get_tagged_entity::<DragContainer>(self);
@@ -567,7 +573,7 @@ mod tests {
             }
 
             fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType) {
-                let piece = self.board_state().piece(sq);
+                let piece = self.pieces_map().at(sq);
                 let tile = self.tiles_map().at(sq);
                 let piece = self.world().entity(piece);
                 let piece_typ = piece.get::<PieceMeta>();
