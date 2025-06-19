@@ -8,7 +8,7 @@ use crate::{
 
 use super::{BoardState, PieceColor, Square, Tile};
 
-#[derive(Component)]
+#[derive(Component, Clone, Copy)]
 pub(super) enum EndGameIcon {
     Winner,
     LoserBlack,
@@ -17,8 +17,21 @@ pub(super) enum EndGameIcon {
     DrawWhite,
 }
 
+trait PieceColorToLoserIcon {
+    fn to_loser_icon(self) -> EndGameIcon;
+}
+
+impl PieceColorToLoserIcon for PieceColor {
+    fn to_loser_icon(self) -> EndGameIcon {
+        match self {
+            Self::BLACK => EndGameIcon::LoserBlack,
+            Self::WHITE => EndGameIcon::LoserWhite,
+        }
+    }
+}
+
 #[derive(Resource)]
-struct EndGameIcons {
+pub(super) struct EndGameIcons {
     winner: Entity,
     loser_black: Entity,
     loser_white: Entity,
@@ -107,13 +120,15 @@ pub(super) fn spawn_end_game_icons(
     })
 }
 
-#[derive(Debug)]
+#[derive(Event, Debug)]
 pub struct ShowCheckmateIcons;
 
-impl Command for ShowCheckmateIcons {
-    fn apply(self, world: &mut World) {
-        let board_state = world.resource::<BoardState>();
-
+impl ShowCheckmateIcons {
+    pub(super) fn handle(
+        _trigger: Trigger<Self>,
+        mut commands: Commands,
+        board_state: Res<BoardState>,
+    ) {
         let loser_color = board_state.side_to_move();
         let loser_square = board_state.king_square(loser_color);
 
@@ -122,47 +137,60 @@ impl Command for ShowCheckmateIcons {
 
         trace!(%winner_square, %loser_square, "Show checkmate icons");
 
-        match loser_color {
-            PieceColor::BLACK => set_end_game_icon(world, EndGameIcon::LoserBlack, loser_square),
-            PieceColor::WHITE => set_end_game_icon(world, EndGameIcon::LoserWhite, loser_square),
-        };
-
-        set_end_game_icon(world, EndGameIcon::Winner, winner_square);
+        commands.trigger(ShowEndGameIcon::new(loser_color.to_loser_icon(), loser_square));
+        commands.trigger(ShowEndGameIcon::new(EndGameIcon::Winner, winner_square));
     }
 }
 
+#[derive(Event)]
 pub struct ShowDrawIcons;
 
-impl Command for ShowDrawIcons {
-    fn apply(self, world: &mut World) {
-        let board_state = world.resource::<BoardState>();
-
+impl ShowDrawIcons {
+    pub(super) fn handle(
+        _trigger: Trigger<Self>,
+        mut commands: Commands,
+        board_state: Res<BoardState>,
+    ) {
         let black_square = board_state.king_square(PieceColor::BLACK);
         let white_square = board_state.king_square(PieceColor::WHITE);
 
         trace!(%white_square, %black_square, "Show draw icons");
 
-        set_end_game_icon(world, EndGameIcon::DrawBlack, black_square);
-        set_end_game_icon(world, EndGameIcon::DrawWhite, white_square);
+        commands.trigger(ShowEndGameIcon::new(EndGameIcon::DrawBlack, black_square));
+        commands.trigger(ShowEndGameIcon::new(EndGameIcon::DrawWhite, white_square));
     }
 }
 
-fn set_end_game_icon(world: &mut World, icon: EndGameIcon, square: Square) {
-    let tile_entity = world.resource::<BoardState>().tile(square);
-    let icon_entity = world.resource::<EndGameIcons>().entity(icon);
-    world.entity_mut(icon_entity).insert(ChildOf(tile_entity));
-    let mut icon = world.entity_mut(icon_entity);
-    *icon.get_mut::<Visibility>().unwrap() = Visibility::Visible;
-    let mut node = icon.get_mut::<Node>().unwrap();
-    if square.get_rank() == Rank::Eighth {
-        node.top = Val::Percent(3.0);
-    } else {
-        node.top = Val::Percent(-14.0);
+#[derive(Event, Clone, Copy)]
+pub(super) struct ShowEndGameIcon {
+    icon: EndGameIcon,
+    square: Square,
+}
+
+impl ShowEndGameIcon {
+    fn new(icon: EndGameIcon, square: Square) -> Self {
+        Self { icon, square }
     }
-    if square.get_file() == File::H {
-        node.left = Val::Percent(57.0);
-    } else {
-        node.left = Val::Percent(74.0);
+
+    pub(super) fn handle(
+        trigger: Trigger<Self>,
+        mut commands: Commands,
+        board_state: Res<BoardState>,
+        end_game_icons: Res<EndGameIcons>,
+        mut q_icon: Query<(&mut Visibility, &mut Node)>,
+    ) {
+        let Self { icon, square } = *trigger.event();
+        let tile_entity = board_state.tile(square);
+        let icon_entity = end_game_icons.entity(icon);
+
+        commands.entity(icon_entity).insert(ChildOf(tile_entity));
+
+        let Ok((mut vis, mut node)) = q_icon.get_mut(icon_entity) else { return };
+
+        *vis = Visibility::Visible;
+
+        node.top = Val::Percent(if square.get_rank() == Rank::Eighth { 3.0 } else { -14.0 });
+        node.left = Val::Percent(if square.get_file() == File::H { 57.0 } else { 74.0 });
     }
 }
 

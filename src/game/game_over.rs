@@ -26,10 +26,10 @@ impl GameOver {
         trace!("Game over");
 
         match board_state.status() {
-            GameStatus::GameOverCheckmate => commands.queue(ShowCheckmateIcons),
+            GameStatus::GameOverCheckmate => commands.trigger(ShowCheckmateIcons),
             GameStatus::GameOverStalemate
             | GameStatus::GameOver50Moves
-            | GameStatus::GameOverRepetition => commands.queue(ShowDrawIcons),
+            | GameStatus::GameOverRepetition => commands.trigger(ShowDrawIcons),
             GameStatus::Ongoing => {
                 warn!("Running game over sequence when the game is still ongoing")
             }

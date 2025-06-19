@@ -34,6 +34,9 @@ impl Plugin for BoardPlugin {
             // Observers
             .add_observer(set_board_on_load_game)
             .add_observer(spawn_pieces_on_load_game)
+            .add_observer(ShowEndGameIcon::handle)
+            .add_observer(ShowCheckmateIcons::handle)
+            .add_observer(ShowDrawIcons::handle)
             .add_observer(hide_end_game_icons_on_load_game)
             .add_observer(on_remove_animating)
             // Systems
