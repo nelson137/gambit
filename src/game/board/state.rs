@@ -8,13 +8,12 @@ use chess::{BitBoard, Board, BoardStatus, CastleRights, ChessMove, EMPTY, MoveGe
 
 use crate::{cli::CliArgs, game::LoadGame};
 
-use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
+use super::{HintDescriptor, PieceColor, PieceMeta, PieceType, Square};
 
 #[derive(Resource)]
 pub struct BoardState {
     status: GameStatus,
     pieces: HashMap<Square, Entity>,
-    tile_hints: HashMap<Square, TileHints>,
     board: Board,
     half_move_clock: u8,
     full_move_count: u16,
@@ -42,7 +41,6 @@ impl FromWorld for BoardState {
         Self {
             status: GameStatus::Ongoing,
             pieces: HashMap::with_capacity(32),
-            tile_hints: HashMap::with_capacity(64),
             board,
             half_move_clock,
             full_move_count,
@@ -176,21 +174,6 @@ impl BoardState {
     }
 
     //------------------------------
-    // Hints
-    //------------------------------
-
-    pub fn tile_hints(&self, square: Square) -> &TileHints {
-        self.tile_hints.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
-    }
-
-    pub fn set_tile_hints(&mut self, square: Square, hints: TileHints) {
-        match self.tile_hints.entry(square) {
-            Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(hints),
-        };
-    }
-
-    //------------------------------
     // Pieces
     //------------------------------
 
@@ -254,7 +237,7 @@ impl BoardState {
     //------------------------------
 
     #[must_use]
-    pub fn calculate_valid_moves(&self, source: Square) -> Vec<Entity> {
+    pub fn calculate_valid_moves(&self, source: Square) -> Vec<HintDescriptor> {
         let mut move_gen = MoveGen::new_legal(&self.board);
         let mut moves = Vec::with_capacity(move_gen.len());
 
@@ -264,7 +247,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.tile_hints(r#move.get_dest().into()).capture_entity);
+            moves.push(HintDescriptor::capture(r#move.get_dest().into()));
         }
 
         move_gen.set_iterator_mask(!EMPTY);
@@ -272,7 +255,7 @@ impl BoardState {
             if r#move.get_source() != source {
                 continue;
             }
-            moves.push(self.tile_hints(r#move.get_dest().into()).move_entity);
+            moves.push(HintDescriptor::r#move(r#move.get_dest().into()));
         }
 
         moves

@@ -1,11 +1,36 @@
+use std::collections::{HashMap, hash_map::Entry};
+
 use bevy::prelude::*;
 
 use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 
-use super::{BoardState, Square, TilesMap};
+use super::{Square, TilesMap};
 
-#[derive(Component)]
-pub struct Hint;
+#[derive(Component, Clone, Copy)]
+pub enum Hint {
+    Move,
+    Capture,
+}
+
+#[derive(Clone, Copy)]
+pub struct HintDescriptor {
+    hint: Hint,
+    square: Square,
+}
+
+impl HintDescriptor {
+    fn new(hint: Hint, square: Square) -> Self {
+        Self { hint, square }
+    }
+
+    pub fn r#move(square: Square) -> Self {
+        Self::new(Hint::Move, square)
+    }
+
+    pub fn capture(square: Square) -> Self {
+        Self::new(Hint::Capture, square)
+    }
+}
 
 #[derive(Debug)]
 pub struct TileHints {
@@ -13,11 +38,20 @@ pub struct TileHints {
     pub capture_entity: Entity,
 }
 
+impl TileHints {
+    fn entity(&self, hint: Hint) -> Entity {
+        match hint {
+            Hint::Move => self.move_entity,
+            Hint::Capture => self.capture_entity,
+        }
+    }
+}
+
 pub fn spawn_hints(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     tiles_map: Res<TilesMap>,
-    mut board_state: ResMut<BoardState>,
+    mut hints_map: ResMut<TileHintsMap>,
 ) {
     let move_hint_texture = asset_server.load("images/hints/move.png");
     let capture_hint_texture = asset_server.load("images/hints/capture.png");
@@ -28,7 +62,7 @@ pub fn spawn_hints(
         // Move hint
         let move_entity = commands
             .spawn((
-                Hint,
+                Hint::Move,
                 debug_name_f!("Move Hint ({square})"),
                 square,
                 Node {
@@ -57,7 +91,7 @@ pub fn spawn_hints(
         // Capture hint
         let capture_entity = commands
             .spawn((
-                Hint,
+                Hint::Capture,
                 debug_name_f!("Capture Hint ({square})"),
                 square,
                 ImageNode::new(capture_hint_texture.clone()),
@@ -74,7 +108,33 @@ pub fn spawn_hints(
             ))
             .id();
 
-        board_state.set_tile_hints(square, TileHints { capture_entity, move_entity });
+        hints_map.set(square, TileHints { capture_entity, move_entity });
         commands.entity(tiles_map.at(square)).add_children(&[move_entity, capture_entity]);
+    }
+}
+
+#[derive(Resource)]
+pub struct TileHintsMap(HashMap<Square, TileHints>);
+
+impl Default for TileHintsMap {
+    fn default() -> Self {
+        Self(HashMap::with_capacity(64))
+    }
+}
+
+impl TileHintsMap {
+    pub fn set(&mut self, square: Square, hints: TileHints) {
+        match self.0.entry(square) {
+            Entry::Occupied(_) => panic!("move hints already in the state at {square}"),
+            Entry::Vacant(e) => e.insert(hints),
+        };
+    }
+
+    pub fn at(&self, square: Square) -> &TileHints {
+        self.0.get(&square).unwrap_or_else(|| panic!("no move hints at {square}"))
+    }
+
+    pub fn many_from_descriptors(&self, descriptors: &[HintDescriptor]) -> Vec<Entity> {
+        descriptors.iter().map(|d| self.at(d.square).entity(d.hint)).collect()
     }
 }

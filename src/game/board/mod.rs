@@ -32,6 +32,7 @@ impl Plugin for BoardPlugin {
             // Resources
             .init_resource::<TilesMap>()
             .init_resource::<HighlightTilesMap>()
+            .init_resource::<TileHintsMap>()
             .init_resource::<BoardState>()
             // Observers
             .add_observer(set_board_on_load_game)

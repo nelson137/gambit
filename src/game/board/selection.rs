@@ -9,6 +9,7 @@ use crate::{
 
 use super::{
     BoardState, HighlightTile, HighlightTilesMap, Hint, MovePiece, Square, StartPromotion,
+    TileHintsMap,
 };
 
 pub struct SelectionPlugin;
@@ -113,6 +114,7 @@ fn handle_mouse_selection_events(
     mut commands: Commands,
     mut selection_state: ResMut<SelectionState>,
     highlights_map: Res<HighlightTilesMap>,
+    hints_map: Res<TileHintsMap>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
 ) {
@@ -188,7 +190,8 @@ fn handle_mouse_selection_events(
                 commands.entity(piece).insert(Dragging { original_square: to_sq });
                 // Update selection & hints
                 let hl_tile = highlights_map.at(to_sq);
-                let hints = board_state.calculate_valid_moves(to_sq);
+                let hint_descriptors = board_state.calculate_valid_moves(to_sq);
+                let hints = hints_map.many_from_descriptors(&hint_descriptors);
                 commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(to_sq);
@@ -219,7 +222,8 @@ fn handle_mouse_selection_events(
                 commands.entity(piece).insert(Dragging { original_square: square });
                 // Update selection & hints
                 let hl_tile = highlights_map.at(square);
-                let hints = board_state.calculate_valid_moves(square);
+                let hint_descriptors = board_state.calculate_valid_moves(square);
+                let hints = hints_map.many_from_descriptors(&hint_descriptors);
                 commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
                 *selection_state = SelectionState::SelectingDragging(square);
@@ -449,6 +453,7 @@ mod tests {
             fn board_state(&self) -> &BoardState;
             fn tiles_map(&self) -> &TilesMap;
             fn highlights_map(&self) -> &HighlightTilesMap;
+            fn hints_map(&self) -> &TileHintsMap;
 
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
@@ -477,6 +482,10 @@ mod tests {
                 self.world().resource::<HighlightTilesMap>()
             }
 
+            fn hints_map(&self) -> &TileHintsMap {
+                self.world().resource::<TileHintsMap>()
+            }
+
             fn set_state(&mut self, state: SelectionState) {
                 *self.world_mut().resource_mut::<SelectionState>() = state;
             }
@@ -489,7 +498,7 @@ mod tests {
             fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>) {
                 for sq in squares.into_iter() {
                     // Test assertions don't differentiate between move hints and capture hints
-                    let entity = self.board_state().tile_hints(sq).move_entity;
+                    let entity = self.hints_map().at(sq).move_entity;
                     self.world_mut().entity_mut(entity).insert(EnabledHint);
                 }
             }
@@ -543,11 +552,11 @@ mod tests {
             }
 
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>) {
-                let board_state = self.board_state();
+                let hints_map = self.hints_map();
 
                 let expected = expected
                     .into_iter()
-                    .map(|sq| board_state.tile_hints(sq).move_entity)
+                    .map(|sq| hints_map.at(sq).move_entity)
                     .collect::<HashSet<_>>();
 
                 let mut q =
