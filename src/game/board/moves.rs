@@ -203,7 +203,7 @@ impl Command for UpdateBoardState {
         board_state.sync_status();
 
         if board_state.is_game_over() {
-            GameOver.apply(world);
+            world.trigger(GameOver);
         }
     }
 }

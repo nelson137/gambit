@@ -6,6 +6,7 @@ use self::{
     audio::GameAudioPlugin,
     board::{MovePlugin, PieceAnimationPlugin, SelectionPlugin},
     camera::setup_camera,
+    game_over::GameOverPlugin,
     menu::GameMenuLogicPlugin,
     menu::MenuState,
     mouse::MouseLogicPlugin,
@@ -40,6 +41,7 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(GameAudioPlugin)
             .add_plugins(PieceAnimationPlugin)
             .add_plugins(StockfishPlugin)
+            .add_plugins(GameOverPlugin)
             // Startup
             .add_systems(Startup, setup_camera)
             .add_systems(PostStartup, load_game_on_startup)
