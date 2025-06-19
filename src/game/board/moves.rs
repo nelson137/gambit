@@ -7,8 +7,8 @@ use crate::{
 };
 
 use super::{
-    BoardState, Captured, PieceColor, PieceMeta, PieceType, PiecesMap, PromotingPiece, Square,
-    TilesMap,
+    BoardState, Captured, GameStatus, PieceColor, PieceMeta, PieceType, PiecesMap, PromotingPiece,
+    Square, TilesMap,
 };
 
 #[derive(Debug)]
@@ -207,9 +207,10 @@ impl Command for UpdateBoardState {
             board_state.inc_full_move_count();
         }
 
-        board_state.sync_status();
+        let game_status = board_state.game_status();
+        *world.resource_mut::<GameStatus>() = game_status;
 
-        if board_state.is_game_over() {
+        if game_status.is_game_over() {
             world.trigger(GameOver);
         }
     }

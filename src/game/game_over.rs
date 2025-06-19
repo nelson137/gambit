@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 use super::{
-    board::{BoardState, GameStatus, ShowCheckmateIcons, ShowDrawIcons},
+    board::{GameStatus, ShowCheckmateIcons, ShowDrawIcons},
     menu::MenuState,
 };
 
@@ -20,12 +20,12 @@ impl GameOver {
     fn handle(
         _trigger: Trigger<Self>,
         mut commands: Commands,
-        board_state: Res<BoardState>,
+        game_status: Res<GameStatus>,
         mut next_menu_state: ResMut<NextState<MenuState>>,
     ) {
         trace!("Game over");
 
-        match board_state.status() {
+        match *game_status {
             GameStatus::GameOverCheckmate => commands.trigger(ShowCheckmateIcons),
             GameStatus::GameOverStalemate
             | GameStatus::GameOver50Moves

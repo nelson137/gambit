@@ -12,7 +12,6 @@ use super::{HintDescriptor, PieceColor, PieceMeta, PieceType, PiecesMap, Square}
 
 #[derive(Resource)]
 pub struct BoardState {
-    status: GameStatus,
     board: Board,
     half_move_clock: u8,
     full_move_count: u16,
@@ -37,13 +36,7 @@ impl FromWorld for BoardState {
         let mut piece_state_counters = HashMap::with_capacity(300);
         *piece_state_counters.entry(board.get_hash()).or_default() = 1;
 
-        Self {
-            status: GameStatus::Ongoing,
-            board,
-            half_move_clock,
-            full_move_count,
-            piece_state_counters,
-        }
+        Self { board, half_move_clock, full_move_count, piece_state_counters }
     }
 }
 
@@ -84,20 +77,6 @@ impl BoardState {
     //------------------------------
     // State
     //------------------------------
-
-    pub fn status(&self) -> GameStatus {
-        self.status
-    }
-
-    pub fn is_game_over(&self) -> bool {
-        matches!(
-            self.status,
-            GameStatus::GameOverCheckmate
-                | GameStatus::GameOverStalemate
-                | GameStatus::GameOverRepetition
-                | GameStatus::GameOver50Moves
-        )
-    }
 
     #[cfg(feature = "stockfish-player")]
     pub fn fen(&self) -> String {
@@ -159,8 +138,8 @@ impl BoardState {
     // Status
     //------------------------------
 
-    pub fn sync_status(&mut self) {
-        self.status = match self.board.status() {
+    pub fn game_status(&mut self) -> GameStatus {
+        match self.board.status() {
             BoardStatus::Checkmate => GameStatus::GameOverCheckmate,
             BoardStatus::Stalemate => GameStatus::GameOverStalemate,
             BoardStatus::Ongoing if self.is_game_over_50_moves() => GameStatus::GameOver50Moves,
@@ -168,15 +147,15 @@ impl BoardState {
                 GameStatus::GameOverRepetition
             }
             BoardStatus::Ongoing => GameStatus::Ongoing,
-        };
+        }
     }
 
-    /// Internal helper. **Only to be used by `Self::sync_status`**.
+    /// Internal helper. **Only to be used by `Self::game_status`**.
     fn is_game_over_50_moves(&self) -> bool {
         self.half_move_clock >= 100
     }
 
-    /// Internal helper. **Only to be used by `Self::sync_status`**.
+    /// Internal helper. **Only to be used by `Self::game_status`**.
     fn is_game_over_repetition(&self) -> bool {
         self.piece_state_counters.values().copied().any(|count| count >= 3)
     }
@@ -278,13 +257,26 @@ impl BoardState {
     }
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Resource, Clone, Copy, Default, Debug, PartialEq, Eq)]
 pub enum GameStatus {
+    #[default]
     Ongoing,
     GameOverCheckmate,
     GameOverStalemate,
     GameOver50Moves,
     GameOverRepetition,
+}
+
+impl GameStatus {
+    pub fn is_game_over(self) -> bool {
+        matches!(
+            self,
+            Self::GameOverCheckmate
+                | Self::GameOverStalemate
+                | Self::GameOverRepetition
+                | Self::GameOver50Moves
+        )
+    }
 }
 
 pub trait ChessBoardExts {
