@@ -330,31 +330,3 @@ pub fn captures(
 
     commands.queue(CapStateUpdate::new(color, typ, CapStateDiff::Increment));
 }
-
-pub struct ResetCapturesUi;
-
-impl Command for ResetCapturesUi {
-    fn apply(self, world: &mut World) {
-        let mut capture_state = world.resource_mut::<CaptureState>();
-
-        let image_entities: Vec<Entity> = capture_state
-            .iter_mut()
-            .flat_map(|player_caps| player_caps.iter_mut())
-            .map(|player_caps| {
-                player_caps.count = 0;
-                player_caps.image_entity
-            })
-            .collect();
-
-        for img_entity in image_entities {
-            if let Some(mut node) = world.entity_mut(img_entity).get_mut::<Node>() {
-                node.display = Display::None;
-            }
-        }
-
-        world
-            .query_filtered::<&mut Visibility, With<MaterialAdvantageLabel>>()
-            .iter_mut(world)
-            .for_each(|mut vis| *vis = Visibility::Hidden);
-    }
-}
