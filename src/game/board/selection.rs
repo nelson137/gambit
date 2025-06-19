@@ -7,7 +7,9 @@ use crate::{
     utils::NoopExts,
 };
 
-use super::{BoardState, HighlightTile, Hint, MovePiece, Square, StartPromotion};
+use super::{
+    BoardState, HighlightTile, HighlightTilesMap, Hint, MovePiece, Square, StartPromotion,
+};
 
 pub struct SelectionPlugin;
 
@@ -110,6 +112,7 @@ impl fmt::Display for MouseSelectionEvent {
 fn handle_mouse_selection_events(
     mut commands: Commands,
     mut selection_state: ResMut<SelectionState>,
+    highlights_map: Res<HighlightTilesMap>,
     board_state: Res<BoardState>,
     mut event_reader: EventReader<MouseSelectionEvent>,
 ) {
@@ -184,7 +187,7 @@ fn handle_mouse_selection_events(
                 let piece = board_state.piece(to_sq);
                 commands.entity(piece).insert(Dragging { original_square: to_sq });
                 // Update selection & hints
-                let hl_tile = board_state.highlight(to_sq);
+                let hl_tile = highlights_map.at(to_sq);
                 let hints = board_state.calculate_valid_moves(to_sq);
                 commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
@@ -215,7 +218,7 @@ fn handle_mouse_selection_events(
                 let piece = board_state.piece(square);
                 commands.entity(piece).insert(Dragging { original_square: square });
                 // Update selection & hints
-                let hl_tile = board_state.highlight(square);
+                let hl_tile = highlights_map.at(square);
                 let hints = board_state.calculate_valid_moves(square);
                 commands.trigger(Select { highlight: hl_tile, hints });
                 // Set state to SelectingDragging
@@ -344,9 +347,13 @@ impl fmt::Display for EnableLastMove {
 }
 
 impl EnableLastMove {
-    fn handle(trigger: Trigger<Self>, mut commands: Commands, board_state: Res<BoardState>) {
+    fn handle(
+        trigger: Trigger<Self>,
+        mut commands: Commands,
+        highlights_map: Res<HighlightTilesMap>,
+    ) {
         let &Self(from_sq, to_sq) = trigger.event();
-        let [e1, e2] = board_state.highlights([from_sq, to_sq]);
+        let [e1, e2] = highlights_map.many([from_sq, to_sq]);
         commands.entity(e1).insert((ShowingIndicator, LastMove));
         commands.entity(e2).insert((ShowingIndicator, LastMove));
     }
@@ -441,6 +448,7 @@ mod tests {
         pub trait TestAppExts {
             fn board_state(&self) -> &BoardState;
             fn tiles_map(&self) -> &TilesMap;
+            fn highlights_map(&self) -> &HighlightTilesMap;
 
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
@@ -465,12 +473,16 @@ mod tests {
                 self.world().resource::<TilesMap>()
             }
 
+            fn highlights_map(&self) -> &HighlightTilesMap {
+                self.world().resource::<HighlightTilesMap>()
+            }
+
             fn set_state(&mut self, state: SelectionState) {
                 *self.world_mut().resource_mut::<SelectionState>() = state;
             }
 
             fn set_selected(&mut self, square: Square) {
-                let entity = self.board_state().highlight(square);
+                let entity = self.highlights_map().at(square);
                 self.world_mut().entity_mut(entity).insert(Selected);
             }
 
@@ -518,7 +530,7 @@ mod tests {
 
             fn assert_selected(&mut self, expected: Option<Square>) {
                 if let Some(expected) = expected {
-                    let entity = self.board_state().highlight(expected);
+                    let entity = self.highlights_map().at(expected);
                     let is_selected = self.world().entity(entity).contains::<Selected>();
                     assert!(is_selected, "selected highlight tile entitiy");
                 } else {

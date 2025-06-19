@@ -14,7 +14,6 @@ use super::{PieceColor, PieceMeta, PieceType, Square, TileHints};
 pub struct BoardState {
     status: GameStatus,
     pieces: HashMap<Square, Entity>,
-    highlights: HashMap<Square, Entity>,
     tile_hints: HashMap<Square, TileHints>,
     board: Board,
     half_move_clock: u8,
@@ -43,7 +42,6 @@ impl FromWorld for BoardState {
         Self {
             status: GameStatus::Ongoing,
             pieces: HashMap::with_capacity(32),
-            highlights: HashMap::with_capacity(64),
             tile_hints: HashMap::with_capacity(64),
             board,
             half_move_clock,
@@ -175,25 +173,6 @@ impl BoardState {
         self.board = *board;
         self.half_move_clock = half_move_clock;
         self.full_move_count = full_move_count;
-    }
-
-    //------------------------------
-    // Highlight tiles
-    //------------------------------
-
-    pub fn highlight(&self, square: Square) -> Entity {
-        self.highlights.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
-    }
-
-    pub fn highlights<const N: usize>(&self, squares: [Square; N]) -> [Entity; N] {
-        squares.map(|s| self.highlight(s))
-    }
-
-    pub fn set_highlight(&mut self, square: Square, entity: Entity) {
-        match self.highlights.entry(square) {
-            Entry::Occupied(_) => panic!("highlight already in the state at {square}"),
-            Entry::Vacant(e) => e.insert(entity),
-        };
     }
 
     //------------------------------

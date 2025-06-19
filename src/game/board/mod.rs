@@ -31,6 +31,7 @@ impl Plugin for BoardPlugin {
         app.noop()
             // Resources
             .init_resource::<TilesMap>()
+            .init_resource::<HighlightTilesMap>()
             .init_resource::<BoardState>()
             // Observers
             .add_observer(set_board_on_load_game)
