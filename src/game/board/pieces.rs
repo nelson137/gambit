@@ -318,12 +318,14 @@ impl Command for AnimatePiece {
     fn apply(self, world: &mut World) {
         let Self { entity, from, to } = self;
 
+        let to_entity = world.resource::<TilesMap>().at(self.to);
+
         if world.get_resource::<IsPieceAnimationPluginAdded>().is_none() {
             warn!(%from, %to, ?entity, "PieceAnimationPlugin is not loaded, skipping animation");
+            world.entity_mut(entity).insert(ChildOf(to_entity));
             return;
         }
 
-        let to_entity = world.resource::<TilesMap>().at(self.to);
         let to_transl = if let Ok((transf, computed_node)) =
             world.query::<(&GlobalTransform, &ComputedNode)>().get(world, to_entity)
         {
