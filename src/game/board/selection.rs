@@ -526,11 +526,13 @@ mod tests {
                 }
             }
 
+            #[track_caller]
             fn assert_state(&self, expected: SelectionState) {
                 let actual = *self.world().resource::<SelectionState>();
                 assert_eq!(actual, expected);
             }
 
+            #[track_caller]
             fn assert_drag_container_empty(&mut self) {
                 let drag_container = get_tagged_entity::<DragContainer>(self);
                 let children = self.world().entity(drag_container).get::<Children>();
@@ -538,6 +540,7 @@ mod tests {
                 assert_eq!(actual, None, "drag container not empty");
             }
 
+            #[track_caller]
             fn assert_piece_has_dragging(&mut self, piece: Square) {
                 let expected = Some(Dragging { original_square: piece });
                 let entity = self.pieces_map().at(piece);
@@ -547,6 +550,7 @@ mod tests {
                 assert_eq!(actual, expected);
             }
 
+            #[track_caller]
             fn assert_selected(&mut self, expected: Option<Square>) {
                 if let Some(expected) = expected {
                     let entity = self.highlights_map().at(expected);
@@ -561,6 +565,7 @@ mod tests {
                 }
             }
 
+            #[track_caller]
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>) {
                 let hints_map = self.hints_map();
 
@@ -576,6 +581,7 @@ mod tests {
                 assert_eq!(actual, expected, "enabled hint entities");
             }
 
+            #[track_caller]
             fn assert_piece_on_tile(&mut self, sq: Square, color: PieceColor, typ: PieceType) {
                 let piece = self.pieces_map().at(sq);
                 let tile = self.tiles_map().at(sq);
