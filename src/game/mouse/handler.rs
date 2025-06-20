@@ -56,13 +56,13 @@ pub(super) fn update_drag_container(
     }
 }
 
-#[derive(Component, Clone)]
+#[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]
 #[component(storage = "SparseSet")]
 pub struct Dragging {
     pub original_square: Square,
 }
 
-pub(super) fn on_add_dragging_piece(
+pub fn on_add_dragging_piece(
     trigger: Trigger<OnAdd, Dragging>,
     mut commands: Commands,
     q_drag_container: Query<Entity, With<DragContainer>>,
@@ -71,7 +71,7 @@ pub(super) fn on_add_dragging_piece(
     commands.entity(q_drag_container.single().unwrap()).add_child(piece);
 }
 
-pub(super) fn on_remove_dragging_piece(
+pub fn on_remove_dragging_piece(
     trigger: Trigger<OnRemove, Dragging>,
     mut commands: Commands,
     tiles_map: Res<TilesMap>,

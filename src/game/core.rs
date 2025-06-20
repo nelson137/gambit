@@ -66,6 +66,12 @@ pub struct GameTestPlugin;
 
 impl Plugin for GameTestPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(bevy::prelude::ImagePlugin::default()).init_asset::<bevy::text::Font>();
+        #[cfg(feature = "debug")]
+        app.add_plugins(bevy::log::LogPlugin { level: bevy::log::Level::TRACE, ..default() });
+
+        app.noop()
+            .add_plugins(bevy::prelude::ImagePlugin::default())
+            .init_asset::<bevy::text::Font>()
+            .noop();
     }
 }

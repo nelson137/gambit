@@ -3,7 +3,11 @@ use std::fmt::{self, Write};
 use bevy::prelude::*;
 
 use crate::{
-    game::{LoadGame, menu::MenuState, mouse::Dragging},
+    game::{
+        LoadGame,
+        menu::MenuState,
+        mouse::{self, Dragging},
+    },
     utils::NoopExts,
 };
 
@@ -22,6 +26,8 @@ impl Plugin for SelectionPlugin {
             // Events
             .add_event::<MouseSelectionEvent>()
             // Observers
+            .add_observer(mouse::on_add_dragging_piece)
+            .add_observer(mouse::on_remove_dragging_piece)
             .add_observer(Select::handle)
             .add_observer(Unselect::handle)
             .add_observer(EnableSelectionHighlight::handle)
@@ -120,7 +126,7 @@ fn handle_mouse_selection_events(
     mut event_reader: EventReader<MouseSelectionEvent>,
 ) {
     for &event in event_reader.read() {
-        trace!(%event, "Processing mouse selection");
+        trace!(state = ?*selection_state, %event, "Processing mouse selection");
         let action = match *selection_state {
             SelectionState::Unselected => match event {
                 MouseSelectionEvent::MouseDown(square) => {
@@ -459,15 +465,16 @@ mod tests {
             fn set_state(&mut self, state: SelectionState);
             fn set_selected(&mut self, square: Square);
             fn set_hints(&mut self, squares: impl IntoIterator<Item = Square>);
-            fn set_piece_to_drag_container(&mut self, square: Square);
+            fn set_dragging_piece(&mut self, square: Square);
+
+            fn entity_debug_name(&mut self, entity: Entity) -> String;
 
             fn assert_state(&self, expected: SelectionState);
             fn assert_drag_container_empty(&mut self);
-            fn assert_piece_in_drag_container(&mut self, expected: Square);
-            fn assert_piece_move_marker(&mut self, expected: MovePiece);
+            fn assert_piece_has_dragging(&mut self, piece: Square);
             fn assert_selected(&mut self, expected: Option<Square>);
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
-            fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType);
+            fn assert_piece_on_tile(&mut self, sq: Square, color: PieceColor, typ: PieceType);
         }
 
         impl TestAppExts for App {
@@ -504,10 +511,19 @@ mod tests {
                 }
             }
 
-            fn set_piece_to_drag_container(&mut self, square: Square) {
-                let parent = get_tagged_entity::<DragContainer>(self);
-                let child = self.pieces_map().at(square);
-                self.world_mut().entity_mut(parent).add_child(child);
+            fn set_dragging_piece(&mut self, square: Square) {
+                let piece = self.pieces_map().at(square);
+                self.world_mut().entity_mut(piece).insert(Dragging { original_square: square });
+            }
+
+            fn entity_debug_name(&mut self, entity: Entity) -> String {
+                let world = self.world_mut();
+                let mut q = world.query::<NameOrEntity>();
+                let name_or_entity = q.get(world, entity).unwrap();
+                match name_or_entity.name {
+                    Some(name) => format!("{entity:?} ({name})"),
+                    None => format!("{entity:?}"),
+                }
             }
 
             fn assert_state(&self, expected: SelectionState) {
@@ -522,20 +538,13 @@ mod tests {
                 assert_eq!(actual, None, "drag container not empty");
             }
 
-            fn assert_piece_in_drag_container(&mut self, piece: Square) {
-                let piece = self.pieces_map().at(piece);
-                let expected = Some(HashSet::<Entity>::from_iter([piece]));
+            fn assert_piece_has_dragging(&mut self, piece: Square) {
+                let expected = Some(Dragging { original_square: piece });
+                let entity = self.pieces_map().at(piece);
 
-                let drag_container = get_tagged_entity::<DragContainer>(self);
-                let children = self.world().entity(drag_container).get::<Children>();
-                let actual = children.map(|c| HashSet::from_iter(c.iter()));
+                let actual = self.world().entity(entity).get::<Dragging>().copied();
 
                 assert_eq!(actual, expected);
-            }
-
-            fn assert_piece_move_marker(&mut self, expected: MovePiece) {
-                let actual = self.world_mut().resource_mut::<Events<MovePiece>>().drain().next();
-                assert_eq!(actual, Some(expected), "move piece event on piece");
             }
 
             fn assert_selected(&mut self, expected: Option<Square>) {
@@ -567,7 +576,7 @@ mod tests {
                 assert_eq!(actual, expected, "enabled hint entities");
             }
 
-            fn assert_piece_on_tile(&self, sq: Square, color: PieceColor, typ: PieceType) {
+            fn assert_piece_on_tile(&mut self, sq: Square, color: PieceColor, typ: PieceType) {
                 let piece = self.pieces_map().at(sq);
                 let tile = self.tiles_map().at(sq);
                 let piece = self.world().entity(piece);
@@ -575,13 +584,14 @@ mod tests {
                 assert_eq!(
                     piece_typ,
                     Some(&PieceMeta::new(color, typ)),
-                    "piece at square {sq} in piece state is not a {color} {typ}"
+                    "piece at {sq} in pieces map is not a {color} {typ}"
                 );
-                let piece_parent = piece.get::<ChildOf>().map(ChildOf::parent);
+                let piece_parent =
+                    piece.get::<ChildOf>().cloned().map(|c| self.entity_debug_name(c.parent()));
                 assert_eq!(
                     piece_parent,
-                    Some(tile),
-                    "piece at square {sq} in piece state is a child of {sq} tile"
+                    Some(self.entity_debug_name(tile)),
+                    "piece at {sq} in pieces map is not a child of tile {sq}"
                 );
             }
         }
@@ -603,7 +613,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::D2));
-        app.assert_piece_in_drag_container(Square::D2);
+        app.assert_piece_has_dragging(Square::D2);
         app.assert_selected(Some(Square::D2));
         app.assert_hints([Square::D3, Square::D4]);
     }
@@ -638,13 +648,13 @@ mod tests {
         app.set_state(SelectionState::SelectingDragging(Square::D2));
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
-        app.set_piece_to_drag_container(Square::D2);
+        app.set_dragging_piece(Square::D2);
 
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, false));
+        app.assert_piece_on_tile(Square::D4, PieceColor::WHITE, PieceType::PAWN);
     }
 
     #[test]
@@ -653,7 +663,7 @@ mod tests {
         app.set_state(SelectionState::SelectingDragging(Square::D2));
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
-        app.set_piece_to_drag_container(Square::D2);
+        app.set_dragging_piece(Square::D2);
 
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
@@ -675,7 +685,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::SelectedDragging(Square::D2));
-        app.assert_piece_in_drag_container(Square::D2);
+        app.assert_piece_has_dragging(Square::D2);
         app.assert_selected(Some(Square::D2));
         app.assert_hints([Square::D3, Square::D4]);
     }
@@ -691,7 +701,7 @@ mod tests {
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, true));
+        app.assert_piece_on_tile(Square::D4, PieceColor::WHITE, PieceType::PAWN);
     }
 
     #[test]
@@ -706,7 +716,7 @@ mod tests {
 
         app.assert_state(SelectionState::SelectingDragging(Square::H2));
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
-        app.assert_piece_in_drag_container(Square::H2);
+        app.assert_piece_has_dragging(Square::H2);
         app.assert_selected(Some(Square::H2));
         app.assert_hints([Square::H3, Square::H4]);
     }
@@ -747,7 +757,7 @@ mod tests {
         app.set_state(SelectionState::SelectedDragging(Square::D2));
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
-        app.set_piece_to_drag_container(Square::D2);
+        app.set_dragging_piece(Square::D2);
 
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D2));
         app.update();
@@ -764,13 +774,13 @@ mod tests {
         app.set_state(SelectionState::SelectedDragging(Square::D2));
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
-        app.set_piece_to_drag_container(Square::D2);
+        app.set_dragging_piece(Square::D2);
 
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
-        app.assert_piece_move_marker(MovePiece::new(Square::D2, Square::D4, None, false));
+        app.assert_piece_on_tile(Square::D4, PieceColor::WHITE, PieceType::PAWN);
     }
 
     #[test]
@@ -779,7 +789,7 @@ mod tests {
         app.set_state(SelectionState::SelectedDragging(Square::D2));
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
-        app.set_piece_to_drag_container(Square::D2);
+        app.set_dragging_piece(Square::D2);
 
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
@@ -804,7 +814,7 @@ mod tests {
         // `a3`
         app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A2));
         app.update();
-        app.assert_piece_in_drag_container(Square::A2);
+        app.assert_piece_has_dragging(Square::A2);
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A3));
         app.update();
         app.assert_piece_on_tile(Square::A3, PieceColor::WHITE, PieceType::PAWN);
@@ -812,7 +822,7 @@ mod tests {
         // `a6`
         app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A7));
         app.update();
-        app.assert_piece_in_drag_container(Square::A7);
+        app.assert_piece_has_dragging(Square::A7);
         app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A6));
         app.update();
         app.assert_piece_on_tile(Square::A6, PieceColor::BLACK, PieceType::PAWN);
@@ -820,6 +830,6 @@ mod tests {
         // Start dragging `a3`
         app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A3));
         app.update();
-        app.assert_piece_in_drag_container(Square::A3);
+        app.assert_piece_has_dragging(Square::A3);
     }
 }
