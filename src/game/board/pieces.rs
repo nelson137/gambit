@@ -418,7 +418,7 @@ pub(super) fn on_remove_animating(
     let entity = trigger.target();
     let Ok(animating) = q_animating.get(entity) else { return };
 
-    commands.entity(animating.to_entity).add_child(entity);
+    commands.entity(entity).insert(ChildOf(animating.to_entity));
 
     let mut node = q_node.get_mut(entity).unwrap();
     node.left = Val::Px(0.0);

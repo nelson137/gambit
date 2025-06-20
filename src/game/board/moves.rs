@@ -137,7 +137,7 @@ impl Command for MoveUiPiece {
             AnimatePiece::new(entity, from_sq, to_sq).apply(world);
         } else {
             let to_tile_entity = world.resource::<TilesMap>().at(to_sq);
-            world.entity_mut(to_tile_entity).add_children(&[entity]);
+            world.entity_mut(entity).insert(ChildOf(to_tile_entity));
         }
     }
 }
