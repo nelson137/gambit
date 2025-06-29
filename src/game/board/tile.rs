@@ -80,7 +80,7 @@ pub fn spawn_tiles(
                         Node {
                             position_type: PositionType::Absolute,
                             bottom: Val::Percent(3.5),
-                            right: Val::Percent(8.0),
+                            right: Val::Percent(6.0),
                             ..default()
                         },
                     ));
