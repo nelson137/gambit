@@ -41,6 +41,7 @@ pub struct EvaluationBarContainer;
 pub struct BoardAndPanelsContainer;
 
 #[derive(Component)]
+#[require(SortIndex(1))]
 pub struct BoardContainer;
 
 pub fn spawn_ui(mut commands: Commands) {
@@ -84,7 +85,6 @@ pub fn spawn_ui(mut commands: Commands) {
                     children![(
                         BoardContainer,
                         debug_name!("Board Container"),
-                        SortIndex(1),
                         Node {
                             flex_grow: 1.0,
                             min_width: MIN_BOARD_SIZE,

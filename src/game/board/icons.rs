@@ -9,6 +9,7 @@ use crate::{
 use super::{BoardState, PieceColor, Square, Tile, TilesMap};
 
 #[derive(Component, Clone, Copy)]
+#[require(Visibility::Hidden, GlobalZIndex(Z_END_GAME_ICONS))]
 pub(super) enum EndGameIcon {
     Winner,
     LoserBlack,
@@ -63,8 +64,6 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon::Winner,
             debug_name!("Winner Icon"),
             ImageNode::new(asset_server.load("images/checkmate/winner.png")),
-            Visibility::Hidden,
-            GlobalZIndex(Z_END_GAME_ICONS),
             ChildOf(parent),
         ))
         .id();
@@ -74,8 +73,6 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon::LoserBlack,
             debug_name!("Black Loser Icon"),
             ImageNode::new(asset_server.load("images/checkmate/loser-black.png")),
-            Visibility::Hidden,
-            GlobalZIndex(Z_END_GAME_ICONS),
             ChildOf(parent),
         ))
         .id();
@@ -85,8 +82,6 @@ pub(super) fn spawn_end_game_icons(
             EndGameIcon::LoserWhite,
             debug_name!("White Loser Icon"),
             ImageNode::new(asset_server.load("images/checkmate/loser-white.png")),
-            Visibility::Hidden,
-            GlobalZIndex(Z_END_GAME_ICONS),
             ChildOf(parent),
         ))
         .id();
@@ -95,8 +90,6 @@ pub(super) fn spawn_end_game_icons(
         .spawn((
             EndGameIcon::DrawBlack,
             ImageNode::new(asset_server.load("images/draw/draw-black.png")),
-            Visibility::Hidden,
-            GlobalZIndex(Z_END_GAME_ICONS),
             ChildOf(parent),
         ))
         .id();
@@ -105,8 +98,6 @@ pub(super) fn spawn_end_game_icons(
         .spawn((
             EndGameIcon::DrawWhite,
             ImageNode::new(asset_server.load("images/draw/draw-white.png")),
-            Visibility::Hidden,
-            GlobalZIndex(Z_END_GAME_ICONS),
             ChildOf(parent),
         ))
         .id();

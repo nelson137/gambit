@@ -11,6 +11,7 @@ use crate::{
 use super::{Square, UiBoard};
 
 #[derive(Component)]
+#[require(GlobalZIndex(Z_TILE))]
 pub struct Tile;
 
 /// The "black" bord color.
@@ -58,7 +59,6 @@ pub fn spawn_tiles(
                     ..default()
                 },
                 BackgroundColor(color),
-                GlobalZIndex(Z_TILE),
             ))
             .with_children(|cmds| {
                 pub const BOARD_TEXT_FONT_SIZE: f32 = 16.0;

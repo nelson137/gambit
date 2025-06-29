@@ -29,15 +29,11 @@ pub(super) fn mouse_handler(
 }
 
 #[derive(Component)]
+#[require(GlobalZIndex(Z_PIECE_SELECTED))]
 pub struct DragContainer;
 
 pub(super) fn spawn_drag_container(mut commands: Commands) {
-    commands.spawn((
-        DragContainer,
-        debug_name!("Drag Container"),
-        Node::DEFAULT,
-        GlobalZIndex(Z_PIECE_SELECTED),
-    ));
+    commands.spawn((DragContainer, debug_name!("Drag Container"), Node::DEFAULT));
 }
 
 pub(super) fn update_drag_container(

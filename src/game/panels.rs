@@ -166,10 +166,7 @@ impl Command for PanelBuilderCmd {
 
                     cmds.spawn((
                         MaterialAdvantageLabel(color),
-                        Text("+6".to_string()),
                         TextFont { font, font_size: 12.0, ..default() },
-                        TextColor(Color::srgba(1.0, 1.0, 1.0, 0.5)),
-                        Visibility::Hidden,
                     ));
                 });
             });
@@ -180,6 +177,11 @@ impl Command for PanelBuilderCmd {
 }
 
 #[derive(Deref, Component)]
+#[require(
+    Text("+6".to_string()),
+    TextColor(Color::srgba(1.0, 1.0, 1.0, 0.5)),
+    Visibility::Hidden,
+)]
 pub struct MaterialAdvantageLabel(PieceColor);
 
 fn captures_images_sizes(

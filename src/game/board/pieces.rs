@@ -25,6 +25,7 @@ macro_rules! asset_path {
 }
 
 #[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
+#[require(GlobalZIndex(Z_PIECE))]
 pub struct PieceMeta {
     pub color: PieceColor,
     pub typ: PieceType,
@@ -209,7 +210,6 @@ pub(super) fn spawn_pieces_on_load_game(
                     height: Val::Percent(100.0),
                     ..default()
                 },
-                GlobalZIndex(Z_PIECE),
             ))
             .id();
 
@@ -282,6 +282,7 @@ impl Plugin for PieceAnimationPlugin {
 struct IsPieceAnimationPluginAdded;
 
 #[derive(Component)]
+#[require(GlobalZIndex(Z_PIECE_SELECTED))]
 struct AnimationLayer;
 
 fn spawn_animation_layer(mut commands: Commands) {
@@ -295,7 +296,6 @@ fn spawn_animation_layer(mut commands: Commands) {
             height: Val::Percent(100.0),
             ..default()
         },
-        GlobalZIndex(Z_PIECE_SELECTED),
     ));
 }
 

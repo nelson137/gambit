@@ -40,13 +40,24 @@ impl Plugin for PromotionPlugin {
 pub struct PromoterSystem;
 
 #[derive(Component)]
+#[require(Visibility::Hidden, GlobalZIndex(Z_PROMOTER))]
 pub struct PromotionUi(PieceColor);
 
 #[derive(Component, Debug)]
+#[require(Button, FocusPolicy::Block, BackgroundColor(Color::WHITE))]
 pub struct PromotionButton(PieceType);
 
 #[derive(Component)]
+#[require(Button, BackgroundColor(CANCEL_BUTTON_BG_COLOR), FocusPolicy::Block)]
 pub struct PromotionCancelButton;
+
+/// `#f1f1f1`
+const CANCEL_BUTTON_BG_COLOR: Color =
+    Color::srgb(0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0);
+
+/// `#8b8987`
+const CANCEL_BUTTON_FG_COLOR: Color =
+    Color::srgb(0x8b as f32 / 255.0, 0x89 as f32 / 255.0, 0x87 as f32 / 255.0);
 
 pub fn spawn_promoters(
     mut commands: Commands,
@@ -74,12 +85,8 @@ pub fn spawn_promoters(
                     flex_direction,
                     ..default()
                 },
-                Visibility::Hidden,
-                GlobalZIndex(Z_PROMOTER),
             ))
             .with_children(|cmds| {
-                const PROMO_TILE_COLOR: Color = Color::WHITE;
-
                 for typ in [PieceType::QUEEN, PieceType::KNIGHT, PieceType::ROOK, PieceType::BISHOP]
                 {
                     let asset_path = PieceMeta::new(color, typ).asset_path();
@@ -87,9 +94,6 @@ pub fn spawn_promoters(
                     cmds.spawn((
                         debug_name_f!("Promotion Button ({color}) ({typ})"),
                         PromotionButton(typ),
-                        Button,
-                        FocusPolicy::Block,
-                        BackgroundColor(PROMO_TILE_COLOR),
                         children![(
                             debug_name_f!("Promotion Piece ({color}) ({typ})"),
                             ImageNode::new(asset_server.load(asset_path)),
@@ -103,29 +107,18 @@ pub fn spawn_promoters(
                     ));
                 }
 
-                /// `#f1f1f1`
-                const CANCEL_BUTTON_BG_COLOR: Color =
-                    Color::srgb(0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0, 0xf1 as f32 / 255.0);
-
-                /// `#8b8987`
-                const CANCEL_BUTTON_FG_COLOR: Color =
-                    Color::srgb(0x8b as f32 / 255.0, 0x89 as f32 / 255.0, 0x87 as f32 / 255.0);
-
                 cmds.spawn((
                     debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
                     Node { flex_direction, ..default() },
                     children![(
                         debug_name_f!("Promotion Cancel Button ({color})"),
                         PromotionCancelButton,
-                        Button,
                         Node {
                             justify_content: JustifyContent::Center,
                             align_items: AlignItems::Center,
                             width: Val::Percent(100.0),
                             ..default()
                         },
-                        BackgroundColor(CANCEL_BUTTON_BG_COLOR),
-                        FocusPolicy::Block,
                         {
                             let font = asset_server.load(FONT_PATH);
                             children![(

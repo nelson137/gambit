@@ -7,6 +7,7 @@ use crate::{debug_name_f, game::consts::Z_HIGHLIGHT_TILE};
 use super::{Square, TilesMap};
 
 #[derive(Component)]
+#[require(Visibility::Hidden, BackgroundColor(COLOR_HIGHLIGHT), GlobalZIndex(Z_HIGHLIGHT_TILE))]
 pub struct HighlightTile;
 
 /// The color used to highlight tiles.
@@ -36,9 +37,6 @@ pub fn spawn_highlight_tiles(
                     height: Val::Percent(100.0),
                     ..default()
                 },
-                BackgroundColor(COLOR_HIGHLIGHT),
-                Visibility::Hidden,
-                GlobalZIndex(Z_HIGHLIGHT_TILE),
             ))
             .id();
 

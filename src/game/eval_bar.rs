@@ -24,6 +24,7 @@ impl Plugin for EvaluationBarPlugin {
 }
 
 #[derive(Component)]
+#[require(BackgroundColor(Color::WHITE))]
 pub struct EvaluationBar;
 
 #[derive(Event)]
@@ -57,7 +58,6 @@ pub fn spawn_eval_bar(mut commands: Commands) {
                     height: Val::Percent(50.0),
                     ..default()
                 },
-                BackgroundColor(Color::WHITE),
             )],
         ))
         .id();

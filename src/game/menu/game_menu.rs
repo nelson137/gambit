@@ -13,6 +13,7 @@ use crate::{
 use super::MenuState;
 
 #[derive(Component)]
+#[require(BackgroundColor(MENU_DIM_LAYER_COLOR), GlobalZIndex(Z_MENU))]
 pub(super) struct GameMenuDimLayer;
 
 const MENU_DIM_LAYER_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.7);
@@ -31,12 +32,11 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
             align_items: AlignItems::Center,
             ..default()
         },
-        BackgroundColor(MENU_DIM_LAYER_COLOR),
-        GlobalZIndex(Z_MENU),
     ));
 }
 
 #[derive(Component)]
+#[require(BackgroundColor(MENU_COLOR))]
 pub struct GameMenu;
 
 /// `#302e2b`
@@ -62,7 +62,6 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
                 align_items: AlignItems::Center,
                 ..default()
             },
-            BackgroundColor(MENU_COLOR),
         ))
         .id();
     commands.entity(parent_entity).add_child(menu_entity);
@@ -94,15 +93,18 @@ pub fn menu_size(
 }
 
 #[derive(Component)]
+#[require(Text("Gambit".to_string()), TextColor(Color::WHITE))]
 pub struct GameMenuTitle;
 
 #[derive(Component)]
 pub struct GameMenuButtonsContainer;
 
 #[derive(Component)]
+#[require(Text("Start".to_string()), TextColor(Color::WHITE))]
 pub struct GameMenuButtonsText;
 
 #[derive(Clone, Copy, Debug, Component)]
+#[require(Button, BackgroundColor(BUTTON_COLOR_DEFAULT))]
 pub(super) enum GameMenuButton {
     Start,
     LoadFen,
@@ -132,9 +134,7 @@ pub fn spawn_menu_elements(
         .spawn((
             GameMenuTitle,
             debug_name!("Game Menu Title"),
-            Text("Gambit".to_string()),
             TextFont { font, font_size: INIT_MENU_TITLE_SIZE, ..default() },
-            TextColor(Color::WHITE),
             Node { margin: UiRect::top(Val::Percent(4.0)), ..default() },
         ))
         .id();
@@ -179,15 +179,11 @@ pub fn spawn_menu_buttons(
         .spawn((
             GameMenuButton::Start,
             debug_name!("Start Game Button"),
-            Button,
             button_node.clone(),
-            BackgroundColor(BUTTON_COLOR_DEFAULT),
             children![(
                 debug_name!("Start Game Button Text"),
                 GameMenuButtonsText,
-                Text("Start".to_string()),
                 text_font.clone(),
-                TextColor(Color::WHITE),
             )],
         ))
         .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
@@ -199,9 +195,7 @@ pub fn spawn_menu_buttons(
         .spawn((
             GameMenuButton::LoadFen,
             debug_name!("Load FEN Button"),
-            Button,
             button_node,
-            BackgroundColor(BUTTON_COLOR_DEFAULT),
             children![(
                 debug_name!("Load FEN Button Text"),
                 GameMenuButtonsText,

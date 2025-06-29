@@ -7,6 +7,7 @@ use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
 use super::{Square, TilesMap};
 
 #[derive(Component, Clone, Copy)]
+#[require(Visibility::Hidden, GlobalZIndex(Z_MOVE_HINT))]
 pub enum Hint {
     Move,
     Capture,
@@ -75,8 +76,6 @@ pub fn spawn_hints(
                     align_items: AlignItems::Center,
                     ..default()
                 },
-                Visibility::Hidden,
-                GlobalZIndex(Z_MOVE_HINT),
                 children![(
                     ImageNode::new(move_hint_texture.clone()),
                     Node {
@@ -103,8 +102,6 @@ pub fn spawn_hints(
                     height: Val::Percent(100.0),
                     ..default()
                 },
-                Visibility::Hidden,
-                GlobalZIndex(Z_MOVE_HINT),
             ))
             .id();
 
