@@ -10,6 +10,41 @@ impl NoopExts for App {}
 impl NoopExts for World {}
 impl NoopExts for ecs::component::ComponentHooks {}
 
+#[cfg(feature = "debug")]
+#[macro_export]
+macro_rules! debug_name {
+    ($name:literal) => {
+        Name::new($name)
+    };
+    ($name:expr) => {
+        Name::new($name)
+    };
+}
+
+#[cfg(not(feature = "debug"))]
+#[macro_export]
+macro_rules! debug_name {
+    ($($args:tt),* $(,)?) => {
+        ()
+    };
+}
+
+#[cfg(feature = "debug")]
+#[macro_export]
+macro_rules! debug_name_f {
+    ($name_fmt:literal $(, $name_args:expr)* $(,)?) => {
+        Name::new(format!($name_fmt $(, $name_args)*))
+    };
+}
+
+#[cfg(not(feature = "debug"))]
+#[macro_export]
+macro_rules! debug_name_f {
+    ($name_fmt:literal $(, $args:expr)* $(,)?) => {
+        ()
+    };
+}
+
 pub trait ReparentInTag {
     fn reparent_in_tag<Tag: Component>(
         &mut self,
