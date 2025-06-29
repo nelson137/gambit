@@ -215,7 +215,8 @@ impl BoardState {
     }
 
     pub fn move_is_en_passant(&self, color: PieceColor, to_sq: Square) -> bool {
-        to_sq.backward(color) == self.en_passant()
+        let ep = self.en_passant();
+        ep.is_some() && to_sq.backward(color) == ep
     }
 
     #[must_use]
@@ -358,5 +359,38 @@ impl ChessBoardExtsDebug for chess::BoardBuilder {
 
             acc
         })
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn build_board_state(fen: &str) -> BoardState {
+        let mut world = World::new();
+        world.insert_resource(CliArgs { fen: Some(fen.into()) });
+        world.init_resource::<BoardState>();
+        world.remove_resource().unwrap()
+    }
+
+    #[test]
+    fn move_is_en_passant() {
+        let mut board_state = build_board_state("k7/3p4/8/2P5/8/8/8/K7 b - - 0 1");
+        board_state.make_board_move(Square::D7, Square::D5, None);
+        assert_eq!(board_state.en_passant(), Some(Square::D5));
+        assert!(board_state.move_is_en_passant(PieceColor::WHITE, Square::D6));
+    }
+
+    #[test]
+    fn move_isnt_en_passant() {
+        let mut board_state = build_board_state("k7/3p4/8/4N3/8/8/8/K7 b - - 0 1");
+        board_state.make_board_move(Square::D7, Square::D5, None);
+        assert!(!board_state.move_is_en_passant(PieceColor::WHITE, Square::D6));
+    }
+
+    #[test]
+    fn move_isnt_en_passant_when_there_is_no_ep() {
+        let board_state = build_board_state("k7/8/8/8/8/5N2/8/K7 w - - 0 1");
+        assert!(!board_state.move_is_en_passant(PieceColor::WHITE, Square::G1));
     }
 }
