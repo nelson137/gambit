@@ -249,12 +249,15 @@ fn handle_mouse_selection_events(
 }
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 struct Selected;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 struct EnabledHint;
 
 #[derive(Component)]
+#[component(storage = "SparseSet")]
 struct LastMove;
 
 #[derive(Component)]
