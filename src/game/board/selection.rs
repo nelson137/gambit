@@ -435,7 +435,6 @@ mod tests {
             board::{MovePlugin, PieceMeta, TilesMap},
             core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
-            mouse::DragContainer,
             ui::GameUiPlugin,
         };
 
@@ -454,10 +453,6 @@ mod tests {
             app
         }
 
-        pub fn get_tagged_entity<Tag: Component>(app: &mut App) -> Entity {
-            app.world_mut().query_filtered::<Entity, With<Tag>>().single(app.world()).unwrap()
-        }
-
         #[allow(dead_code)]
         pub trait TestAppExts {
             fn tiles_map(&self) -> &TilesMap;
@@ -473,7 +468,6 @@ mod tests {
             fn entity_debug_name(&mut self, entity: Entity) -> String;
 
             fn assert_state(&self, expected: SelectionState);
-            fn assert_drag_container_empty(&mut self);
             fn assert_piece_has_dragging(&mut self, piece: Square);
             fn assert_selected(&mut self, expected: Option<Square>);
             fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
@@ -533,14 +527,6 @@ mod tests {
             fn assert_state(&self, expected: SelectionState) {
                 let actual = *self.world().resource::<SelectionState>();
                 assert_eq!(actual, expected);
-            }
-
-            #[track_caller]
-            fn assert_drag_container_empty(&mut self) {
-                let drag_container = get_tagged_entity::<DragContainer>(self);
-                let children = self.world().entity(drag_container).get::<Children>();
-                let actual = children.map(|c| HashSet::<Entity>::from_iter(c.iter()));
-                assert_eq!(actual, None, "drag container not empty");
             }
 
             #[track_caller]

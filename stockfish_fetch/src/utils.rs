@@ -1,6 +1,6 @@
 use std::{ffi::OsStr, fmt, fs::File, io, process::Command, sync::Mutex};
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use shell_escape::escape;
 use tracing_subscriber::fmt::MakeWriter;
 
@@ -73,7 +73,7 @@ pub trait CommandExts {
 }
 
 impl CommandExts for Command {
-    fn display(&self) -> CommandDisplay {
+    fn display(&self) -> CommandDisplay<'_> {
         CommandDisplay(self)
     }
 }

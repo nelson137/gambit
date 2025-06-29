@@ -314,7 +314,7 @@ impl ChessBoardExtsDebug for chess::BitBoard {
     fn to_pretty_string(&self) -> String {
         let output = String::with_capacity(127);
         chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
-            if !acc.is_empty() && sq.to_int() % 8 == 0 {
+            if !acc.is_empty() && sq.to_int().is_multiple_of(8) {
                 acc.push('\n');
             }
 
@@ -324,7 +324,7 @@ impl ChessBoardExtsDebug for chess::BitBoard {
                 'X'
             });
 
-            if (sq.to_int() + 1) % 8 > 0 {
+            if !(sq.to_int() + 1).is_multiple_of(8) {
                 acc.push(' ');
             }
 
@@ -347,13 +347,13 @@ impl ChessBoardExtsDebug for chess::BoardBuilder {
         chess::ALL_SQUARES.chunks(8).rev().flatten().copied().fold(output, |mut acc, sq| {
             let sq_str = self[sq].map(|(p, c)| p.to_string(c)).unwrap_or_else(|| '.'.into());
 
-            if !acc.is_empty() && sq.to_int() % 8 == 0 {
+            if !acc.is_empty() && sq.to_int().is_multiple_of(8) {
                 acc.push('\n');
             }
 
             acc.push_str(&sq_str);
 
-            if (sq.to_int() + 1) % 8 > 0 {
+            if !(sq.to_int() + 1).is_multiple_of(8) {
                 acc.push(' ');
             }
 

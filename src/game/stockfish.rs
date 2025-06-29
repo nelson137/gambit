@@ -61,7 +61,7 @@ pub enum SfCommand {
 }
 
 impl SfCommand {
-    pub fn to_str(&self) -> Cow<str> {
+    pub fn to_str(&self) -> Cow<'_, str> {
         match self {
             Self::Uci => Cow::Borrowed("uci\n"),
             Self::IsReady => Cow::Borrowed("isready\n"),
@@ -76,7 +76,7 @@ impl SfCommand {
         }
     }
 
-    fn to_bytes(&self) -> Cow<[u8]> {
+    fn to_bytes(&self) -> Cow<'_, [u8]> {
         match self.to_str() {
             Cow::Borrowed(s) => Cow::Borrowed(s.as_bytes()),
             Cow::Owned(s) => Cow::Owned(s.into_bytes()),

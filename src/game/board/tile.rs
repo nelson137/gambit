@@ -45,7 +45,7 @@ pub fn spawn_tiles(
         let rank = square.get_rank();
 
         let file_rank_sum = rank.to_index() + file.to_index();
-        let color = if file_rank_sum % 2 == 0 { COLOR_BLACK } else { COLOR_WHITE };
+        let color = if file_rank_sum.is_multiple_of(2) { COLOR_BLACK } else { COLOR_WHITE };
 
         let tile_entity = commands
             .spawn((
@@ -68,8 +68,11 @@ pub fn spawn_tiles(
                     font: asset_server.load(FONT_PATH),
                     ..default()
                 };
-                let text_color =
-                    TextColor(if file_rank_sum % 2 == 0 { COLOR_WHITE } else { COLOR_BLACK });
+                let text_color = TextColor(if file_rank_sum.is_multiple_of(2) {
+                    COLOR_WHITE
+                } else {
+                    COLOR_BLACK
+                });
 
                 // File markers
                 if square.get_rank() == Rank::First {

@@ -1,6 +1,5 @@
 use bevy::{
     app::{App, Plugin},
-    prelude::AssetApp,
     utils::default,
     window::{Window, WindowResolution},
 };
@@ -62,10 +61,14 @@ impl Plugin for GameHeadPlugin {
     }
 }
 
+#[cfg(test)]
 pub struct GameTestPlugin;
 
+#[cfg(test)]
 impl Plugin for GameTestPlugin {
     fn build(&self, app: &mut App) {
+        use bevy::prelude::AssetApp;
+
         #[cfg(feature = "debug")]
         app.add_plugins(bevy::log::LogPlugin { level: bevy::log::Level::TRACE, ..default() });
 

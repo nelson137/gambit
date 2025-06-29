@@ -257,7 +257,7 @@ impl PiecesMap {
         self.0.remove(&ep_sq)
     }
 
-    pub fn entry(&mut self, square: Square) -> Entry<Square, Entity> {
+    pub fn entry(&mut self, square: Square) -> Entry<'_, Square, Entity> {
         self.0.entry(square)
     }
 
