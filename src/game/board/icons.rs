@@ -61,8 +61,8 @@ pub(super) fn spawn_end_game_icons(
 
     let winner = commands
         .spawn((
-            EndGameIcon::Winner,
             debug_name!("Winner Icon"),
+            EndGameIcon::Winner,
             ImageNode::new(asset_server.load("images/checkmate/winner.png")),
             ChildOf(parent),
         ))
@@ -70,8 +70,8 @@ pub(super) fn spawn_end_game_icons(
 
     let loser_black = commands
         .spawn((
-            EndGameIcon::LoserBlack,
             debug_name!("Black Loser Icon"),
+            EndGameIcon::LoserBlack,
             ImageNode::new(asset_server.load("images/checkmate/loser-black.png")),
             ChildOf(parent),
         ))
@@ -79,8 +79,8 @@ pub(super) fn spawn_end_game_icons(
 
     let loser_white = commands
         .spawn((
-            EndGameIcon::LoserWhite,
             debug_name!("White Loser Icon"),
+            EndGameIcon::LoserWhite,
             ImageNode::new(asset_server.load("images/checkmate/loser-white.png")),
             ChildOf(parent),
         ))

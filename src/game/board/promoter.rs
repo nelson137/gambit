@@ -75,8 +75,8 @@ pub fn spawn_promoters(
         };
         let promo_entity = commands
             .spawn((
-                PromotionUi(color),
                 debug_name_f!("Promoter ({color})"),
+                PromotionUi(color),
                 Node {
                     position_type: PositionType::Absolute,
                     left,

@@ -20,8 +20,8 @@ const MENU_DIM_LAYER_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.7);
 
 pub fn spawn_menu_dim_layer(mut commands: Commands) {
     commands.spawn((
-        GameMenuDimLayer,
         debug_name!("Game Menu Dim Layer"),
+        GameMenuDimLayer,
         Node {
             position_type: PositionType::Absolute,
             top: Val::Px(0.0),
@@ -52,8 +52,8 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
 
     let menu_entity = commands
         .spawn((
-            GameMenu,
             debug_name!("Game Menu"),
+            GameMenu,
             Node {
                 width: Val::Px(INIT_MENU_WIDTH),
                 height: Val::Px(INIT_MENU_HEIGHT),
@@ -132,8 +132,8 @@ pub fn spawn_menu_elements(
     let font = asset_server.load(TITLE_FONT_PATH);
     let title_entity = commands
         .spawn((
-            GameMenuTitle,
             debug_name!("Game Menu Title"),
+            GameMenuTitle,
             TextFont { font, font_size: INIT_MENU_TITLE_SIZE, ..default() },
             Node { margin: UiRect::top(Val::Percent(4.0)), ..default() },
         ))
@@ -141,8 +141,8 @@ pub fn spawn_menu_elements(
 
     let buttons_container_entity = commands
         .spawn((
-            GameMenuButtonsContainer,
             debug_name!("Game Menu Buttons Container"),
+            GameMenuButtonsContainer,
             Node {
                 width: Val::Percent(100.0),
                 flex_grow: 1.0,
@@ -177,8 +177,8 @@ pub fn spawn_menu_buttons(
 
     let start_button_entity = commands
         .spawn((
-            GameMenuButton::Start,
             debug_name!("Start Game Button"),
+            GameMenuButton::Start,
             button_node.clone(),
             children![(
                 debug_name!("Start Game Button Text"),
@@ -193,8 +193,8 @@ pub fn spawn_menu_buttons(
 
     let fen_button_entity = commands
         .spawn((
-            GameMenuButton::LoadFen,
             debug_name!("Load FEN Button"),
+            GameMenuButton::LoadFen,
             button_node,
             children![(
                 debug_name!("Load FEN Button Text"),

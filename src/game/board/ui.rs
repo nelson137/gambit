@@ -8,8 +8,8 @@ pub struct UiBoard;
 pub fn spawn_board(mut commands: Commands) {
     let entity = commands
         .spawn((
-            UiBoard,
             debug_name!("Board"),
+            UiBoard,
             Node {
                 width: Val::Percent(100.0),
                 height: Val::Percent(100.0),

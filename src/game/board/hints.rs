@@ -63,8 +63,8 @@ pub fn spawn_hints(
         // Move hint
         let move_entity = commands
             .spawn((
-                Hint::Move,
                 debug_name_f!("Move Hint ({square})"),
+                Hint::Move,
                 square,
                 Node {
                     position_type: PositionType::Absolute,
@@ -90,8 +90,8 @@ pub fn spawn_hints(
         // Capture hint
         let capture_entity = commands
             .spawn((
-                Hint::Capture,
                 debug_name_f!("Capture Hint ({square})"),
+                Hint::Capture,
                 square,
                 ImageNode::new(capture_hint_texture.clone()),
                 Node {

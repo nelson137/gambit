@@ -26,8 +26,8 @@ pub fn spawn_highlight_tiles(
 
         let hl_tile_entity = commands
             .spawn((
-                HighlightTile,
                 debug_name_f!("Highlight Tile ({square})"),
+                HighlightTile,
                 square,
                 Node {
                     position_type: PositionType::Absolute,

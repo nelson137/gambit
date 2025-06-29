@@ -58,8 +58,8 @@ pub fn spawn_ui(mut commands: Commands) {
             ..default()
         },
         children![(
-            Ui,
             debug_name!("Ui"),
+            Ui,
             Node {
                 height: Val::Percent(100.0),
                 padding: UiRect::all(UI_GAP_VAL),
@@ -68,8 +68,8 @@ pub fn spawn_ui(mut commands: Commands) {
             },
             children![
                 (
-                    EvaluationBarContainer,
                     debug_name!("Evaluation Bar Container"),
+                    EvaluationBarContainer,
                     Node {
                         margin: UiRect::right(UI_GAP_VAL),
                         display: Display::Flex,
@@ -79,12 +79,12 @@ pub fn spawn_ui(mut commands: Commands) {
                     },
                 ),
                 (
-                    BoardAndPanelsContainer,
                     debug_name!("Board and Panels Container"),
+                    BoardAndPanelsContainer,
                     Node { flex_direction: FlexDirection::Column, ..default() },
                     children![(
-                        BoardContainer,
                         debug_name!("Board Container"),
+                        BoardContainer,
                         Node {
                             flex_grow: 1.0,
                             min_width: MIN_BOARD_SIZE,

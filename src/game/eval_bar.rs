@@ -49,8 +49,8 @@ pub fn spawn_eval_bar(mut commands: Commands) {
             },
             BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
             children![(
-                EvaluationBar,
                 debug_name!("Evaluation Bar (white)"),
+                EvaluationBar,
                 Node {
                     position_type: PositionType::Absolute,
                     bottom: Val::Px(0.0),

@@ -8,7 +8,7 @@ use bevy::prelude::*;
 use chess::{Piece, Rank};
 
 use crate::{
-    debug_name_f,
+    debug_name, debug_name_f,
     game::{
         LoadGame,
         consts::{Z_PIECE, Z_PIECE_SELECTED},
@@ -198,8 +198,8 @@ pub(super) fn spawn_pieces_on_load_game(
 
         let piece_entity = commands
             .spawn((
-                info,
                 debug_name_f!("Piece ({} {}) ({square})", info.color, info.typ),
+                info,
                 square,
                 ImageNode::new(asset_server.load(image_path)),
                 Node {
@@ -287,7 +287,7 @@ struct AnimationLayer;
 
 fn spawn_animation_layer(mut commands: Commands) {
     commands.spawn((
-        Name::new("Animation Layer"),
+        debug_name!("Animation Layer"),
         AnimationLayer,
         Node {
             top: Val::Px(0.0),

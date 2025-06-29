@@ -116,15 +116,15 @@ impl Command for PanelBuilderCmd {
 
         commands.entity(self.entity).with_children(|cmds| {
             cmds.spawn((
-                ProfileImage,
                 debug_name!("Profile Image"),
+                ProfileImage,
                 ImageNode::new(profile_image_handle),
                 Node { width: PROFILE_IMAGE_SIZE_VAL, height: PROFILE_IMAGE_SIZE_VAL, ..default() },
             ));
 
             cmds.spawn((
-                PanelInnerContainer,
                 debug_name!("Panel Inner Container"),
+                PanelInnerContainer,
                 Node {
                     height: Val::Percent(100.0),
                     margin: UiRect::left(UI_GAP_VAL),

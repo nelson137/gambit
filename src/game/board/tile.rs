@@ -49,8 +49,8 @@ pub fn spawn_tiles(
 
         let tile_entity = commands
             .spawn((
-                Tile,
                 debug_name_f!("Tile ({square})"),
+                Tile,
                 square,
                 Node {
                     position_type: PositionType::Relative,
