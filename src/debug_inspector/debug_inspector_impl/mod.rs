@@ -21,6 +21,7 @@ impl Plugin for DebugInspectorPlugin {
             .register_type::<bevy::pbr::DirectionalLight>()
             .register_type::<bevy::pbr::PointLight>()
             .register_type::<bevy::pbr::StandardMaterial>()
+            .register_type::<bevy::ui::GlobalZIndex>()
             .add_plugins(DefaultInspectorConfigPlugin)
             .add_plugins(bevy::pbr::PbrPlugin::default())
             .add_plugins(bevy::gizmos::GizmoPlugin)
