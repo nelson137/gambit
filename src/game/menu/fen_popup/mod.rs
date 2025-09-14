@@ -23,11 +23,11 @@ pub(super) fn fen_menu(
     mut egui_contexts: EguiContexts,
     mut next_menu_state: ResMut<NextState<MenuState>>,
     mut state: ResMut<PopupState>,
-) {
-    let ctx = egui_contexts.ctx_mut();
+) -> Result {
+    let ctx = egui_contexts.ctx_mut()?;
 
     if !state.fonts.is_initialized() {
-        state.fonts.initialize(ctx)
+        state.fonts.initialize(ctx);
     }
 
     match view::fen_window(ctx, &mut state) {
@@ -44,4 +44,6 @@ pub(super) fn fen_menu(
         },
         FenPopupInteraction::None => {}
     }
+
+    Ok(())
 }
