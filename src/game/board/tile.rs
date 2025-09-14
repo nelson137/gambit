@@ -3,15 +3,11 @@ use std::collections::{HashMap, hash_map::Entry};
 use bevy::prelude::*;
 use chess::{File, Rank};
 
-use crate::{
-    debug_name_f,
-    game::consts::{FONT_PATH, Z_TILE},
-};
+use crate::{debug_name_f, game::consts::FONT_PATH};
 
 use super::{Square, UiBoard};
 
 #[derive(Component)]
-#[require(GlobalZIndex(Z_TILE))]
 pub struct Tile;
 
 /// The "black" bord color.

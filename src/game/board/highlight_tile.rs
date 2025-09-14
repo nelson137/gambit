@@ -2,12 +2,12 @@ use std::collections::{HashMap, hash_map::Entry};
 
 use bevy::prelude::*;
 
-use crate::{debug_name_f, game::consts::Z_HIGHLIGHT_TILE};
+use crate::{debug_name_f, game::consts::z};
 
 use super::{Square, TilesMap};
 
 #[derive(Component)]
-#[require(Visibility::Hidden, BackgroundColor(COLOR_HIGHLIGHT), GlobalZIndex(Z_HIGHLIGHT_TILE))]
+#[require(Visibility::Hidden, BackgroundColor(COLOR_HIGHLIGHT), ZIndex(z::HIGHLIGHT_TILE))]
 pub struct HighlightTile;
 
 /// The color used to highlight tiles.

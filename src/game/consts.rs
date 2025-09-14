@@ -55,31 +55,29 @@ pub const INIT_MENU_BUTTON_TEXT_SIZE: f32 = 48.0;
 
 pub const MIN_BOARD_SIZE: Val = Val::Px(256.0);
 
-//==================================================
-// Z-Values
-//==================================================
+/// The z-index values for elements of the game UI.
+///
+/// Constants prefixed with `G_` indicate a `GlobalZIndex` value, those without the prefix indicate
+/// a (local) `ZIndex` value.
+pub mod z {
+    // Global --------------------
 
-// Menu --------------------
+    pub const G_MENU: i32 = 50;
 
-pub const Z_MENU: i32 = 50;
+    /// The z-index for the `DragContainer` and piece `AnimationLayer`.
+    pub const G_PIECE_MOVE: i32 = 10;
 
-// Board UI & Annotations --------------------
+    // Board --------------------
 
-pub const Z_PROMOTER: i32 = 16;
+    pub const G_PROMOTER: i32 = 1;
 
-/// The z-index for the end-game icons: checkmate, checkmate loser, and draw.
-pub const Z_END_GAME_ICONS: i32 = 15;
+    /// The z-index for the end-game icons: checkmate, checkmate loser, and draw.
+    pub const END_GAME_ICONS: i32 = 15;
 
-// Pieces --------------------
+    pub const PIECE: i32 = 10;
 
-pub const Z_PIECE_SELECTED: i32 = 11;
+    /// The z-index for move and capture hints.
+    pub const MOVE_HINT: i32 = 3;
 
-pub const Z_PIECE: i32 = 10;
-
-// Board --------------------
-
-pub const Z_MOVE_HINT: i32 = 3;
-
-pub const Z_HIGHLIGHT_TILE: i32 = 2;
-
-pub const Z_TILE: i32 = 1;
+    pub const HIGHLIGHT_TILE: i32 = 2;
+}

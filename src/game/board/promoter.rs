@@ -7,7 +7,7 @@ use crate::{
     debug_name_f,
     game::{
         board::MovePiece,
-        consts::{FONT_PATH, Z_PROMOTER},
+        consts::{FONT_PATH, z},
     },
     utils::NoopExts,
 };
@@ -40,7 +40,7 @@ impl Plugin for PromotionPlugin {
 pub struct PromoterSystem;
 
 #[derive(Component)]
-#[require(Visibility::Hidden, GlobalZIndex(Z_PROMOTER))]
+#[require(Visibility::Hidden, GlobalZIndex(z::G_PROMOTER))]
 pub struct PromotionUi(PieceColor);
 
 #[derive(Component, Debug)]

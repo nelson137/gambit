@@ -3,13 +3,13 @@ use chess::{File, Rank};
 
 use crate::{
     debug_name,
-    game::{LoadGame, consts::Z_END_GAME_ICONS},
+    game::{LoadGame, consts::z},
 };
 
 use super::{BoardState, PieceColor, Square, Tile, TilesMap};
 
 #[derive(Component, Clone, Copy)]
-#[require(Visibility::Hidden, GlobalZIndex(Z_END_GAME_ICONS))]
+#[require(Visibility::Hidden, ZIndex(z::END_GAME_ICONS))]
 pub(super) enum EndGameIcon {
     Winner,
     LoserBlack,

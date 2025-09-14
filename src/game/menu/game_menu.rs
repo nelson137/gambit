@@ -5,7 +5,7 @@ use crate::{
     game::consts::{
         FONT_PATH, INIT_MENU_BUTTON_TEXT_SIZE, INIT_MENU_HEIGHT, INIT_MENU_TITLE_SIZE,
         INIT_MENU_WIDTH, INIT_WIN_HEIGHT, INIT_WIN_WIDTH, MENU_HEIGHT_RATIO, MENU_WIDTH_RATIO,
-        TITLE_FONT_PATH, Z_MENU,
+        TITLE_FONT_PATH, z,
     },
     utils::{RoundToNearest, recolor_on, set_state_on},
 };
@@ -13,7 +13,7 @@ use crate::{
 use super::MenuState;
 
 #[derive(Component)]
-#[require(BackgroundColor(MENU_DIM_LAYER_COLOR), GlobalZIndex(Z_MENU))]
+#[require(BackgroundColor(MENU_DIM_LAYER_COLOR), GlobalZIndex(z::G_MENU))]
 pub(super) struct GameMenuDimLayer;
 
 const MENU_DIM_LAYER_COLOR: Color = Color::srgba(0.0, 0.0, 0.0, 0.7);

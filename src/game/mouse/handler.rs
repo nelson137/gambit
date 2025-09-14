@@ -4,7 +4,7 @@ use crate::{
     debug_name,
     game::{
         board::{MouseSelectionEvent, Square, Tile, TilesMap},
-        consts::Z_PIECE_SELECTED,
+        consts::z,
     },
 };
 
@@ -29,7 +29,7 @@ pub(super) fn mouse_handler(
 }
 
 #[derive(Component)]
-#[require(GlobalZIndex(Z_PIECE_SELECTED))]
+#[require(GlobalZIndex(z::G_PIECE_MOVE))]
 pub struct DragContainer;
 
 pub(super) fn spawn_drag_container(mut commands: Commands) {

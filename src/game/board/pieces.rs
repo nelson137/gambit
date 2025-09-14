@@ -9,10 +9,7 @@ use chess::{Piece, Rank};
 
 use crate::{
     debug_name, debug_name_f,
-    game::{
-        LoadGame,
-        consts::{Z_PIECE, Z_PIECE_SELECTED},
-    },
+    game::{LoadGame, consts::z},
     utils::NoopExts,
 };
 
@@ -25,7 +22,7 @@ macro_rules! asset_path {
 }
 
 #[derive(Clone, Copy, Component, Debug, PartialEq, Eq)]
-#[require(GlobalZIndex(Z_PIECE))]
+#[require(ZIndex(z::PIECE))]
 pub struct PieceMeta {
     pub color: PieceColor,
     pub typ: PieceType,
@@ -282,7 +279,7 @@ impl Plugin for PieceAnimationPlugin {
 struct IsPieceAnimationPluginAdded;
 
 #[derive(Component)]
-#[require(GlobalZIndex(Z_PIECE_SELECTED))]
+#[require(GlobalZIndex(z::G_PIECE_MOVE))]
 struct AnimationLayer;
 
 fn spawn_animation_layer(mut commands: Commands) {

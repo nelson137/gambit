@@ -2,12 +2,12 @@ use std::collections::{HashMap, hash_map::Entry};
 
 use bevy::prelude::*;
 
-use crate::{debug_name_f, game::consts::Z_MOVE_HINT};
+use crate::{debug_name_f, game::consts::z};
 
 use super::{Square, TilesMap};
 
 #[derive(Component, Clone, Copy)]
-#[require(Visibility::Hidden, GlobalZIndex(Z_MOVE_HINT))]
+#[require(Visibility::Hidden, ZIndex(z::MOVE_HINT))]
 pub enum Hint {
     Move,
     Capture,
