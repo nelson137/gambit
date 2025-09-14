@@ -28,7 +28,7 @@ opt-level = 2
 anyhow = "1.0"
 stockfish_fetch = { path = "./stockfish_fetch" }
 tracing = "0.1"
-tracing-subscriber = { version = "0.3", features = ["local-time", "time"] }
+tracing-subscriber = { version = "^0.3.20", features = ["local-time", "time"] }
 
 [dependencies]
 bevy = { version = "0.16", features = ["flac"] }
