@@ -61,10 +61,10 @@ pub struct Dragging {
 pub fn on_add_dragging_piece(
     trigger: Trigger<OnAdd, Dragging>,
     mut commands: Commands,
-    q_drag_container: Query<Entity, With<DragContainer>>,
+    drag_container: Single<Entity, With<DragContainer>>,
 ) {
     let piece = trigger.target();
-    commands.entity(q_drag_container.single().unwrap()).add_child(piece);
+    commands.entity(*drag_container).add_child(piece);
 }
 
 pub fn on_remove_dragging_piece(

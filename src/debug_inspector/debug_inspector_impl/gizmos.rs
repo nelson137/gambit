@@ -18,12 +18,11 @@ pub(super) fn configure_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
 pub(super) fn draw_entity_hover_gizmo(
     mut drawn_entities: Local<HashSet<Entity>>,
     mut inspector_state: ResMut<InspectorState>,
-    q_win: Query<&Window, With<PrimaryWindow>>,
+    win: Single<&Window, With<PrimaryWindow>>,
     q_global_transf: Query<&GlobalTransform>,
     q_computed_node: Query<&ComputedNode>,
     mut gizmos: Gizmos,
 ) {
-    let Ok(win) = q_win.single() else { return };
     let half_res = vec2(win.resolution.width(), win.resolution.height());
 
     drawn_entities.extend(inspector_state.panes_state.selected_entities.iter());

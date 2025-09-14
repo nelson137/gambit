@@ -47,9 +47,10 @@ const MENU_COLOR: Color = Color::srgba(
     0.975,
 );
 
-pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<GameMenuDimLayer>>) {
-    let Ok(parent_entity) = q_parent.single() else { return };
-
+pub(super) fn spawn_menu(
+    mut commands: Commands,
+    parent_entity: Single<Entity, With<GameMenuDimLayer>>,
+) {
     let menu_entity = commands
         .spawn((
             debug_name!("Game Menu"),
@@ -64,16 +65,13 @@ pub(super) fn spawn_menu(mut commands: Commands, q_parent: Query<Entity, With<Ga
             },
         ))
         .id();
-    commands.entity(parent_entity).add_child(menu_entity);
+    commands.entity(*parent_entity).add_child(menu_entity);
 }
 
 pub fn menu_size(
-    q_window: Query<&Window, With<PrimaryWindow>>,
-    mut q_menu: Query<&mut Node, With<GameMenu>>,
+    win: Single<&Window, With<PrimaryWindow>>,
+    mut menu_node: Single<&mut Node, With<GameMenu>>,
 ) {
-    let Ok(win) = q_window.single() else { return };
-    let Ok(mut menu_node) = q_menu.single_mut() else { return };
-
     let win_width_scale = win.width() / INIT_WIN_WIDTH;
     let win_height_scale = win.height() / INIT_WIN_HEIGHT;
     let scale = win_width_scale.min(win_height_scale);
@@ -127,7 +125,7 @@ const BUTTON_COLOR_HOVER: Color = Color::srgb(
 pub fn spawn_menu_elements(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    q_menu: Query<Entity, With<GameMenu>>,
+    menu: Single<Entity, With<GameMenu>>,
 ) {
     let font = asset_server.load(TITLE_FONT_PATH);
     let title_entity = commands
@@ -154,15 +152,13 @@ pub fn spawn_menu_elements(
         ))
         .id();
 
-    commands
-        .entity(q_menu.single().unwrap())
-        .add_children(&[title_entity, buttons_container_entity]);
+    commands.entity(*menu).add_children(&[title_entity, buttons_container_entity]);
 }
 
 pub fn spawn_menu_buttons(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
-    q_menu_buttons_container: Query<Entity, With<GameMenuButtonsContainer>>,
+    menu_buttons_container: Single<Entity, With<GameMenuButtonsContainer>>,
 ) {
     let button_node = Node {
         width: Val::Percent(50.0),
@@ -209,19 +205,17 @@ pub fn spawn_menu_buttons(
         .id();
 
     commands
-        .entity(q_menu_buttons_container.single().unwrap())
+        .entity(*menu_buttons_container)
         .add_children(&[start_button_entity, fen_button_entity]);
 }
 
 pub(super) fn game_menu_elements_sizes(
-    q_menu: Query<&ComputedNode, With<GameMenu>>,
+    menu_computed_node: Single<&ComputedNode, With<GameMenu>>,
     mut q_text: ParamSet<(
         Query<&mut TextFont, With<GameMenuTitle>>,
         Query<&mut TextFont, With<GameMenuButtonsText>>,
     )>,
 ) {
-    let Ok(menu_computed_node) = q_menu.single() else { return };
-
     let menu_width = menu_computed_node.size().x * menu_computed_node.inverse_scale_factor();
     let scale = menu_width / INIT_MENU_WIDTH;
 

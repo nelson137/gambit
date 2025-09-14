@@ -32,10 +32,8 @@ pub fn spawn_tiles(
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     mut tiles_map: ResMut<TilesMap>,
-    q_board: Query<Entity, With<UiBoard>>,
+    board: Single<Entity, With<UiBoard>>,
 ) {
-    let board = q_board.single().unwrap();
-
     for square in chess::ALL_SQUARES.map(Square::new) {
         let file = square.get_file();
         let rank = square.get_rank();
@@ -102,7 +100,7 @@ pub fn spawn_tiles(
             })
             .id();
 
-        commands.entity(board).add_child(tile_entity);
+        commands.entity(*board).add_child(tile_entity);
         tiles_map.set(square, tile_entity);
     }
 }
