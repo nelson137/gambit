@@ -67,6 +67,7 @@ pub const Z_MENU: i32 = 50;
 
 pub const Z_PROMOTER: i32 = 16;
 
+/// The z-index for the end-game icons: checkmate, checkmate loser, and draw.
 pub const Z_END_GAME_ICONS: i32 = 15;
 
 // Pieces --------------------
