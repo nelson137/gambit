@@ -214,6 +214,9 @@ impl BoardState {
         self.full_move_count += 1;
     }
 
+    // TODO: docs
+    // `chess::Board::en_passant()` only returns `Some(_)` if the last move was a pawn double move
+    // *and* there is a pawn of the opposite color adjacent to the destination square.
     pub fn move_is_en_passant(&self, color: PieceColor, to_sq: Square) -> bool {
         let ep = self.en_passant();
         ep.is_some() && to_sq.backward(color) == ep
