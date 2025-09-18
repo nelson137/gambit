@@ -190,7 +190,7 @@ pub(super) fn spawn_pieces_on_load_game(
     q_pieces.iter().for_each(|e| commands.entity(e).despawn());
 
     for square in chess::ALL_SQUARES.map(Square::new) {
-        let Some(info) = trigger.event().board.get_piece_meta(square) else { continue };
+        let Some(info) = trigger.board.get_piece_meta(square) else { continue };
         let image_path = info.asset_path();
 
         let piece_entity = commands

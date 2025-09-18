@@ -233,7 +233,7 @@ impl CapState {
 }
 
 fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands) {
-    let board = &trigger.event().board;
+    let board = &trigger.board;
     let kings_bb = board.pieces(chess::Piece::King);
 
     for color in chess::ALL_COLORS {

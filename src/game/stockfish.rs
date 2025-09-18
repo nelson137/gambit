@@ -433,7 +433,7 @@ fn set_stockfish_player_color_on_load_game(
     trigger: Trigger<LoadGame>,
     mut player_color: ResMut<StockfishPlayerColor>,
 ) {
-    let primary_color = PieceColor(trigger.event().board.side_to_move());
+    let primary_color = PieceColor(trigger.board.side_to_move());
     player_color.0 = !primary_color;
 }
 

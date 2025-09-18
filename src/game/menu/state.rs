@@ -29,7 +29,7 @@ pub(super) fn set_state_to_game_on_load(
     trigger: Trigger<LoadGame>,
     mut next_state: ResMut<NextState<MenuState>>,
 ) {
-    next_state.set(trigger.event().menu_state);
+    next_state.set(trigger.menu_state);
 }
 
 impl PartialEq for MenuState {

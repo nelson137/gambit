@@ -170,7 +170,7 @@ impl ShowEndGameIcon {
         end_game_icons: Res<EndGameIcons>,
         mut q_icon: Query<(&mut Visibility, &mut Node)>,
     ) {
-        let Self { icon, square } = *trigger.event();
+        let Self { icon, square } = *trigger;
         let tile_entity = tiles_map.at(square);
         let icon_entity = end_game_icons.entity(icon);
 

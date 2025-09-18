@@ -51,7 +51,7 @@ pub fn move_piece(
     mut q_info: Query<(&PieceMeta, &mut ImageNode)>,
 ) {
     let entity = trigger.target();
-    let &MovePiece { from_sq, to_sq, promotion, animate } = trigger.event();
+    let MovePiece { from_sq, to_sq, promotion, animate } = *trigger;
     let Ok((&PieceMeta { color, typ }, mut image)) = q_info.get_mut(entity) else { return };
 
     trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");

@@ -31,15 +31,14 @@ enum PlayGameAudio {
 
 impl PlayGameAudio {
     fn on_piece_move_completed(trigger: Trigger<MovePieceCompleted>, mut commands: Commands) {
-        let event = trigger.event();
-        commands.trigger(if event.is_promotion {
+        commands.trigger(if trigger.is_promotion {
             PlayGameAudio::Promote
-        } else if event.is_capture {
+        } else if trigger.is_capture {
             PlayGameAudio::Capture
-        } else if event.is_castle {
+        } else if trigger.is_castle {
             PlayGameAudio::Castle
         } else {
-            match event.color {
+            match trigger.color {
                 PieceColor::BLACK => PlayGameAudio::MoveOpponent,
                 PieceColor::WHITE => PlayGameAudio::MoveSelf,
             }
@@ -52,15 +51,14 @@ impl PlayGameAudio {
         board_state: Res<BoardState>,
         asset_server: Res<AssetServer>,
     ) {
-        let event = trigger.event();
-        trace!(action = ?event, "Play audio");
+        trace!(action = ?*trigger, "Play audio");
 
         let checkers = *board_state.board().checkers();
 
         let path = if checkers != chess::EMPTY {
             "audio/move-check.flac"
         } else {
-            match *event {
+            match *trigger {
                 Self::Capture => "audio/capture.flac",
                 Self::Castle => "audio/castle.flac",
                 Self::MoveOpponent => "audio/move-opponent.flac",

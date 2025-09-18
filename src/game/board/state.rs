@@ -65,8 +65,7 @@ pub(super) fn set_board_on_load_game(
     trigger: Trigger<LoadGame>,
     mut board_state: ResMut<BoardState>,
 ) {
-    let e = trigger.event();
-    board_state.set_board(&e.board, e.half_move_clock, e.full_move_count);
+    board_state.set_board(&trigger.board, trigger.half_move_clock, trigger.full_move_count);
 }
 
 //==================================================

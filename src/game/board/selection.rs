@@ -45,7 +45,7 @@ impl Plugin for SelectionPlugin {
             })
             // Observers - MovePiece
             .add_observer(|trigger: Trigger<MovePiece>, mut commands: Commands| {
-                let &MovePiece { from_sq, to_sq, .. } = trigger.event();
+                let MovePiece { from_sq, to_sq, .. } = *trigger;
                 commands.trigger(Unselect);
                 commands.trigger(DisableLastMove);
                 commands.trigger(EnableLastMove(from_sq, to_sq));
@@ -307,10 +307,9 @@ impl fmt::Display for Select {
 
 impl Select {
     fn handle(trigger: Trigger<Self>, mut commands: Commands) {
-        let event = trigger.event();
         commands.trigger(Unselect);
-        commands.trigger(EnableSelectionHighlight(event.highlight));
-        commands.trigger(EnableHints(event.hints.clone()));
+        commands.trigger(EnableSelectionHighlight(trigger.highlight));
+        commands.trigger(EnableHints(trigger.hints.clone()));
     }
 }
 
@@ -335,7 +334,7 @@ struct EnableSelectionHighlight(Entity);
 
 impl EnableSelectionHighlight {
     fn handle(trigger: Trigger<Self>, mut commands: Commands) {
-        commands.entity(trigger.event().0).insert((ShowingIndicator, Selected));
+        commands.entity(trigger.0).insert((ShowingIndicator, Selected));
     }
 }
 
@@ -344,7 +343,7 @@ struct EnableHints(Vec<Entity>);
 
 impl EnableHints {
     fn handle(trigger: Trigger<Self>, mut commands: Commands) {
-        for &entity in &trigger.event().0 {
+        for &entity in &trigger.0 {
             commands.entity(entity).insert((ShowingIndicator, EnabledHint));
         }
     }
@@ -366,7 +365,7 @@ impl EnableLastMove {
         mut commands: Commands,
         highlights_map: Res<HighlightTilesMap>,
     ) {
-        let &Self(from_sq, to_sq) = trigger.event();
+        let Self(from_sq, to_sq) = *trigger;
         let [e1, e2] = highlights_map.many([from_sq, to_sq]);
         commands.entity(e1).insert((ShowingIndicator, LastMove));
         commands.entity(e2).insert((ShowingIndicator, LastMove));
