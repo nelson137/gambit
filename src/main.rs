@@ -2,16 +2,7 @@
 
 use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
-
-use self::{
-    cli::CliPlugin,
-    debug_inspector::DebugInspectorPlugin,
-    game::{
-        GameLogicPlugin,
-        consts::{COLOR_BG, LOG_FILTER, LOG_LEVEL},
-        core::{GameHeadPlugin, GameHeadlessPlugin},
-    },
-};
+use game::consts::*;
 
 mod cli;
 mod debug_inspector;
@@ -20,18 +11,33 @@ mod utils;
 
 fn main() {
     App::new()
-        .add_plugins(bevy::log::LogPlugin {
-            level: LOG_LEVEL,
-            filter: LOG_FILTER.into(),
-            ..default()
-        })
         // App
-        .add_plugins((GameHeadlessPlugin, GameHeadPlugin))
+        .add_plugins(
+            DefaultPlugins
+                .set(WindowPlugin {
+                    primary_window: Some(Window {
+                        title: "Gambit".into(),
+                        resolution: bevy::window::WindowResolution::new(
+                            INIT_WIN_WIDTH,
+                            INIT_WIN_HEIGHT,
+                        ),
+                        resizable: true,
+                        ..default()
+                    }),
+                    ..default()
+                })
+                .set(bevy::log::LogPlugin {
+                    level: LOG_LEVEL,
+                    filter: LOG_FILTER.into(),
+                    ..default()
+                }),
+        )
         // Game
-        .add_plugins(CliPlugin)
+        .add_plugins(cli::CliPlugin)
         .add_plugins(EguiPlugin::default())
-        .add_plugins(GameLogicPlugin)
-        .add_plugins(DebugInspectorPlugin)
+        .add_plugins(utils::SortableChildrenPlugin)
+        .add_plugins(game::GameLogicPlugin)
+        .add_plugins(debug_inspector::DebugInspectorPlugin)
         // Resources
         .insert_resource(ClearColor(COLOR_BG))
         // Run

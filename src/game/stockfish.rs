@@ -282,7 +282,7 @@ fn stockfish_update(
     mut sleep_timer: Local<Option<Timer>>,
     mut stockfish: ResMut<Stockfish>,
     mut sf_state: Local<SfState>,
-    mut eval_bar_writer: EventWriter<EvaluationUpdate>,
+    mut eval_bar_writer: MessageWriter<EvaluationUpdate>,
 ) {
     if let Some(st) = &mut *sleep_timer {
         st.tick(time.delta());
@@ -337,7 +337,7 @@ fn stockfish_update(
                     });
 
                     let piece = pieces_map.at(from_sq);
-                    commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, true), piece);
+                    commands.trigger(MovePiece::new(piece, from_sq, to_sq, None, true));
 
                     break 'is_waiting;
                 }
@@ -416,7 +416,10 @@ fn stockfish_update(
     }
 }
 
-fn update_eval_bar(_trigger: Trigger<MovePieceCompleted>, mut stockfish: ResMut<Stockfish>) {
+fn update_eval_bar(
+    _move_piece_completed: On<MovePieceCompleted>,
+    mut stockfish: ResMut<Stockfish>,
+) {
     stockfish.push_cmd(SfCommand::Eval);
 }
 
@@ -430,16 +433,16 @@ impl Default for StockfishPlayerColor {
 }
 
 fn set_stockfish_player_color_on_load_game(
-    trigger: Trigger<LoadGame>,
+    load_game: On<LoadGame>,
     mut player_color: ResMut<StockfishPlayerColor>,
 ) {
-    let primary_color = PieceColor(trigger.board.side_to_move());
+    let primary_color = PieceColor(load_game.board.side_to_move());
     player_color.0 = !primary_color;
 }
 
 #[cfg(feature = "stockfish-player")]
 fn stockfish_move(
-    _trigger: Trigger<MovePieceCompleted>,
+    _move_piece_completed: On<MovePieceCompleted>,
     board_state: Res<crate::game::board::BoardState>,
     sf_color: Res<StockfishPlayerColor>,
     mut stockfish: ResMut<Stockfish>,
@@ -455,4 +458,4 @@ fn stockfish_move(
 }
 
 #[cfg(not(feature = "stockfish-player"))]
-fn stockfish_move(_trigger: Trigger<LoadGame>) {}
+fn stockfish_move(_load_game: On<LoadGame>) {}

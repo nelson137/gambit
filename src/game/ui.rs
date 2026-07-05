@@ -48,11 +48,11 @@ pub fn spawn_ui(mut commands: Commands) {
     commands.spawn((
         debug_name!("Ui Wrapper"),
         Node {
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            width: percent(100.0),
+            height: percent(100.0),
             position_type: PositionType::Absolute,
-            left: Val::Percent(0.0),
-            top: Val::Percent(0.0),
+            left: percent(0.0),
+            top: percent(0.0),
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::Center,
             ..default()
@@ -61,8 +61,8 @@ pub fn spawn_ui(mut commands: Commands) {
             debug_name!("Ui"),
             Ui,
             Node {
-                height: Val::Percent(100.0),
-                padding: UiRect::all(UI_GAP_VAL),
+                height: percent(100.0),
+                padding: UI_GAP_VAL.all(),
                 flex_direction: FlexDirection::Row,
                 ..default()
             },
@@ -71,7 +71,7 @@ pub fn spawn_ui(mut commands: Commands) {
                     debug_name!("Evaluation Bar Container"),
                     EvaluationBarContainer,
                     Node {
-                        margin: UiRect::right(UI_GAP_VAL),
+                        margin: UI_GAP_VAL.right(),
                         display: Display::Flex,
                         flex_direction: FlexDirection::Column,
                         row_gap: UI_GAP_VAL,

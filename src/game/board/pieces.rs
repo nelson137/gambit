@@ -178,7 +178,7 @@ impl PieceType {
 }
 
 pub(super) fn spawn_pieces_on_load_game(
-    trigger: Trigger<LoadGame>,
+    load_game: On<LoadGame>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     tiles_map: Res<TilesMap>,
@@ -190,7 +190,7 @@ pub(super) fn spawn_pieces_on_load_game(
     q_pieces.iter().for_each(|e| commands.entity(e).despawn());
 
     for square in chess::ALL_SQUARES.map(Square::new) {
-        let Some(info) = trigger.board.get_piece_meta(square) else { continue };
+        let Some(info) = load_game.board.get_piece_meta(square) else { continue };
         let image_path = info.asset_path();
 
         let piece_entity = commands
@@ -201,10 +201,10 @@ pub(super) fn spawn_pieces_on_load_game(
                 ImageNode::new(asset_server.load(image_path)),
                 Node {
                     position_type: PositionType::Absolute,
-                    top: Val::Px(0.0),
-                    left: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    top: px(0.0),
+                    left: px(0.0),
+                    width: percent(100.0),
+                    height: percent(100.0),
                     ..default()
                 },
             ))
@@ -287,10 +287,10 @@ fn spawn_animation_layer(mut commands: Commands) {
         debug_name!("Animation Layer"),
         AnimationLayer,
         Node {
-            top: Val::Px(0.0),
-            left: Val::Px(0.0),
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            top: px(0.0),
+            left: px(0.0),
+            width: percent(100.0),
+            height: percent(100.0),
             ..default()
         },
     ));
@@ -324,9 +324,9 @@ impl Command for AnimatePiece {
         }
 
         let to_transl = if let Ok((transf, computed_node)) =
-            world.query::<(&GlobalTransform, &ComputedNode)>().get(world, to_entity)
+            world.query::<(&UiGlobalTransform, &ComputedNode)>().get(world, to_entity)
         {
-            transf.translation().truncate() * computed_node.inverse_scale_factor()
+            transf.translation.trunc() * computed_node.inverse_scale_factor()
         } else {
             return;
         };
@@ -343,16 +343,16 @@ impl Command for AnimatePiece {
         let size = computed_node.size() * inverse_scale_factor;
         let ui_world_offset = size / 2.0;
 
-        let transl = entity.get::<GlobalTransform>().unwrap().translation().truncate()
-            * inverse_scale_factor;
+        let transl =
+            entity.get::<UiGlobalTransform>().unwrap().translation.trunc() * inverse_scale_factor;
         let from_pos = transl - ui_world_offset;
         let to_pos = to_transl - ui_world_offset;
 
         let mut node = entity.get_mut::<Node>().unwrap();
-        node.left = Val::Px(from_pos.x);
-        node.top = Val::Px(from_pos.y);
-        node.width = Val::Px(size.x);
-        node.height = Val::Px(size.y);
+        node.left = px(from_pos.x);
+        node.top = px(from_pos.y);
+        node.width = px(size.x);
+        node.height = px(size.y);
 
         entity.insert(Animating::new(from_pos, to_pos, to_entity));
     }
@@ -391,7 +391,7 @@ fn animate_pieces(
     mut q_animating: Query<(Entity, &mut Animating, &mut Node)>,
 ) {
     for (entity, mut animating, mut node) in &mut q_animating {
-        if animating.timer.finished() {
+        if animating.timer.is_finished() {
             continue;
         }
 
@@ -403,25 +403,24 @@ fn animate_pieces(
 
         let t = animating.interpolater.ease(animating.timer.fraction());
         let Vec2 { x, y } = animating.from.lerp(animating.to, t);
-        node.left = Val::Px(x);
-        node.top = Val::Px(y);
+        node.left = px(x);
+        node.top = px(y);
     }
 }
 
 pub(super) fn on_remove_animating(
-    trigger: Trigger<OnRemove, Animating>,
+    remove: On<Remove, Animating>,
     mut commands: Commands,
     q_animating: Query<&Animating>,
     mut q_node: Query<&mut Node>,
 ) {
-    let entity = trigger.target();
-    let Ok(animating) = q_animating.get(entity) else { return };
+    let Ok(animating) = q_animating.get(remove.entity) else { return };
 
-    commands.entity(entity).insert(ChildOf(animating.to_entity));
+    commands.entity(remove.entity).insert(ChildOf(animating.to_entity));
 
-    let mut node = q_node.get_mut(entity).unwrap();
-    node.left = Val::Px(0.0);
-    node.top = Val::Px(0.0);
-    node.width = Val::Percent(100.0);
-    node.height = Val::Percent(100.0);
+    let mut node = q_node.get_mut(remove.entity).unwrap();
+    node.left = px(0.0);
+    node.top = px(0.0);
+    node.width = percent(100.0);
+    node.height = percent(100.0);
 }

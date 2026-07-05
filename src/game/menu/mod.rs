@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ui::UiSystem};
+use bevy::{prelude::*, ui::UiSystems};
 use bevy_startup_tree::{AddStartupTree, startup_tree};
 
 use crate::utils::NoopExts;
@@ -39,7 +39,7 @@ impl Plugin for GameMenuLogicPlugin {
             .add_observer(set_state_to_game_on_load)
             // Systems
             .add_systems(Startup, init_menu_state_from_cli)
-            .add_systems(PostUpdate, menu_size.before(UiSystem::Layout))
+            .add_systems(PostUpdate, menu_size.before(UiSystems::Layout))
             .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state_fen_input)
             .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state_menu)
             .add_systems(OnEnter(MenuState::Game), on_enter_menu_state_game)
@@ -53,8 +53,6 @@ impl Plugin for GameMenuLogicPlugin {
 
 #[cfg(test)]
 pub mod test {
-    use bevy::prelude::*;
-
     use crate::utils::NoopExts;
 
     use super::*;

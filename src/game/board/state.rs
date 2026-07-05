@@ -61,11 +61,8 @@ pub fn parse_fen(fen: &str) -> Result<(Board, u8, u16), chess::Error> {
     }
 }
 
-pub(super) fn set_board_on_load_game(
-    trigger: Trigger<LoadGame>,
-    mut board_state: ResMut<BoardState>,
-) {
-    board_state.set_board(&trigger.board, trigger.half_move_clock, trigger.full_move_count);
+pub(super) fn set_board_on_load_game(load_game: On<LoadGame>, mut board_state: ResMut<BoardState>) {
+    board_state.set_board(&load_game.board, load_game.half_move_clock, load_game.full_move_count);
 }
 
 //==================================================

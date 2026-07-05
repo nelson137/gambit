@@ -68,21 +68,17 @@ pub fn spawn_hints(
                 square,
                 Node {
                     position_type: PositionType::Absolute,
-                    top: Val::Px(0.0),
-                    left: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    top: px(0.0),
+                    left: px(0.0),
+                    width: percent(100.0),
+                    height: percent(100.0),
                     justify_content: JustifyContent::Center,
                     align_items: AlignItems::Center,
                     ..default()
                 },
                 children![(
                     ImageNode::new(move_hint_texture.clone()),
-                    Node {
-                        width: Val::Percent(100.0 / 3.0),
-                        height: Val::Percent(100.0 / 3.0),
-                        ..default()
-                    },
+                    Node { width: percent(100.0 / 3.0), height: percent(100.0 / 3.0), ..default() },
                 )],
             ))
             .id();
@@ -96,10 +92,10 @@ pub fn spawn_hints(
                 ImageNode::new(capture_hint_texture.clone()),
                 Node {
                     position_type: PositionType::Absolute,
-                    top: Val::Px(0.0),
-                    left: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    top: px(0.0),
+                    left: px(0.0),
+                    width: percent(100.0),
+                    height: percent(100.0),
                     ..default()
                 },
             ))

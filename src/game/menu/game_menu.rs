@@ -24,10 +24,10 @@ pub fn spawn_menu_dim_layer(mut commands: Commands) {
         GameMenuDimLayer,
         Node {
             position_type: PositionType::Absolute,
-            top: Val::Px(0.0),
-            left: Val::Px(0.0),
-            width: Val::Percent(100.0),
-            height: Val::Percent(100.0),
+            top: px(0.0),
+            left: px(0.0),
+            width: percent(100.0),
+            height: percent(100.0),
             justify_content: JustifyContent::Center,
             align_items: AlignItems::Center,
             ..default()
@@ -56,8 +56,8 @@ pub(super) fn spawn_menu(
             debug_name!("Game Menu"),
             GameMenu,
             Node {
-                width: Val::Px(INIT_MENU_WIDTH),
-                height: Val::Px(INIT_MENU_HEIGHT),
+                width: px(INIT_MENU_WIDTH),
+                height: px(INIT_MENU_HEIGHT),
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::SpaceEvenly,
                 align_items: AlignItems::Center,
@@ -72,22 +72,22 @@ pub fn menu_size(
     win: Single<&Window, With<PrimaryWindow>>,
     mut menu_node: Single<&mut Node, With<GameMenu>>,
 ) {
-    let win_width_scale = win.width() / INIT_WIN_WIDTH;
-    let win_height_scale = win.height() / INIT_WIN_HEIGHT;
+    let win_width_scale = win.width() / INIT_WIN_WIDTH as f32;
+    let win_height_scale = win.height() / INIT_WIN_HEIGHT as f32;
     let scale = win_width_scale.min(win_height_scale);
 
     let width_scale = scale * MENU_WIDTH_RATIO;
     let height_scale = scale * MENU_HEIGHT_RATIO;
 
-    let width = (width_scale * INIT_WIN_WIDTH) as u32;
-    let height = (height_scale * INIT_WIN_HEIGHT) as u32;
+    let width = (width_scale * INIT_WIN_WIDTH as f32) as u32;
+    let height = (height_scale * INIT_WIN_HEIGHT as f32) as u32;
 
     const MENU_SIZE_STEP: u32 = 32;
     let width_stepped = width.round_to_nearest(MENU_SIZE_STEP);
     let height_stepped = height.round_to_nearest(MENU_SIZE_STEP);
 
-    menu_node.width = Val::Px(width_stepped as f32);
-    menu_node.height = Val::Px(height_stepped as f32);
+    menu_node.width = px(width_stepped as f32);
+    menu_node.height = px(height_stepped as f32);
 }
 
 #[derive(Component)]
@@ -133,7 +133,7 @@ pub fn spawn_menu_elements(
             debug_name!("Game Menu Title"),
             GameMenuTitle,
             TextFont { font, font_size: INIT_MENU_TITLE_SIZE, ..default() },
-            Node { margin: UiRect::top(Val::Percent(4.0)), ..default() },
+            Node { margin: percent(4.0).top(), ..default() },
         ))
         .id();
 
@@ -142,7 +142,7 @@ pub fn spawn_menu_elements(
             debug_name!("Game Menu Buttons Container"),
             GameMenuButtonsContainer,
             Node {
-                width: Val::Percent(100.0),
+                width: percent(100.0),
                 flex_grow: 1.0,
                 flex_direction: FlexDirection::Column,
                 justify_content: JustifyContent::SpaceEvenly,
@@ -161,8 +161,8 @@ pub fn spawn_menu_buttons(
     menu_buttons_container: Single<Entity, With<GameMenuButtonsContainer>>,
 ) {
     let button_node = Node {
-        width: Val::Percent(50.0),
-        padding: UiRect::vertical(Val::Px(8.0)),
+        width: percent(50.0),
+        padding: px(8.0).vertical(),
         justify_content: JustifyContent::Center,
         align_items: AlignItems::Center,
         ..default()
@@ -182,9 +182,9 @@ pub fn spawn_menu_buttons(
                 text_font.clone(),
             )],
         ))
-        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
-        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
-        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::Game))
+        .observe(recolor_on::<_, Pointer<Over>, _>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<_, Pointer<Out>, _>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<_, MenuState, Pointer<Click>, _>(MenuState::Game))
         .id();
 
     let fen_button_entity = commands
@@ -199,9 +199,9 @@ pub fn spawn_menu_buttons(
                 text_font,
             )],
         ))
-        .observe(recolor_on::<Pointer<Over>>(BUTTON_COLOR_HOVER))
-        .observe(recolor_on::<Pointer<Out>>(BUTTON_COLOR_DEFAULT))
-        .observe(set_state_on::<MenuState, Pointer<Click>>(MenuState::FenInput))
+        .observe(recolor_on::<_, Pointer<Over>, _>(BUTTON_COLOR_HOVER))
+        .observe(recolor_on::<_, Pointer<Out>, _>(BUTTON_COLOR_DEFAULT))
+        .observe(set_state_on::<_, MenuState, Pointer<Click>, _>(MenuState::FenInput))
         .id();
 
     commands

@@ -2,6 +2,11 @@ pub use self::bevy::*;
 
 mod bevy;
 
+#[cfg(test)]
+mod test;
+#[cfg(test)]
+pub use test::*;
+
 pub trait RoundToNearest {
     fn round_to_nearest(self, step: Self) -> Self;
 }

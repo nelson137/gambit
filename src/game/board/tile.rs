@@ -48,8 +48,8 @@ pub fn spawn_tiles(
                 square,
                 Node {
                     position_type: PositionType::Relative,
-                    width: Val::Percent(100.0 / 8.0),
-                    height: Val::Percent(100.0 / 8.0),
+                    width: percent(100.0 / 8.0),
+                    height: percent(100.0 / 8.0),
                     ..default()
                 },
                 BackgroundColor(color),
@@ -76,8 +76,8 @@ pub fn spawn_tiles(
                         text_color,
                         Node {
                             position_type: PositionType::Absolute,
-                            bottom: Val::Percent(3.5),
-                            right: Val::Percent(6.0),
+                            bottom: percent(3.5),
+                            right: percent(6.0),
                             ..default()
                         },
                     ));
@@ -91,8 +91,8 @@ pub fn spawn_tiles(
                         text_color,
                         Node {
                             position_type: PositionType::Absolute,
-                            top: Val::Percent(1.0),
-                            left: Val::Percent(4.5),
+                            top: percent(1.0),
+                            left: percent(4.5),
                             ..default()
                         },
                     ));

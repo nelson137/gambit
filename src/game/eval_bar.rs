@@ -16,7 +16,7 @@ pub struct EvaluationBarPlugin;
 impl Plugin for EvaluationBarPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            .add_event::<EvaluationUpdate>()
+            .add_message::<EvaluationUpdate>()
             .add_systems(Startup, spawn_eval_bar.after(spawn_ui))
             .add_systems(Update, update_eval_bar)
             .noop();
@@ -27,7 +27,7 @@ impl Plugin for EvaluationBarPlugin {
 #[require(BackgroundColor(Color::WHITE))]
 pub struct EvaluationBar;
 
-#[derive(Event)]
+#[derive(Message)]
 pub struct EvaluationUpdate(pub f32);
 
 pub fn spawn_eval_bar(mut commands: Commands) {
@@ -42,7 +42,7 @@ pub fn spawn_eval_bar(mut commands: Commands) {
             debug_name!("Evaluation Bar Background (black)"),
             Node {
                 position_type: PositionType::Relative,
-                width: Val::Px(20.0),
+                width: px(20.0),
                 flex_grow: 1.0,
                 min_height: MIN_BOARD_SIZE,
                 ..default()
@@ -53,9 +53,9 @@ pub fn spawn_eval_bar(mut commands: Commands) {
                 EvaluationBar,
                 Node {
                     position_type: PositionType::Absolute,
-                    bottom: Val::Px(0.0),
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(50.0),
+                    bottom: px(0.0),
+                    width: percent(100.0),
+                    height: percent(50.0),
                     ..default()
                 },
             )],
@@ -69,14 +69,14 @@ pub fn spawn_eval_bar(mut commands: Commands) {
 }
 
 pub fn update_eval_bar(
-    mut reader: EventReader<EvaluationUpdate>,
+    mut reader: MessageReader<EvaluationUpdate>,
     mut q_bar: Query<&mut Node, With<EvaluationBar>>,
 ) {
     let Ok(mut bar_node) = q_bar.single_mut() else { return };
 
     for update in reader.read() {
         // Map eval stat in [-10.0,10.0] to [0.0,100.0]
-        let percent = (update.0 + 10.0).clamp(0.0, 20.0) * 5.0;
-        bar_node.height = Val::Percent(percent);
+        let p = (update.0 + 10.0).clamp(0.0, 20.0) * 5.0;
+        bar_node.height = percent(p);
     }
 }

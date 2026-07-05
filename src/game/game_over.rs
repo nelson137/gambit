@@ -18,7 +18,7 @@ pub struct GameOver;
 
 impl GameOver {
     fn handle(
-        _trigger: Trigger<Self>,
+        _game_over: On<Self>,
         mut commands: Commands,
         game_status: Res<GameStatus>,
         mut next_menu_state: ResMut<NextState<MenuState>>,

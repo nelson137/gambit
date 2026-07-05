@@ -24,7 +24,7 @@ impl Plugin for SelectionPlugin {
             // Resources
             .init_resource::<SelectionState>()
             // Events
-            .add_event::<MouseSelectionEvent>()
+            .add_message::<MouseSelectionEvent>()
             // Observers
             .add_observer(mouse::on_add_dragging_piece)
             .add_observer(mouse::on_remove_dragging_piece)
@@ -39,19 +39,19 @@ impl Plugin for SelectionPlugin {
             .add_observer(on_add_showing_indicator)
             .add_observer(on_remove_showing_indicator)
             // Observers - LoadGame
-            .add_observer(|_trigger: Trigger<LoadGame>, mut commands: Commands| {
+            .add_observer(|_load_game: On<LoadGame>, mut commands: Commands| {
                 commands.trigger(Unselect);
                 commands.trigger(DisableLastMove);
             })
             // Observers - MovePiece
-            .add_observer(|trigger: Trigger<MovePiece>, mut commands: Commands| {
-                let MovePiece { from_sq, to_sq, .. } = *trigger;
+            .add_observer(|move_piece: On<MovePiece>, mut commands: Commands| {
+                let MovePiece { from_sq, to_sq, .. } = *move_piece;
                 commands.trigger(Unselect);
                 commands.trigger(DisableLastMove);
                 commands.trigger(EnableLastMove(from_sq, to_sq));
             })
             // Observers - StartPromotion
-            .add_observer(|_trigger: Trigger<StartPromotion>, mut commands: Commands| {
+            .add_observer(|_start_promotion: On<StartPromotion>, mut commands: Commands| {
                 commands.trigger(Unselect);
             })
             // Systems
@@ -101,7 +101,7 @@ impl fmt::Display for SelectionStateAction {
     }
 }
 
-#[derive(Clone, Copy, Debug, Event)]
+#[derive(Clone, Copy, Debug, Message)]
 pub enum MouseSelectionEvent {
     MouseDown(Square),
     MouseUp(Square),
@@ -123,9 +123,9 @@ fn handle_mouse_selection_events(
     hints_map: Res<TileHintsMap>,
     pieces_map: Res<PiecesMap>,
     board_state: Res<BoardState>,
-    mut event_reader: EventReader<MouseSelectionEvent>,
+    mut message_reader: MessageReader<MouseSelectionEvent>,
 ) {
-    for &event in event_reader.read() {
+    for &event in message_reader.read() {
         trace!(state = ?*selection_state, %event, "Processing mouse selection");
         let action = match *selection_state {
             SelectionState::Unselected => match event {
@@ -212,7 +212,7 @@ fn handle_mouse_selection_events(
             }
             SelectionStateAction::Move { from_sq, to_sq, animate } => {
                 let piece = pieces_map.at(from_sq);
-                commands.trigger_targets(MovePiece::new(from_sq, to_sq, None, animate), piece);
+                commands.trigger(MovePiece::new(piece, from_sq, to_sq, None, animate));
                 // Set state to Unselected
                 *selection_state = SelectionState::Unselected;
             }
@@ -264,20 +264,17 @@ struct LastMove;
 #[component(storage = "SparseSet")]
 struct ShowingIndicator;
 
-fn on_add_showing_indicator(
-    trigger: Trigger<OnAdd, ShowingIndicator>,
-    mut q_vis: Query<&mut Visibility>,
-) {
-    if let Ok(mut vis) = q_vis.get_mut(trigger.target()) {
+fn on_add_showing_indicator(add: On<Add, ShowingIndicator>, mut q_vis: Query<&mut Visibility>) {
+    if let Ok(mut vis) = q_vis.get_mut(add.entity) {
         *vis = Visibility::Visible;
     }
 }
 
 fn on_remove_showing_indicator(
-    trigger: Trigger<OnRemove, ShowingIndicator>,
+    remove: On<Remove, ShowingIndicator>,
     mut q_vis: Query<&mut Visibility>,
 ) {
-    if let Ok(mut vis) = q_vis.get_mut(trigger.target()) {
+    if let Ok(mut vis) = q_vis.get_mut(remove.entity) {
         *vis = Visibility::Hidden;
     }
 }
@@ -306,10 +303,10 @@ impl fmt::Display for Select {
 }
 
 impl Select {
-    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
+    fn handle(select: On<Self>, mut commands: Commands) {
         commands.trigger(Unselect);
-        commands.trigger(EnableSelectionHighlight(trigger.highlight));
-        commands.trigger(EnableHints(trigger.hints.clone()));
+        commands.trigger(EnableSelectionHighlight(select.highlight));
+        commands.trigger(EnableHints(select.hints.clone()));
     }
 }
 
@@ -323,7 +320,7 @@ impl fmt::Display for Unselect {
 }
 
 impl Unselect {
-    fn handle(_trigger: Trigger<Self>, mut commands: Commands) {
+    fn handle(_unselect: On<Self>, mut commands: Commands) {
         commands.trigger(DisableSelectionHighlight);
         commands.trigger(DisableHints);
     }
@@ -333,8 +330,8 @@ impl Unselect {
 struct EnableSelectionHighlight(Entity);
 
 impl EnableSelectionHighlight {
-    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
-        commands.entity(trigger.0).insert((ShowingIndicator, Selected));
+    fn handle(enable_selection_highlight: On<Self>, mut commands: Commands) {
+        commands.entity(enable_selection_highlight.0).insert((ShowingIndicator, Selected));
     }
 }
 
@@ -342,8 +339,8 @@ impl EnableSelectionHighlight {
 struct EnableHints(Vec<Entity>);
 
 impl EnableHints {
-    fn handle(trigger: Trigger<Self>, mut commands: Commands) {
-        for &entity in &trigger.0 {
+    fn handle(enable_hints: On<Self>, mut commands: Commands) {
+        for &entity in &enable_hints.0 {
             commands.entity(entity).insert((ShowingIndicator, EnabledHint));
         }
     }
@@ -361,11 +358,11 @@ impl fmt::Display for EnableLastMove {
 
 impl EnableLastMove {
     fn handle(
-        trigger: Trigger<Self>,
+        enable_last_move: On<Self>,
         mut commands: Commands,
         highlights_map: Res<HighlightTilesMap>,
     ) {
-        let Self(from_sq, to_sq) = *trigger;
+        let Self(from_sq, to_sq) = *enable_last_move;
         let [e1, e2] = highlights_map.many([from_sq, to_sq]);
         commands.entity(e1).insert((ShowingIndicator, LastMove));
         commands.entity(e2).insert((ShowingIndicator, LastMove));
@@ -377,7 +374,7 @@ struct DisableSelectionHighlight;
 
 impl DisableSelectionHighlight {
     fn handle(
-        _trigger: Trigger<Self>,
+        _disable_selection_highlight: On<Self>,
         mut commands: Commands,
         q_selection: Query<(Entity, Has<LastMove>), (With<HighlightTile>, With<Selected>)>,
     ) {
@@ -396,7 +393,7 @@ struct DisableHints;
 
 impl DisableHints {
     fn handle(
-        _trigger: Trigger<Self>,
+        _disable_hints: On<Self>,
         mut commands: Commands,
         q_selected_hints: Query<Entity, (With<Hint>, With<EnabledHint>)>,
     ) {
@@ -411,7 +408,7 @@ struct DisableLastMove;
 
 impl DisableLastMove {
     fn handle(
-        _trigger: Trigger<Self>,
+        _disable_last_move: On<Self>,
         mut commands: Commands,
         q_last_move: Query<Entity, (With<HighlightTile>, With<LastMove>)>,
     ) {
@@ -432,7 +429,6 @@ mod tests {
 
         use crate::game::{
             board::{MovePlugin, PieceMeta, TilesMap},
-            core::{GameHeadlessPlugin, GameTestPlugin},
             menu::test::TestMenuStateInGamePlugin,
             ui::GameUiPlugin,
         };
@@ -441,7 +437,7 @@ mod tests {
 
         pub fn build_app() -> App {
             let mut app = App::new();
-            app.add_plugins((GameHeadlessPlugin, GameTestPlugin))
+            app.add_plugins(crate::utils::GameTestPlugin)
                 .add_plugins(TestMenuStateInGamePlugin)
                 .add_plugins(GameUiPlugin)
                 .add_plugins(SelectionPlugin)
@@ -603,7 +599,7 @@ mod tests {
     fn unselected_starts_dragging_on_mouse_down_on_piece() {
         let mut app = build_app();
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D2));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::D2));
@@ -616,7 +612,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_down_when_not_on_piece() {
         let mut app = build_app();
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D4));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -628,7 +624,7 @@ mod tests {
     fn unselected_does_nothing_on_mouse_up() {
         let mut app = build_app();
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A1));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -644,7 +640,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_dragging_piece(Square::D2);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -659,7 +655,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_dragging_piece(Square::D2);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
@@ -675,7 +671,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D2));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::SelectedDragging(Square::D2));
@@ -691,7 +687,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::D4));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -705,7 +701,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::H2));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::H2));
         app.update();
 
         app.assert_state(SelectionState::SelectingDragging(Square::H2));
@@ -722,7 +718,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::E4));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::E4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -737,7 +733,7 @@ mod tests {
         app.set_selected(Square::D2);
         app.set_hints([Square::D3, Square::D4]);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A1));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A1));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
@@ -753,7 +749,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_dragging_piece(Square::D2);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D2));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::D2));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -770,7 +766,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_dragging_piece(Square::D2);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::D4));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::D4));
         app.update();
 
         app.assert_state(SelectionState::Unselected);
@@ -785,7 +781,7 @@ mod tests {
         app.set_hints([Square::D3, Square::D4]);
         app.set_dragging_piece(Square::D2);
 
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A8));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A8));
         app.update();
 
         app.assert_state(SelectionState::Selected(Square::D2));
@@ -806,23 +802,23 @@ mod tests {
         let mut app = build_app();
 
         // `a3`
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A2));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::A2));
         app.update();
         app.assert_piece_has_dragging(Square::A2);
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A3));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A3));
         app.update();
         app.assert_piece_on_tile(Square::A3, PieceColor::WHITE, PieceType::PAWN);
 
         // `a6`
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A7));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::A7));
         app.update();
         app.assert_piece_has_dragging(Square::A7);
-        app.world_mut().send_event(MouseSelectionEvent::MouseUp(Square::A6));
+        app.world_mut().write_message(MouseSelectionEvent::MouseUp(Square::A6));
         app.update();
         app.assert_piece_on_tile(Square::A6, PieceColor::BLACK, PieceType::PAWN);
 
         // Start dragging `a3`
-        app.world_mut().send_event(MouseSelectionEvent::MouseDown(Square::A3));
+        app.world_mut().write_message(MouseSelectionEvent::MouseDown(Square::A3));
         app.update();
         app.assert_piece_has_dragging(Square::A3);
     }

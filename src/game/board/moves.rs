@@ -25,6 +25,7 @@ impl Plugin for MovePlugin {
 
 #[derive(Event, Debug, PartialEq, Eq)]
 pub struct MovePiece {
+    pub entity: Entity,
     pub from_sq: Square,
     pub to_sq: Square,
     pub promotion: Option<PieceType>,
@@ -33,25 +34,25 @@ pub struct MovePiece {
 
 impl MovePiece {
     pub fn new(
+        entity: Entity,
         from_sq: Square,
         to_sq: Square,
         promotion: Option<PieceType>,
         animate: bool,
     ) -> Self {
-        Self { from_sq, to_sq, promotion, animate }
+        Self { entity, from_sq, to_sq, promotion, animate }
     }
 }
 
 pub fn move_piece(
-    trigger: Trigger<MovePiece>,
+    move_piece: On<MovePiece>,
     mut commands: Commands,
     asset_server: Res<AssetServer>,
     pieces_map: Res<PiecesMap>,
     board_state: Res<BoardState>,
     mut q_info: Query<(&PieceMeta, &mut ImageNode)>,
 ) {
-    let entity = trigger.target();
-    let MovePiece { from_sq, to_sq, promotion, animate } = *trigger;
+    let MovePiece { entity, from_sq, to_sq, promotion, animate } = *move_piece;
     let Ok((&PieceMeta { color, typ }, mut image)) = q_info.get_mut(entity) else { return };
 
     trace!(?color, ?typ, %from_sq, %to_sq, ?promotion, "Move piece");
@@ -62,7 +63,7 @@ pub fn move_piece(
         image.image = asset_server.load(new_asset_path);
     } else if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
         // Start promotion
-        commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
+        commands.entity(entity).insert(PromotingPiece::new(entity, from_sq, to_sq));
         return;
     }
 
@@ -161,7 +162,7 @@ impl Command for UpdatePieceState {
             let mut board_state = world.resource_mut::<BoardState>();
             let captured = board_state.update_piece(&mut pieces_map, color, from_sq, to_sq);
             if let Some(piece) = captured {
-                world.trigger_targets(Captured, piece);
+                world.trigger(Captured(piece));
             }
         });
     }

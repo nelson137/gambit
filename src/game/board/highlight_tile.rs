@@ -18,8 +18,8 @@ pub fn spawn_highlight_tiles(
     tiles_map: Res<TilesMap>,
     mut highlights_map: ResMut<HighlightTilesMap>,
 ) {
-    let top = Val::Px(0.0);
-    let left = Val::Px(0.0);
+    let top = px(0.0);
+    let left = px(0.0);
 
     for square in chess::ALL_SQUARES {
         let square = Square::new(square);
@@ -33,8 +33,8 @@ pub fn spawn_highlight_tiles(
                     position_type: PositionType::Absolute,
                     top,
                     left,
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
+                    width: percent(100.0),
+                    height: percent(100.0),
                     ..default()
                 },
             ))

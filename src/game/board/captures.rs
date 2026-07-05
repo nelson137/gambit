@@ -232,8 +232,8 @@ impl CapState {
     }
 }
 
-fn load_capture_state(trigger: Trigger<LoadGame>, mut commands: Commands) {
-    let board = &trigger.board;
+fn load_capture_state(load_game: On<LoadGame>, mut commands: Commands) {
+    let board = &load_game.board;
     let kings_bb = board.pieces(chess::Piece::King);
 
     for color in chess::ALL_COLORS {
@@ -309,15 +309,15 @@ impl Command for CapStateUpdate {
     }
 }
 
-#[derive(Event)]
-pub struct Captured;
+#[derive(EntityEvent)]
+pub struct Captured(pub Entity);
 
-pub fn captures(
-    trigger: Trigger<Captured>,
+fn captures(
+    captured: On<Captured>,
     mut commands: Commands,
     mut q_data: Query<(&PieceMeta, &mut Visibility)>,
 ) {
-    let Ok((&PieceMeta { mut color, typ }, mut vis)) = q_data.get_mut(trigger.target()) else {
+    let Ok((&PieceMeta { mut color, typ }, mut vis)) = q_data.get_mut(captured.0) else {
         return;
     };
     trace!(?color, ?typ, "Capture piece");

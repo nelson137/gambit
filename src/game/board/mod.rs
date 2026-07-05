@@ -1,4 +1,4 @@
-use bevy::{prelude::*, ui::UiSystem};
+use bevy::{prelude::*, ui::UiSystems};
 use bevy_startup_tree::{AddStartupTree, startup_tree};
 
 use crate::utils::NoopExts;
@@ -55,7 +55,7 @@ impl Plugin for BoardPlugin {
                     },
                 },
             })
-            .add_systems(PostUpdate, end_game_icon_size.before(UiSystem::Layout))
+            .add_systems(PostUpdate, end_game_icon_size.before(UiSystems::Layout))
             .noop();
     }
 }

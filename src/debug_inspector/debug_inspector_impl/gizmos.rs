@@ -1,7 +1,4 @@
-use bevy::{
-    math::vec2, platform::collections::HashSet, prelude::*, render::camera::ClearColorConfig,
-    window::PrimaryWindow,
-};
+use bevy::{math::vec2, platform::collections::HashSet, prelude::*, window::PrimaryWindow};
 
 use super::state::InspectorState;
 
@@ -19,7 +16,7 @@ pub(super) fn draw_entity_hover_gizmo(
     mut drawn_entities: Local<HashSet<Entity>>,
     mut inspector_state: ResMut<InspectorState>,
     win: Single<&Window, With<PrimaryWindow>>,
-    q_global_transf: Query<&GlobalTransform>,
+    q_global_transf: Query<&UiGlobalTransform>,
     q_computed_node: Query<&ComputedNode>,
     mut gizmos: Gizmos,
 ) {
@@ -32,7 +29,7 @@ pub(super) fn draw_entity_hover_gizmo(
         let Ok(global_transf) = q_global_transf.get(entity) else { continue };
         let Ok(computed_node) = q_computed_node.get(entity) else { continue };
 
-        let transl = global_transf.translation();
+        let transl = global_transf.translation;
         let inverse_scale_factor = computed_node.inverse_scale_factor();
         let size = computed_node.size() * inverse_scale_factor;
         let pos = vec2(transl.x - half_res.x, half_res.y - transl.y) * inverse_scale_factor;

@@ -1,6 +1,6 @@
 use bevy::{
     prelude::*,
-    ui::{FocusPolicy, UiSystem},
+    ui::{FocusPolicy, UiSystems},
 };
 
 use crate::{
@@ -30,7 +30,7 @@ impl Plugin for PromotionPlugin {
                     .pipe(promotion_result_handler)
                     .in_set(PromoterSystem)
                     .run_if(is_promoting_piece)
-                    .after(UiSystem::Focus),
+                    .after(UiSystems::Focus),
             )
             .noop();
     }
@@ -64,94 +64,95 @@ pub fn spawn_promoters(
     asset_server: Res<AssetServer>,
     tiles_map: Res<TilesMap>,
 ) {
-    for (color, flex_direction) in [
-        (PieceColor::WHITE, FlexDirection::Column),
-        (PieceColor::BLACK, FlexDirection::ColumnReverse),
+    let tile_entity = tiles_map.at(Square::H8);
+    let font = asset_server.load(FONT_PATH);
+
+    for (color, (top, bottom), flex_direction) in [
+        (PieceColor::WHITE, (px(0.0), auto()), FlexDirection::Column),
+        (PieceColor::BLACK, (auto(), px(0.0)), FlexDirection::ColumnReverse),
     ] {
-        let (left, top, bottom) = if let PieceColor::WHITE = color {
-            (Val::Px(0.0), Val::Px(0.0), Val::Auto)
-        } else {
-            (Val::Px(0.0), Val::Auto, Val::Px(0.0))
-        };
-        let promo_entity = commands
-            .spawn((
-                debug_name_f!("Promoter ({color})"),
-                PromotionUi(color),
-                Node {
-                    position_type: PositionType::Absolute,
-                    left,
-                    top,
-                    bottom,
-                    flex_direction,
-                    ..default()
-                },
-            ))
-            .with_children(|cmds| {
-                for typ in [PieceType::QUEEN, PieceType::KNIGHT, PieceType::ROOK, PieceType::BISHOP]
-                {
-                    let asset_path = PieceMeta::new(color, typ).asset_path();
-
-                    cmds.spawn((
-                        debug_name_f!("Promotion Button ({color}) ({typ})"),
-                        PromotionButton(typ),
-                        children![(
-                            debug_name_f!("Promotion Piece ({color}) ({typ})"),
-                            ImageNode::new(asset_server.load(asset_path)),
-                            Node {
-                                width: Val::Percent(100.0),
-                                height: Val::Percent(100.0),
-                                ..default()
-                            },
-                            FocusPolicy::Pass,
-                        )],
-                    ));
-                }
-
-                cmds.spawn((
-                    debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
-                    Node { flex_direction, ..default() },
-                    children![(
-                        debug_name_f!("Promotion Cancel Button ({color})"),
-                        PromotionCancelButton,
-                        Node {
-                            justify_content: JustifyContent::Center,
-                            align_items: AlignItems::Center,
-                            width: Val::Percent(100.0),
-                            ..default()
-                        },
-                        {
-                            let font = asset_server.load(FONT_PATH);
-                            children![(
-                                Text("x".to_string()),
-                                TextFont { font, font_size: 24.0, ..default() },
-                                TextColor(CANCEL_BUTTON_FG_COLOR),
-                            )]
-                        },
-                    )],
-                ));
-            })
-            .id();
-
-        let tile_entity = tiles_map.at(Square::H8);
-        commands.entity(tile_entity).add_child(promo_entity);
+        commands.spawn((
+            debug_name_f!("Promoter ({color})"),
+            PromotionUi(color),
+            ChildOf(tile_entity),
+            Node {
+                position_type: PositionType::Absolute,
+                left: px(0.0),
+                top,
+                bottom,
+                flex_direction,
+                ..default()
+            },
+            children![
+                promoter_piece_button(&asset_server, color, PieceType::QUEEN),
+                promoter_piece_button(&asset_server, color, PieceType::KNIGHT),
+                promoter_piece_button(&asset_server, color, PieceType::ROOK),
+                promoter_piece_button(&asset_server, color, PieceType::BISHOP),
+                promoter_cancel_button(color, font.clone()),
+            ],
+        ));
     }
 }
 
-#[derive(Component, Clone, Copy)]
+fn promoter_piece_button(
+    asset_server: &AssetServer,
+    color: PieceColor,
+    typ: PieceType,
+) -> impl Bundle {
+    let asset_path = PieceMeta::new(color, typ).asset_path();
+    let texture = asset_server.load(asset_path);
+    (
+        debug_name_f!("Promotion Button ({color}) ({typ})"),
+        PromotionButton(typ),
+        children![(
+            debug_name_f!("Promotion Piece ({color}) ({typ})"),
+            ImageNode::new(texture),
+            Node { width: percent(100.0), height: percent(100.0), ..default() },
+            FocusPolicy::Pass,
+        )],
+    )
+}
+
+fn promoter_cancel_button(color: PieceColor, font: Handle<Font>) -> impl Bundle {
+    #[cfg(not(feature = "debug"))]
+    let _ = color;
+    (
+        debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
+        Node::default(),
+        children![(
+            debug_name_f!("Promotion Cancel Button ({color})"),
+            PromotionCancelButton,
+            Node {
+                justify_content: JustifyContent::Center,
+                align_items: AlignItems::Center,
+                width: percent(100.0),
+                ..default()
+            },
+            children![(
+                Text("x".to_string()),
+                TextFont { font, font_size: 24.0, ..default() },
+                TextColor(CANCEL_BUTTON_FG_COLOR),
+            )],
+        )],
+    )
+}
+
+#[derive(Component, Clone, Copy, EntityEvent)]
 #[component(storage = "SparseSet")]
 pub struct PromotingPiece {
+    entity: Entity,
     from_sq: Square,
     to_sq: Square,
 }
 
 impl PromotingPiece {
-    pub fn new(from_sq: Square, to_sq: Square) -> Self {
-        Self { from_sq, to_sq }
+    pub fn new(entity: Entity, from_sq: Square, to_sq: Square) -> Self {
+        Self { entity, from_sq, to_sq }
     }
 }
 
 pub fn on_add_promoting_piece(
-    trigger: Trigger<OnAdd, PromotingPiece>,
+    add: On<Add, PromotingPiece>,
     mut commands: Commands,
     tiles_map: Res<TilesMap>,
     q_promoting: Query<&PromotingPiece>,
@@ -159,10 +160,9 @@ pub fn on_add_promoting_piece(
     mut q_visibility: Query<&mut Visibility>,
     mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
-    let piece = trigger.target();
-    let Ok(&PromotingPiece { from_sq, to_sq }) = q_promoting.get(piece) else { return };
-    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
-    let Ok(mut vis) = q_visibility.get_mut(piece) else { return };
+    let Ok(&PromotingPiece { from_sq, to_sq, .. }) = q_promoting.get(add.entity) else { return };
+    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(add.entity) else { return };
+    let Ok(mut vis) = q_visibility.get_mut(add.entity) else { return };
 
     trace!(?color, %from_sq, %to_sq, "Start promotion");
 
@@ -185,16 +185,15 @@ pub fn on_add_promoting_piece(
 pub struct StartPromotion;
 
 pub fn on_remove_promoting_piece(
-    trigger: Trigger<OnRemove, PromotingPiece>,
+    remove: On<Remove, PromotingPiece>,
     q_promoting: Query<&PromotingPiece>,
     q_piece_meta: Query<&PieceMeta>,
     mut q_visibility: Query<&mut Visibility>,
     mut q_promoters: Query<(Entity, &PromotionUi)>,
 ) {
-    let piece = trigger.target();
-    let Ok(&PromotingPiece { from_sq, to_sq }) = q_promoting.get(piece) else { return };
-    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(piece) else { return };
-    let Ok(mut piece_vis) = q_visibility.get_mut(piece) else { return };
+    let Ok(&PromotingPiece { from_sq, to_sq, .. }) = q_promoting.get(remove.entity) else { return };
+    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(remove.entity) else { return };
+    let Ok(mut piece_vis) = q_visibility.get_mut(remove.entity) else { return };
 
     trace!(?color, %from_sq, %to_sq, "End promotion");
 
@@ -226,14 +225,14 @@ fn promotion_ui_sizes(
 
     let mut lens = q_promo_button.join::<PromoButtonD, PromoButtonD>(&mut q_node);
     for (_, mut node) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
-        node.width = Val::Px(tile_size.x);
-        node.height = Val::Px(tile_size.y);
+        node.width = px(tile_size.x);
+        node.height = px(tile_size.y);
     }
 
     let mut lens = q_cancel_buttons.join::<PromoButtonD, PromoButtonD>(&mut q_node);
     for (_, mut node) in lens.query().iter_mut().filter(|(vis, _)| vis.get()) {
-        node.width = Val::Px(tile_size.x);
-        node.height = Val::Px(tile_size.y / 2.0);
+        node.width = px(tile_size.x);
+        node.height = px(tile_size.y / 2.0);
     }
 }
 
@@ -274,7 +273,7 @@ pub fn promotion_result_handler(
 ) {
     let Some(result) = promotion_result else { return };
 
-    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq })) =
+    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq, .. })) =
         q_promo.single()
     else {
         warn!("Ignoring promotion event as no piece is awaiting promotion");
@@ -288,8 +287,7 @@ pub fn promotion_result_handler(
     match result {
         PromotionResult::Promote(promo_typ) => {
             // Move the piece
-            commands
-                .trigger_targets(MovePiece::new(from_sq, to_sq, Some(promo_typ), false), entity);
+            commands.trigger(MovePiece::new(entity, from_sq, to_sq, Some(promo_typ), false));
         }
         PromotionResult::Cancel => {
             // Re-parent piece back to its original square

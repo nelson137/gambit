@@ -1,4 +1,4 @@
-use bevy::{ecs::system::SystemState, prelude::*, ui::UiSystem};
+use bevy::{ecs::system::SystemState, prelude::*, ui::UiSystems};
 
 use crate::{
     debug_name,
@@ -21,7 +21,7 @@ impl Plugin for UiPanelsPlugin {
 
         app.noop()
             .add_systems(Startup, spawn_panels.after(spawn_ui))
-            .add_systems(PostUpdate, captures_images_sizes.before(UiSystem::Layout))
+            .add_systems(PostUpdate, captures_images_sizes.before(UiSystems::Layout))
             .noop();
     }
 }
@@ -36,7 +36,7 @@ fn spawn_panels(mut commands: Commands) {
         color: PieceColor::BLACK,
         profile_image_path: "images/profiles/black.png",
         profile_label: "Black",
-        margin: UiRect::bottom(UI_GAP_VAL),
+        margin: UI_GAP_VAL.bottom(),
     };
     let black_panel_entity = commands.spawn(black_panel.as_bundle()).id();
     commands.queue(black_panel.build(black_panel_entity));
@@ -47,7 +47,7 @@ fn spawn_panels(mut commands: Commands) {
         color: PieceColor::WHITE,
         profile_image_path: "images/profiles/white.png",
         profile_label: "White",
-        margin: UiRect::top(UI_GAP_VAL),
+        margin: UI_GAP_VAL.top(),
     };
     let white_panel_entity = commands.spawn(white_panel.as_bundle()).id();
     commands.queue(white_panel.build(white_panel_entity));
@@ -72,9 +72,9 @@ impl PanelBuilder {
             UiPanel,
             SortIndex(self.index),
             Node {
-                width: Val::Percent(100.0),
-                height: Val::Px(CAPTURES_PANEL_HEIGHT),
-                min_height: Val::Px(CAPTURES_PANEL_HEIGHT),
+                width: percent(100.0),
+                height: px(CAPTURES_PANEL_HEIGHT),
+                min_height: px(CAPTURES_PANEL_HEIGHT),
                 margin: self.margin,
                 ..default()
             },
@@ -126,8 +126,8 @@ impl Command for PanelBuilderCmd {
                 debug_name!("Panel Inner Container"),
                 PanelInnerContainer,
                 Node {
-                    height: Val::Percent(100.0),
-                    margin: UiRect::left(UI_GAP_VAL),
+                    height: percent(100.0),
+                    margin: UI_GAP_VAL.left(),
                     flex_direction: FlexDirection::Column,
                     align_items: AlignItems::FlexStart,
                     flex_grow: 1.0,
@@ -143,9 +143,9 @@ impl Command for PanelBuilderCmd {
                 ));
 
                 cmds.spawn(Node {
-                    width: Val::Percent(100.0),
-                    height: Val::Percent(100.0),
-                    margin: UiRect::top(UI_GAP_VAL),
+                    width: percent(100.0),
+                    height: percent(100.0),
+                    margin: UI_GAP_VAL.top(),
                     ..default()
                 })
                 .with_children(|cmds| {
@@ -157,7 +157,7 @@ impl Command for PanelBuilderCmd {
                                 ImageNode::new(handle),
                                 Node {
                                     display: Display::None,
-                                    margin: UiRect::right(UI_GAP_VAL),
+                                    margin: UI_GAP_VAL.right(),
                                     ..default()
                                 },
                             ))
@@ -193,7 +193,7 @@ fn captures_images_sizes(
             let image_size = img.size();
             let size = computed_node.size() * computed_node.inverse_scale_factor();
             let scale = size.y / image_size.y as f32;
-            node.width = Val::Px(image_size.x as f32 * scale);
+            node.width = px(image_size.x as f32 * scale);
         }
     }
 }

@@ -52,19 +52,12 @@ impl EndGameIcons {
     }
 }
 
-pub(super) fn spawn_end_game_icons(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    tiles_map: Res<TilesMap>,
-) {
-    let parent = tiles_map.at(Square::DEFAULT);
-
+pub(super) fn spawn_end_game_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
     let winner = commands
         .spawn((
             debug_name!("Winner Icon"),
             EndGameIcon::Winner,
             ImageNode::new(asset_server.load("images/checkmate/winner.png")),
-            ChildOf(parent),
         ))
         .id();
 
@@ -73,7 +66,6 @@ pub(super) fn spawn_end_game_icons(
             debug_name!("Black Loser Icon"),
             EndGameIcon::LoserBlack,
             ImageNode::new(asset_server.load("images/checkmate/loser-black.png")),
-            ChildOf(parent),
         ))
         .id();
 
@@ -82,23 +74,22 @@ pub(super) fn spawn_end_game_icons(
             debug_name!("White Loser Icon"),
             EndGameIcon::LoserWhite,
             ImageNode::new(asset_server.load("images/checkmate/loser-white.png")),
-            ChildOf(parent),
         ))
         .id();
 
     let draw_black = commands
         .spawn((
+            debug_name!("Black Draw Icon"),
             EndGameIcon::DrawBlack,
             ImageNode::new(asset_server.load("images/draw/draw-black.png")),
-            ChildOf(parent),
         ))
         .id();
 
     let draw_white = commands
         .spawn((
+            debug_name!("White Draw Icon"),
             EndGameIcon::DrawWhite,
             ImageNode::new(asset_server.load("images/draw/draw-white.png")),
-            ChildOf(parent),
         ))
         .id();
 
@@ -116,7 +107,7 @@ pub struct ShowCheckmateIcons;
 
 impl ShowCheckmateIcons {
     pub(super) fn handle(
-        _trigger: Trigger<Self>,
+        _show_checkmate_icons: On<Self>,
         mut commands: Commands,
         board_state: Res<BoardState>,
     ) {
@@ -138,7 +129,7 @@ pub struct ShowDrawIcons;
 
 impl ShowDrawIcons {
     pub(super) fn handle(
-        _trigger: Trigger<Self>,
+        _show_draw_icons: On<Self>,
         mut commands: Commands,
         board_state: Res<BoardState>,
     ) {
@@ -164,13 +155,13 @@ impl ShowEndGameIcon {
     }
 
     pub(super) fn handle(
-        trigger: Trigger<Self>,
+        show_end_game_icons: On<Self>,
         mut commands: Commands,
         tiles_map: Res<TilesMap>,
         end_game_icons: Res<EndGameIcons>,
         mut q_icon: Query<(&mut Visibility, &mut Node)>,
     ) {
-        let Self { icon, square } = *trigger;
+        let Self { icon, square } = *show_end_game_icons;
         let tile_entity = tiles_map.at(square);
         let icon_entity = end_game_icons.entity(icon);
 
@@ -180,8 +171,8 @@ impl ShowEndGameIcon {
 
         *vis = Visibility::Visible;
 
-        node.top = Val::Percent(if square.get_rank() == Rank::Eighth { 3.0 } else { -14.0 });
-        node.left = Val::Percent(if square.get_file() == File::H { 57.0 } else { 74.0 });
+        node.top = percent(if square.get_rank() == Rank::Eighth { 3.0 } else { -14.0 });
+        node.left = percent(if square.get_file() == File::H { 57.0 } else { 74.0 });
     }
 }
 
@@ -191,7 +182,7 @@ pub(super) fn end_game_icon_size(
 ) {
     let Some(tile_computed_node) = q_tiles.iter().next() else { return };
     let tile_size = tile_computed_node.size().x * tile_computed_node.inverse_scale_factor();
-    let icon_size = Val::Px(tile_size * 0.4);
+    let icon_size = px(tile_size * 0.4);
     for mut node in &mut q_end_game_icons {
         node.width = icon_size;
         node.height = icon_size;
@@ -199,7 +190,7 @@ pub(super) fn end_game_icon_size(
 }
 
 pub(super) fn hide_end_game_icons_on_load_game(
-    _trigger: Trigger<LoadGame>,
+    _load_game: On<LoadGame>,
     mut q_end_game_icons: Query<&mut Visibility, With<EndGameIcon>>,
 ) {
     q_end_game_icons.iter_mut().for_each(|mut vis| *vis = Visibility::Hidden);

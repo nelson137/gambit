@@ -13,18 +13,18 @@ use super::position::{MouseBoardSquare, MouseWorldPosition};
 pub(super) fn mouse_handler(
     mouse_buttons: Res<ButtonInput<MouseButton>>,
     mouse_sq: Res<MouseBoardSquare>,
-    mut event_writer: EventWriter<MouseSelectionEvent>,
+    mut message_writer: MessageWriter<MouseSelectionEvent>,
 ) {
     if mouse_buttons.just_pressed(MouseButton::Left)
         && let Some(square) = **mouse_sq
     {
-        event_writer.write(MouseSelectionEvent::MouseDown(square));
+        message_writer.write(MouseSelectionEvent::MouseDown(square));
     }
 
     if mouse_buttons.just_released(MouseButton::Left)
         && let Some(square) = **mouse_sq
     {
-        event_writer.write(MouseSelectionEvent::MouseUp(square));
+        message_writer.write(MouseSelectionEvent::MouseUp(square));
     }
 }
 
@@ -45,10 +45,10 @@ pub(super) fn update_drag_container(
     let inverse_scale_factor = tile_computed_node.inverse_scale_factor();
     let Vec2 { x: width, y: height } = tile_computed_node.size() * inverse_scale_factor;
     if let Ok(mut node) = q_container.single_mut() {
-        node.width = Val::Px(width);
-        node.height = Val::Px(height);
-        node.top = Val::Px(mouse_world_pos.y - height / 2.0);
-        node.left = Val::Px(mouse_world_pos.x - width / 2.0);
+        node.width = px(width);
+        node.height = px(height);
+        node.top = px(mouse_world_pos.y - height / 2.0);
+        node.left = px(mouse_world_pos.x - width / 2.0);
     }
 }
 
@@ -59,22 +59,20 @@ pub struct Dragging {
 }
 
 pub fn on_add_dragging_piece(
-    trigger: Trigger<OnAdd, Dragging>,
+    add: On<Add, Dragging>,
     mut commands: Commands,
     drag_container: Single<Entity, With<DragContainer>>,
 ) {
-    let piece = trigger.target();
-    commands.entity(*drag_container).add_child(piece);
+    commands.entity(*drag_container).add_child(add.entity);
 }
 
 pub fn on_remove_dragging_piece(
-    trigger: Trigger<OnRemove, Dragging>,
+    remove: On<Remove, Dragging>,
     mut commands: Commands,
     tiles_map: Res<TilesMap>,
     q_dragging: Query<&Dragging>,
 ) {
-    let piece = trigger.target();
-    let Ok(dragging) = q_dragging.get(piece) else { return };
+    let Ok(dragging) = q_dragging.get(remove.entity) else { return };
     let original_tile = tiles_map.at(dragging.original_square);
-    commands.entity(original_tile).add_child(piece);
+    commands.entity(original_tile).add_child(remove.entity);
 }

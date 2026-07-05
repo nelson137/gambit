@@ -29,25 +29,25 @@ pub const DEFAULT_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQk
 //==================================================
 
 #[cfg(not(feature = "debug"))]
-pub const INIT_WIN_WIDTH: f32 = 698.0;
+pub const INIT_WIN_WIDTH: u32 = 698;
 #[cfg(not(feature = "debug"))]
-pub const INIT_WIN_HEIGHT: f32 = 750.0;
+pub const INIT_WIN_HEIGHT: u32 = 750;
 
 #[cfg(feature = "debug")]
-pub const INIT_WIN_WIDTH: f32 = 698.0 * 2.0;
+pub const INIT_WIN_WIDTH: u32 = 698 * 2;
 #[cfg(feature = "debug")]
-pub const INIT_WIN_HEIGHT: f32 = 750.0;
+pub const INIT_WIN_HEIGHT: u32 = 750;
 
 pub const UI_GAP: f32 = 8.0;
 pub const UI_GAP_VAL: Val = Val::Px(UI_GAP);
 
 pub const CAPTURES_PANEL_HEIGHT: f32 = 32.0;
 
-pub const MENU_WIDTH_RATIO: f32 = 544.0 / INIT_WIN_WIDTH;
-pub const MENU_HEIGHT_RATIO: f32 = 448.0 / INIT_WIN_HEIGHT;
+pub const MENU_WIDTH_RATIO: f32 = 544.0 / INIT_WIN_WIDTH as f32;
+pub const MENU_HEIGHT_RATIO: f32 = 448.0 / INIT_WIN_HEIGHT as f32;
 
-pub const INIT_MENU_WIDTH: f32 = MENU_WIDTH_RATIO * INIT_WIN_WIDTH;
-pub const INIT_MENU_HEIGHT: f32 = MENU_HEIGHT_RATIO * INIT_WIN_HEIGHT;
+pub const INIT_MENU_WIDTH: f32 = MENU_WIDTH_RATIO * INIT_WIN_WIDTH as f32;
+pub const INIT_MENU_HEIGHT: f32 = MENU_HEIGHT_RATIO * INIT_WIN_HEIGHT as f32;
 
 pub const INIT_MENU_TITLE_SIZE: f32 = 128.0;
 

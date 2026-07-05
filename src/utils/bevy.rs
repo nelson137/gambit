@@ -8,7 +8,6 @@ pub trait NoopExts {
 
 impl NoopExts for App {}
 impl NoopExts for World {}
-impl NoopExts for ecs::component::ComponentHooks {}
 
 #[cfg(feature = "debug")]
 #[macro_export]
@@ -117,19 +116,35 @@ fn sort_sortable_entities(
     }
 }
 
-pub fn recolor_on<E: 'static>(color: Color) -> impl ecs::system::ObserverSystem<E, (), ()> {
-    let system = move |mut trigger: Trigger<E>, mut commands: Commands| {
-        trigger.propagate(false);
-        commands.entity(trigger.target()).insert(BackgroundColor(color));
+pub fn recolor_on<const AUTO_PROPAGATE: bool, E, T>(
+    color: Color,
+) -> impl ecs::system::ObserverSystem<E, (), ()>
+where
+    E: Event
+        + EntityEvent
+        + for<'a> Event<Trigger<'a> = ecs::event::PropagateEntityTrigger<AUTO_PROPAGATE, E, T>>
+        + 'static,
+    T: ecs::traversal::Traversal<E> + 'static,
+{
+    let system = move |mut event: On<E>, mut commands: Commands| {
+        event.propagate(false);
+        let entity = event.event_target();
+        commands.entity(entity).insert(BackgroundColor(color));
     };
     ecs::system::IntoObserverSystem::into_system(system)
 }
 
-pub fn set_state_on<S: state::state::FreelyMutableState, E: 'static>(
+pub fn set_state_on<'w, 't, const AUTO_PROPAGATE: bool, S, E, T>(
     state: S,
-) -> impl ecs::system::ObserverSystem<E, (), ()> {
-    let system = move |mut trigger: Trigger<E>, mut next_state: ResMut<NextState<S>>| {
-        trigger.propagate(false);
+) -> impl ecs::system::ObserverSystem<E, (), ()>
+where
+    S: state::state::FreelyMutableState,
+    E: EntityEvent
+        + for<'a> Event<Trigger<'a> = ecs::event::PropagateEntityTrigger<AUTO_PROPAGATE, E, T>>,
+    T: ecs::traversal::Traversal<E> + 'static,
+{
+    let system = move |mut event: On<E>, mut next_state: ResMut<NextState<S>>| {
+        event.propagate(false);
         next_state.set(state.clone());
     };
     ecs::system::IntoObserverSystem::into_system(system)

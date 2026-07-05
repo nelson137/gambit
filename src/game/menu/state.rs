@@ -26,10 +26,10 @@ pub(super) fn init_menu_state_from_cli(
 }
 
 pub(super) fn set_state_to_game_on_load(
-    trigger: Trigger<LoadGame>,
+    load_game: On<LoadGame>,
     mut next_state: ResMut<NextState<MenuState>>,
 ) {
-    next_state.set(trigger.menu_state);
+    next_state.set(load_game.menu_state);
 }
 
 impl PartialEq for MenuState {

@@ -32,7 +32,7 @@ pub(super) fn mouse_screen_position_to_world(
 pub(super) struct MouseBoardSquare(pub Option<Square>);
 
 pub(super) fn mouse_world_position_to_square(
-    board: Single<(&GlobalTransform, &ComputedNode), With<UiBoard>>,
+    board: Single<(&UiGlobalTransform, &ComputedNode), With<UiBoard>>,
     mouse_world_pos: Res<MouseWorldPosition>,
     mut mouse_sq: ResMut<MouseBoardSquare>,
 ) {
@@ -40,7 +40,7 @@ pub(super) fn mouse_world_position_to_square(
 
     let (board_global_transf, board_computed_node) = *board;
     let inverse_scale_factor = board_computed_node.inverse_scale_factor();
-    let board_pos = board_global_transf.translation().truncate() * inverse_scale_factor;
+    let board_pos = board_global_transf.translation.trunc() * inverse_scale_factor;
     let board_size = board_computed_node.size() * inverse_scale_factor;
     let tile_size = board_size / 8.0;
 
