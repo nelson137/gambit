@@ -227,7 +227,7 @@ impl PopupFonts {
 
     pub(super) fn initialize(&mut self, ctx: &mut Context) {
         self.is_initialized = true;
-        ctx.style_mut(|style| {
+        ctx.global_style_mut(|style| {
             let drag_value_style = FontId::new(16.0, default());
             style.text_styles.entry(self.drag_value()).or_insert(drag_value_style);
             style.drag_value_text_style = self.drag_value();

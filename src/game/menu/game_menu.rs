@@ -127,12 +127,12 @@ pub fn spawn_menu_elements(
     asset_server: Res<AssetServer>,
     menu: Single<Entity, With<GameMenu>>,
 ) {
-    let font = asset_server.load(TITLE_FONT_PATH);
+    let font = asset_server.load(TITLE_FONT_PATH).into();
     let title_entity = commands
         .spawn((
             debug_name!("Game Menu Title"),
             GameMenuTitle,
-            TextFont { font, font_size: INIT_MENU_TITLE_SIZE, ..default() },
+            TextFont { font, font_size: FontSize::Px(INIT_MENU_TITLE_SIZE), ..default() },
             Node { margin: percent(4.0).top(), ..default() },
         ))
         .id();
@@ -168,8 +168,8 @@ pub fn spawn_menu_buttons(
         ..default()
     };
 
-    let font = asset_server.load(FONT_PATH);
-    let text_font = TextFont { font, font_size: 48.0, ..default() };
+    let font = asset_server.load(FONT_PATH).into();
+    let text_font = TextFont { font, font_size: FontSize::Px(48.), ..default() };
 
     let start_button_entity = commands
         .spawn((
@@ -222,7 +222,7 @@ pub(super) fn game_menu_elements_sizes(
     fn set_text_font_size_impl(font_size: f32) -> impl FnMut(Mut<TextFont>) {
         let stepped_font_size = (font_size as u32).round_to_nearest(8) as f32;
         move |mut text_font: Mut<TextFont>| {
-            text_font.font_size = stepped_font_size;
+            text_font.font_size = FontSize::Px(stepped_font_size);
         }
     }
 

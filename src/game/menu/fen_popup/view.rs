@@ -83,7 +83,7 @@ impl PopupState {
 
         if self.focus_fen {
             self.focus_fen = false;
-            ui.memory_mut(move |mem| mem.request_focus(response.id));
+            ui.memory_mut(|mem| mem.request_focus(response.id));
         }
 
         if response.clicked() {

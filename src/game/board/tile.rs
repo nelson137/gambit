@@ -55,11 +55,11 @@ pub fn spawn_tiles(
                 BackgroundColor(color),
             ))
             .with_children(|cmds| {
-                pub const BOARD_TEXT_FONT_SIZE: f32 = 16.0;
+                pub const BOARD_TEXT_FONT_SIZE: FontSize = FontSize::Px(16.);
 
                 let text_font = TextFont {
                     font_size: BOARD_TEXT_FONT_SIZE,
-                    font: asset_server.load(FONT_PATH),
+                    font: asset_server.load(FONT_PATH).into(),
                     ..default()
                 };
                 let text_color = TextColor(if file_rank_sum.is_multiple_of(2) {

@@ -1,4 +1,8 @@
-use bevy::{ecs::system::SystemState, prelude::*, ui::UiSystems};
+use bevy::{
+    ecs::system::{SystemParamValidationError, SystemState},
+    prelude::*,
+    ui::UiSystems,
+};
 
 use crate::{
     debug_name,
@@ -104,15 +108,17 @@ const PROFILE_IMAGE_SIZE: f32 = CAPTURES_PANEL_HEIGHT;
 const PROFILE_IMAGE_SIZE_VAL: Val = Val::Px(PROFILE_IMAGE_SIZE);
 
 impl Command for PanelBuilderCmd {
-    fn apply(self, world: &mut World) {
+    type Out = Result<(), SystemParamValidationError>;
+
+    fn apply(self, world: &mut World) -> Self::Out {
         let color = self.data.color;
 
         let asset_server = world.resource::<AssetServer>();
         let profile_image_handle = asset_server.load(self.data.profile_image_path);
-        let font = asset_server.load(FONT_PATH);
+        let font = FontSource::Handle(asset_server.load(FONT_PATH));
 
         let mut state = SystemState::<(Commands, ResMut<CaptureState>)>::new(world);
-        let (mut commands, mut capture_state) = state.get_mut(world);
+        let (mut commands, mut capture_state) = state.get_mut(world)?;
 
         commands.entity(self.entity).with_children(|cmds| {
             cmds.spawn((
@@ -138,7 +144,7 @@ impl Command for PanelBuilderCmd {
                 cmds.spawn((
                     debug_name!("Profile Label"),
                     Text(self.data.profile_label.to_string()),
-                    TextFont { font: font.clone(), font_size: 12.0, ..default() },
+                    TextFont { font: font.clone(), font_size: FontSize::Px(12.), ..default() },
                     TextColor(Color::WHITE),
                 ));
 
@@ -166,13 +172,15 @@ impl Command for PanelBuilderCmd {
 
                     cmds.spawn((
                         MaterialAdvantageLabel(color),
-                        TextFont { font, font_size: 12.0, ..default() },
+                        TextFont { font, font_size: FontSize::Px(12.), ..default() },
                     ));
                 });
             });
         });
 
         state.apply(world);
+
+        Ok(())
     }
 }
 

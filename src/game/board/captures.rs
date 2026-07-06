@@ -269,7 +269,9 @@ pub enum CapStateDiff {
 }
 
 impl Command for CapStateUpdate {
-    fn apply(self, world: &mut World) {
+    type Out = ();
+
+    fn apply(self, world: &mut World) -> Self::Out {
         trace!(side = ?self.color, typ = ?self.typ, action = ?self.diff, "Update capture state");
 
         let mut state = world.resource_mut::<CaptureState>();

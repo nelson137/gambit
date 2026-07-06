@@ -312,7 +312,9 @@ impl AnimatePiece {
 }
 
 impl Command for AnimatePiece {
-    fn apply(self, world: &mut World) {
+    type Out = ();
+
+    fn apply(self, world: &mut World) -> Self::Out {
         let Self { entity, from, to } = self;
 
         let to_entity = world.resource::<TilesMap>().at(self.to);

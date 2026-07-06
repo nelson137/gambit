@@ -65,7 +65,7 @@ pub fn spawn_promoters(
     tiles_map: Res<TilesMap>,
 ) {
     let tile_entity = tiles_map.at(Square::H8);
-    let font = asset_server.load(FONT_PATH);
+    let font = FontSource::Handle(asset_server.load(FONT_PATH));
 
     for (color, (top, bottom), flex_direction) in [
         (PieceColor::WHITE, (px(0.0), auto()), FlexDirection::Column),
@@ -113,7 +113,7 @@ fn promoter_piece_button(
     )
 }
 
-fn promoter_cancel_button(color: PieceColor, font: Handle<Font>) -> impl Bundle {
+fn promoter_cancel_button(color: PieceColor, font: FontSource) -> impl Bundle {
     #[cfg(not(feature = "debug"))]
     let _ = color;
     (
@@ -130,7 +130,7 @@ fn promoter_cancel_button(color: PieceColor, font: Handle<Font>) -> impl Bundle 
             },
             children![(
                 Text("x".to_string()),
-                TextFont { font, font_size: 24.0, ..default() },
+                TextFont { font, font_size: FontSize::Px(24.), ..default() },
                 TextColor(CANCEL_BUTTON_FG_COLOR),
             )],
         )],

@@ -126,7 +126,9 @@ impl MoveUiPiece {
 }
 
 impl Command for MoveUiPiece {
-    fn apply(self, world: &mut World) {
+    type Out = ();
+
+    fn apply(self, world: &mut World) -> Self::Out {
         let Self { entity, from_sq, to_sq, animate } = self;
         trace!(to_sq = %to_sq, "Move UI piece");
 
@@ -156,7 +158,9 @@ impl UpdatePieceState {
 }
 
 impl Command for UpdatePieceState {
-    fn apply(self, world: &mut World) {
+    type Out = ();
+
+    fn apply(self, world: &mut World) -> Self::Out {
         let Self { color, from_sq, to_sq } = self;
         world.resource_scope(|world, mut pieces_map: Mut<PiecesMap>| {
             let mut board_state = world.resource_mut::<BoardState>();
@@ -191,7 +195,9 @@ impl UpdateBoardState {
 }
 
 impl Command for UpdateBoardState {
-    fn apply(self, world: &mut World) {
+    type Out = ();
+
+    fn apply(self, world: &mut World) -> Self::Out {
         let Self { from_sq, to_sq, color, typ, promotion, is_capture } = self;
         let mut board_state = world.resource_mut::<BoardState>();
 
