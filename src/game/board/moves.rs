@@ -1,29 +1,14 @@
 use bevy::prelude::*;
 use chess::File;
 
-use crate::{
-    game::{board::AnimatePiece, game_over::GameOver, mouse::Dragging},
-    utils::NoopExts,
-};
+use crate::game::{board::AnimatePiece, game_over::GameOver, mouse::Dragging};
 
 use super::{
     BoardState, Captured, GameStatus, PieceColor, PieceMeta, PieceType, PiecesMap, PromotingPiece,
     Square, TilesMap,
 };
 
-#[derive(Debug)]
-pub struct MovePlugin;
-
-impl Plugin for MovePlugin {
-    fn build(&self, app: &mut App) {
-        app.noop()
-            // Observers
-            .add_observer(move_piece)
-            .noop();
-    }
-}
-
-#[derive(Event, Debug, PartialEq, Eq)]
+#[derive(EntityEvent, Debug, PartialEq, Eq)]
 pub struct MovePiece {
     pub entity: Entity,
     pub from_sq: Square,

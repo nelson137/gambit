@@ -4,7 +4,7 @@ use crate::{cli::CliArgs, utils::NoopExts};
 
 use self::{
     audio::GameAudioPlugin,
-    board::{MovePlugin, PieceAnimationPlugin, SelectionPlugin},
+    board::{PieceAnimationPlugin, SelectionPlugin},
     camera::setup_camera,
     game_over::GameOverPlugin,
     menu::GameMenuLogicPlugin,
@@ -36,7 +36,6 @@ impl Plugin for GameLogicPlugin {
             .add_plugins(MouseLogicPlugin)
             .add_plugins(GameMenuLogicPlugin)
             .add_plugins(SelectionPlugin)
-            .add_plugins(MovePlugin)
             .add_plugins(GameAudioPlugin)
             .add_plugins(PieceAnimationPlugin)
             .add_plugins(StockfishPlugin)

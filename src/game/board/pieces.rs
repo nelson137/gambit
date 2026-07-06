@@ -208,6 +208,7 @@ pub(super) fn spawn_pieces_on_load_game(
                     ..default()
                 },
             ))
+            .observe(super::move_piece)
             .observe(super::PromotingPiece::on_add)
             .observe(super::PromotingPiece::on_remove)
             .id();

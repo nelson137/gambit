@@ -428,7 +428,7 @@ mod tests {
         use bevy::platform::collections::HashSet;
 
         use crate::game::{
-            board::{MovePlugin, PieceMeta, TilesMap},
+            board::{PieceMeta, TilesMap},
             menu::test::TestMenuStateInGamePlugin,
             ui::GameUiPlugin,
         };
@@ -440,8 +440,7 @@ mod tests {
             app.add_plugins(crate::utils::GameTestPlugin)
                 .add_plugins(TestMenuStateInGamePlugin)
                 .add_plugins(GameUiPlugin)
-                .add_plugins(SelectionPlugin)
-                .add_plugins(MovePlugin);
+                .add_plugins(SelectionPlugin);
             app.update();
             app.world_mut().trigger(LoadGame::in_game_default());
             app.update();

@@ -16,7 +16,7 @@ use crate::{game::eval_bar::EvaluationUpdate, utils::NoopExts};
 
 use super::{
     LoadGame,
-    board::{MovePiece, MovePieceCompleted, MovePlugin, PieceColor, PiecesMap, Square},
+    board::{MovePiece, MovePieceCompleted, PieceColor, PiecesMap, Square},
 };
 
 const STOCKFISH_EXECUTABLE: &[u8] =
@@ -26,10 +26,6 @@ pub struct StockfishPlugin;
 
 impl Plugin for StockfishPlugin {
     fn build(&self, app: &mut App) {
-        if !app.is_plugin_added::<MovePlugin>() {
-            panic!("Attempted to add plugin without required dependency: {MovePlugin:?}");
-        }
-
         app.noop()
             // Resources
             .init_resource::<SfCommunications>()
