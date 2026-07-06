@@ -27,7 +27,6 @@ impl Plugin for CapturePlugin {
             .init_resource::<CaptureState>()
             // Observers
             .add_observer(load_capture_state)
-            .add_observer(captures)
             .noop();
     }
 }
@@ -314,7 +313,7 @@ impl Command for CapStateUpdate {
 #[derive(EntityEvent)]
 pub struct Captured(pub Entity);
 
-fn captures(
+pub fn on_piece_captured(
     captured: On<Captured>,
     mut commands: Commands,
     mut q_data: Query<(&PieceMeta, &mut Visibility)>,
