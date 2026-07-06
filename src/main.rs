@@ -35,7 +35,6 @@ fn main() {
         // Game
         .add_plugins(cli::CliPlugin)
         .add_plugins(EguiPlugin::default())
-        .add_plugins(utils::SortableChildrenPlugin)
         .add_plugins(game::GameLogicPlugin)
         .add_plugins(debug_inspector::DebugInspectorPlugin)
         // Resources

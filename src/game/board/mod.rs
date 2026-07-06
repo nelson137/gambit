@@ -1,5 +1,4 @@
 use bevy::{prelude::*, ui::UiSystems};
-use bevy_startup_tree::{AddStartupTree, startup_tree};
 
 use crate::utils::NoopExts;
 
@@ -7,8 +6,6 @@ pub use self::{
     captures::*, highlight_tile::*, hints::*, icons::*, moves::*, pieces::*, promoter::*,
     selection::*, square::*, state::*, tile::*, ui::*,
 };
-
-use super::ui::spawn_ui;
 
 mod captures;
 mod highlight_tile;
@@ -44,16 +41,11 @@ impl Plugin for BoardPlugin {
             .add_observer(ShowDrawIcons::handle)
             .add_observer(hide_end_game_icons_on_load_game)
             // Systems
-            .add_startup_tree(startup_tree! {
-                spawn_board.after(spawn_ui) => {
-                    spawn_tiles => {
-                        spawn_highlight_tiles,
-                        spawn_hints,
-                        spawn_promoters,
-                        spawn_end_game_icons,
-                    },
-                },
-            })
+            .add_systems(Startup, (promoters.spawn(), end_game_icons.spawn()))
+            .add_systems(
+                PostStartup,
+                (load_tile_map, load_highlight_map, load_hint_map, load_end_game_icons),
+            )
             .add_systems(PostUpdate, end_game_icon_size.before(UiSystems::Layout))
             .noop();
     }

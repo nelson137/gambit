@@ -8,7 +8,6 @@ use bevy::prelude::*;
 use chess::{Piece, Rank};
 
 use crate::{
-    debug_name, debug_name_f,
     game::{LoadGame, consts::z},
     utils::NoopExts,
 };
@@ -53,6 +52,12 @@ impl PieceMeta {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceColor(pub chess::Color);
+
+impl Default for PieceColor {
+    fn default() -> Self {
+        Self(chess::Color::White)
+    }
+}
 
 impl From<chess::Color> for PieceColor {
     fn from(color: chess::Color) -> Self {
@@ -113,6 +118,12 @@ impl PieceColor {
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub struct PieceType(pub Piece);
+
+impl Default for PieceType {
+    fn default() -> Self {
+        Self(Piece::Pawn)
+    }
+}
 
 impl From<chess::Piece> for PieceType {
     fn from(typ: chess::Piece) -> Self {
@@ -195,7 +206,7 @@ pub(super) fn spawn_pieces_on_load_game(
 
         let piece_entity = commands
             .spawn((
-                debug_name_f!("Piece ({} {}) ({square})", info.color, info.typ),
+                Name::new(format!("Piece ({} {}) ({square})", info.color, info.typ)),
                 info,
                 square,
                 ImageNode::new(asset_server.load(image_path)),
@@ -277,7 +288,7 @@ impl Plugin for PieceAnimationPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
             .init_resource::<IsPieceAnimationPluginAdded>()
-            .add_systems(Startup, spawn_animation_layer)
+            .add_systems(Startup, animation_layer.spawn())
             .add_systems(Update, animate_pieces)
             .noop();
     }
@@ -286,22 +297,21 @@ impl Plugin for PieceAnimationPlugin {
 #[derive(Default, Resource)]
 struct IsPieceAnimationPluginAdded;
 
-#[derive(Component)]
-#[require(GlobalZIndex(z::G_PIECE_MOVE))]
+#[derive(Component, Clone, Default)]
 struct AnimationLayer;
 
-fn spawn_animation_layer(mut commands: Commands) {
-    commands.spawn((
-        debug_name!("Animation Layer"),
-        AnimationLayer,
+fn animation_layer() -> impl Scene {
+    bsn! {
+        #AnimationLayer
+        AnimationLayer
+        GlobalZIndex(z::G_PIECE_MOVE)
         Node {
-            top: px(0.0),
-            left: px(0.0),
-            width: percent(100.0),
-            height: percent(100.0),
-            ..default()
-        },
-    ));
+            top: px(0),
+            left: px(0),
+            width: percent(100),
+            height: percent(100),
+        }
+    }
 }
 
 /// Setup `entity` (the piece) for animation.

@@ -1,6 +1,8 @@
 use std::borrow::Borrow;
 
-use bevy::{ecs, platform::collections::HashSet, prelude::*, state};
+use bevy::{ecs, prelude::*, state};
+
+use crate::game::consts;
 
 pub trait NoopExts {
     fn noop(&mut self) -> &mut Self {
@@ -11,39 +13,36 @@ pub trait NoopExts {
 impl NoopExts for App {}
 impl NoopExts for World {}
 
-#[cfg(feature = "debug")]
-#[macro_export]
-macro_rules! debug_name {
-    ($name:literal) => {
-        Name::new($name)
-    };
-    ($name:expr) => {
-        Name::new($name)
-    };
+pub struct TextFontBuilder {
+    path: &'static str,
+    font_size: FontSize,
 }
 
-#[cfg(not(feature = "debug"))]
-#[macro_export]
-macro_rules! debug_name {
-    ($($args:tt),* $(,)?) => {
-        ()
-    };
+impl TextFontBuilder {
+    pub fn new(path: &'static str) -> Self {
+        Self { path, font_size: FontSize::Px(12.) }
+    }
+
+    pub fn template(self) -> impl Scene {
+        template(move |ctx| {
+            let asset_server = ctx.resource::<AssetServer>();
+            let font = FontSource::Handle(asset_server.load(self.path));
+            Ok(TextFont { font, font_size: self.font_size, ..default() })
+        })
+    }
+
+    pub fn font_size_px(mut self, font_size: f32) -> Self {
+        self.font_size = FontSize::Px(font_size);
+        self
+    }
 }
 
-#[cfg(feature = "debug")]
-#[macro_export]
-macro_rules! debug_name_f {
-    ($name_fmt:literal $(, $name_args:expr)* $(,)?) => {
-        Name::new(format!($name_fmt $(, $name_args)*))
-    };
+pub fn text_font(path: &'static str, font_size: f32) -> impl Scene {
+    TextFontBuilder::new(path).font_size_px(font_size).template()
 }
 
-#[cfg(not(feature = "debug"))]
-#[macro_export]
-macro_rules! debug_name_f {
-    ($name_fmt:literal $(, $args:expr)* $(,)?) => {
-        ()
-    };
+pub fn text_default_font(font_size: f32) -> impl Scene {
+    TextFontBuilder::new(consts::FONT_PATH).font_size_px(font_size).template()
 }
 
 pub trait CommandsTriggerMany {
@@ -90,81 +89,9 @@ impl<'w, 's> CommandsTriggerMany for Commands<'w, 's> {
     }
 }
 
-pub trait ReparentInTag {
-    fn reparent_in_tag<Tag: Component>(
-        &mut self,
-        entities: impl IntoIterator<Item = Entity> + Send + 'static,
-    );
-}
-
-impl ReparentInTag for Commands<'_, '_> {
-    fn reparent_in_tag<Tag: Component>(
-        &mut self,
-        entities: impl IntoIterator<Item = Entity> + Send + 'static,
-    ) {
-        self.queue(move |world: &mut World| {
-            let parent = world.query_filtered::<Entity, With<Tag>>().single(world).unwrap();
-            let mut parent = world.entity_mut(parent);
-            for entity in entities {
-                parent.add_child(entity);
-            }
-        });
-    }
-}
-
-pub struct SortableChildrenPlugin;
-
-impl Plugin for SortableChildrenPlugin {
-    fn build(&self, app: &mut App) {
-        app.init_resource::<SortableEntities>().add_systems(
-            PostStartup,
-            (collect_sortable_parents, tag_sortable_entities, sort_sortable_entities).chain(),
-        );
-    }
-}
-
-#[derive(PartialEq, Eq, PartialOrd, Ord, Component)]
-pub struct SortIndex(pub usize);
-
-const CHILD_INDEX_MIN: SortIndex = SortIndex(usize::MIN);
-
-#[derive(Default, Resource)]
-struct SortableEntities(HashSet<Entity>);
-
-#[derive(Component)]
-struct Sortable;
-
-fn collect_sortable_parents(
-    mut sortable_parents: ResMut<SortableEntities>,
-    q_sortable_parents: Query<&ChildOf, With<SortIndex>>,
-) {
-    for parent in &q_sortable_parents {
-        sortable_parents.0.insert(parent.parent());
-    }
-}
-
-fn tag_sortable_entities(world: &mut World) {
-    let Some(sortable_entities) = world.remove_resource::<SortableEntities>() else { return };
-    for entity in sortable_entities.0 {
-        let mut entity = world.entity_mut(entity);
-        if !entity.contains::<Sortable>() {
-            entity.insert(Sortable);
-        }
-    }
-}
-
-fn sort_sortable_entities(
-    mut q_sortable: Query<&mut Children, With<Sortable>>,
-    q_index: Query<&SortIndex>,
-) {
-    for mut children in &mut q_sortable {
-        children.sort_by_key(|entity| q_index.get(*entity).unwrap_or(&CHILD_INDEX_MIN))
-    }
-}
-
 pub fn recolor_on<const AUTO_PROPAGATE: bool, E, T>(
     color: Color,
-) -> impl ecs::system::ObserverSystem<E, (), ()>
+) -> impl ecs::system::ObserverSystem<E, (), ()> + Clone
 where
     E: Event
         + EntityEvent
@@ -182,7 +109,7 @@ where
 
 pub fn set_state_on<'w, 't, const AUTO_PROPAGATE: bool, S, E, T>(
     state: S,
-) -> impl ecs::system::ObserverSystem<E, (), ()>
+) -> impl ecs::system::ObserverSystem<E, (), ()> + Clone
 where
     S: state::state::FreelyMutableState,
     E: EntityEvent

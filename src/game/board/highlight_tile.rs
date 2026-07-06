@@ -2,49 +2,43 @@ use std::collections::{HashMap, hash_map::Entry};
 
 use bevy::prelude::*;
 
-use crate::{debug_name_f, game::consts::z};
+use crate::game::consts::z;
 
-use super::{Square, TilesMap};
+use super::Square;
 
-#[derive(Component)]
-#[require(Visibility::Hidden, BackgroundColor(COLOR_HIGHLIGHT), ZIndex(z::HIGHLIGHT_TILE))]
+#[derive(Component, Clone, Default)]
 pub struct HighlightTile;
 
 /// The color used to highlight tiles.
 pub const COLOR_HIGHLIGHT: Color = Color::srgba(1.0, 1.0, 0.0, 0.5);
 
-pub fn spawn_highlight_tiles(
-    mut commands: Commands,
-    tiles_map: Res<TilesMap>,
+pub fn highlight_tile(square: Square) -> impl Scene {
+    bsn! {
+        Name::new(format!("Highlight Tile ({square})"))
+        HighlightTile
+        template_value(square)
+        BackgroundColor(COLOR_HIGHLIGHT)
+        Visibility::Hidden
+        ZIndex(z::HIGHLIGHT_TILE)
+        Node {
+            position_type: PositionType::Absolute,
+            top: px(0.0),
+            left: px(0.0),
+            width: percent(100.0),
+            height: percent(100.0),
+        }
+        on(super::EnableSelectionHighlight::handle)
+        on(super::ShowingIndicator::on_add)
+        on(super::ShowingIndicator::on_remove)
+    }
+}
+
+pub(super) fn load_highlight_map(
+    q_highlights: Query<(Entity, &Square), With<HighlightTile>>,
     mut highlights_map: ResMut<HighlightTilesMap>,
 ) {
-    let top = px(0.0);
-    let left = px(0.0);
-
-    for square in chess::ALL_SQUARES {
-        let square = Square::new(square);
-
-        let hl_tile_entity = commands
-            .spawn((
-                debug_name_f!("Highlight Tile ({square})"),
-                HighlightTile,
-                square,
-                Node {
-                    position_type: PositionType::Absolute,
-                    top,
-                    left,
-                    width: percent(100.0),
-                    height: percent(100.0),
-                    ..default()
-                },
-            ))
-            .observe(super::EnableSelectionHighlight::handle)
-            .observe(super::ShowingIndicator::on_add)
-            .observe(super::ShowingIndicator::on_remove)
-            .id();
-
-        highlights_map.set(square, hl_tile_entity);
-        commands.entity(tiles_map.at(square)).add_child(hl_tile_entity);
+    for (entity, square) in &q_highlights {
+        highlights_map.set(*square, entity);
     }
 }
 

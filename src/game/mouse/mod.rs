@@ -13,7 +13,7 @@ pub struct MouseUiPlugin;
 
 impl Plugin for MouseUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_drag_container);
+        app.add_systems(Startup, drag_container.spawn());
     }
 }
 

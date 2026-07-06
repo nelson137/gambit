@@ -19,8 +19,8 @@ impl Plugin for GameTestPlugin {
             .add_plugins(bevy::app::TaskPoolPlugin::default())
             .add_plugins(bevy::asset::AssetPlugin::default())
             .add_plugins(bevy::state::app::StatesPlugin)
+            .add_plugins(bevy::scene::ScenePlugin)
             .add_plugins(bevy::image::ImagePlugin::default())
-            .add_plugins(crate::utils::SortableChildrenPlugin)
             .init_asset::<bevy::text::Font>()
             .noop();
     }

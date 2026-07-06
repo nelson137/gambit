@@ -1,71 +1,73 @@
 use bevy::prelude::*;
 
 use crate::{
-    debug_name,
-    game::{
-        consts::{CAPTURES_PANEL_HEIGHT, MIN_BOARD_SIZE},
-        ui::EvaluationBarContainer,
-    },
-    utils::{NoopExts, ReparentInTag},
+    game::consts::{CAPTURES_PANEL_HEIGHT, MIN_BOARD_SIZE},
+    utils::NoopExts,
 };
-
-use super::ui::spawn_ui;
 
 pub struct EvaluationBarPlugin;
 
 impl Plugin for EvaluationBarPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
+            // Messages
             .add_message::<EvaluationUpdate>()
-            .add_systems(Startup, spawn_eval_bar.after(spawn_ui))
+            // Systems
             .add_systems(Update, update_eval_bar)
             .noop();
     }
 }
 
-#[derive(Component)]
-#[require(BackgroundColor(Color::WHITE))]
+#[derive(Component, Clone, Default)]
 pub struct EvaluationBar;
 
 #[derive(Message)]
 pub struct EvaluationUpdate(pub f32);
 
-pub fn spawn_eval_bar(mut commands: Commands) {
-    const SPACER_H: Val = Val::Px(CAPTURES_PANEL_HEIGHT);
-    let spacer_bundle = || Node { height: SPACER_H, flex_shrink: 0.0, ..default() };
+pub fn eval_bar_spacer_top() -> impl Scene {
+    bsn! {
+        #EvaluationBarSpacerTop
+        eval_bar_spacer()
+    }
+}
 
-    let spacer_top =
-        commands.spawn((debug_name!("Evaluation Bar Spacer (Top)"), spacer_bundle())).id();
+pub fn eval_bar_spacer_bottom() -> impl Scene {
+    bsn! {
+        #EvaluationBarSpacerBottom
+        eval_bar_spacer()
+    }
+}
 
-    let bar = commands
-        .spawn((
-            debug_name!("Evaluation Bar Background (black)"),
-            Node {
-                position_type: PositionType::Relative,
-                width: px(20.0),
-                flex_grow: 1.0,
-                min_height: MIN_BOARD_SIZE,
-                ..default()
-            },
-            BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39)),
-            children![(
-                debug_name!("Evaluation Bar (white)"),
-                EvaluationBar,
+fn eval_bar_spacer() -> impl Scene {
+    bsn! {
+        Node { height: px(CAPTURES_PANEL_HEIGHT), flex_shrink: 0.0 }
+    }
+}
+
+pub fn eval_bar() -> impl Scene {
+    bsn! {
+        #EvaluationBarBackground
+        Node {
+            position_type: PositionType::Relative,
+            width: px(20.0),
+            flex_grow: 1.0,
+            min_height: MIN_BOARD_SIZE,
+        }
+        BackgroundColor(Color::srgb_u8(0x40, 0x3d, 0x39))
+        Children [
+            (
+                #EvaluationBar
+                EvaluationBar
+                BackgroundColor(Color::WHITE)
                 Node {
                     position_type: PositionType::Absolute,
                     bottom: px(0.0),
                     width: percent(100.0),
                     height: percent(50.0),
-                    ..default()
-                },
-            )],
-        ))
-        .id();
-
-    let spacer_bot =
-        commands.spawn((debug_name!("Evaluation Bar Spacer (Bottom)"), spacer_bundle())).id();
-
-    commands.reparent_in_tag::<EvaluationBarContainer>([spacer_top, bar, spacer_bot]);
+                }
+            )
+        ]
+    }
 }
 
 pub fn update_eval_bar(

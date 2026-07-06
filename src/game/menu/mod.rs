@@ -1,5 +1,4 @@
 use bevy::{prelude::*, ui::UiSystems};
-use bevy_startup_tree::{AddStartupTree, startup_tree};
 
 use crate::utils::NoopExts;
 
@@ -15,13 +14,7 @@ pub struct GameMenuUiPlugin;
 
 impl Plugin for GameMenuUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_startup_tree(startup_tree! {
-            spawn_menu_dim_layer => {
-                spawn_menu => {
-                    spawn_menu_elements => spawn_menu_buttons,
-                },
-            },
-        });
+        app.add_systems(Startup, game_menu.spawn());
     }
 }
 

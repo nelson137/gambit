@@ -34,7 +34,6 @@ tracing-subscriber = { version = "^0.3.20", features = ["local-time", "time"] }
 bevy = { version = "0.19", features = ["flac"] }
 bevy-inspector-egui = { version = "0.37", optional = true }
 bevy_egui = "0.41"
-bevy_startup_tree = "0.11"
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 crossbeam-channel = "0.5"

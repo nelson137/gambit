@@ -1,16 +1,14 @@
 use bevy::prelude::*;
 use chess::{File, Rank};
 
-use crate::{
-    debug_name,
-    game::{LoadGame, consts::z},
-};
+use crate::game::{LoadGame, consts::z};
 
 use super::{BoardState, PieceColor, Square, Tile, TilesMap};
 
-#[derive(Component, Clone, Copy)]
+#[derive(Component, Clone, Copy, Default)]
 #[require(Visibility::Hidden, ZIndex(z::END_GAME_ICONS))]
 pub(super) enum EndGameIcon {
+    #[default]
     Winner,
     LoserBlack,
     LoserWhite,
@@ -52,46 +50,61 @@ impl EndGameIcons {
     }
 }
 
-pub(super) fn spawn_end_game_icons(mut commands: Commands, asset_server: Res<AssetServer>) {
-    let winner = commands
-        .spawn((
-            debug_name!("Winner Icon"),
-            EndGameIcon::Winner,
-            ImageNode::new(asset_server.load("images/checkmate/winner.png")),
-        ))
-        .id();
+pub(super) fn end_game_icons() -> impl SceneList {
+    fn image(path: &'static str) -> impl Scene {
+        template(move |ctx| {
+            let asset_server = ctx.resource::<AssetServer>();
+            Ok(ImageNode::new(asset_server.load(path)))
+        })
+    }
 
-    let loser_black = commands
-        .spawn((
-            debug_name!("Black Loser Icon"),
-            EndGameIcon::LoserBlack,
-            ImageNode::new(asset_server.load("images/checkmate/loser-black.png")),
-        ))
-        .id();
+    let scenes: Vec<Box<dyn Scene>> = vec![
+        Box::new(bsn! {
+            #WinnerIcon
+            template_value(EndGameIcon::Winner)
+            image("images/checkmate/winner.png")
+        }),
+        Box::new(bsn! {
+            #BlackLoserIcon
+            template_value(EndGameIcon::LoserBlack)
+            image("images/checkmate/loser-black.png")
+        }),
+        Box::new(bsn! {
+            #WhiteLoserIcon
+            template_value(EndGameIcon::LoserWhite)
+            image("images/checkmate/loser-white.png")
+        }),
+        Box::new(bsn! {
+            #BlackDrawIcon
+            template_value(EndGameIcon::DrawBlack)
+            image("images/draw/draw-black.png")
+        }),
+        Box::new(bsn! {
+            #WhiteDrawIcon
+            template_value(EndGameIcon::DrawWhite)
+            image("images/draw/draw-white.png")
+        }),
+    ];
 
-    let loser_white = commands
-        .spawn((
-            debug_name!("White Loser Icon"),
-            EndGameIcon::LoserWhite,
-            ImageNode::new(asset_server.load("images/checkmate/loser-white.png")),
-        ))
-        .id();
+    scenes
+}
 
-    let draw_black = commands
-        .spawn((
-            debug_name!("Black Draw Icon"),
-            EndGameIcon::DrawBlack,
-            ImageNode::new(asset_server.load("images/draw/draw-black.png")),
-        ))
-        .id();
+pub(super) fn load_end_game_icons(mut commands: Commands, q_icons: Query<(Entity, &EndGameIcon)>) {
+    let mut winner = Entity::PLACEHOLDER;
+    let mut loser_black = Entity::PLACEHOLDER;
+    let mut loser_white = Entity::PLACEHOLDER;
+    let mut draw_black = Entity::PLACEHOLDER;
+    let mut draw_white = Entity::PLACEHOLDER;
 
-    let draw_white = commands
-        .spawn((
-            debug_name!("White Draw Icon"),
-            EndGameIcon::DrawWhite,
-            ImageNode::new(asset_server.load("images/draw/draw-white.png")),
-        ))
-        .id();
+    for (entity, icon) in &q_icons {
+        match *icon {
+            EndGameIcon::Winner => winner = entity,
+            EndGameIcon::LoserBlack => loser_black = entity,
+            EndGameIcon::LoserWhite => loser_white = entity,
+            EndGameIcon::DrawBlack => draw_black = entity,
+            EndGameIcon::DrawWhite => draw_white = entity,
+        }
+    }
 
     commands.insert_resource(EndGameIcons {
         winner,
@@ -99,7 +112,7 @@ pub(super) fn spawn_end_game_icons(mut commands: Commands, asset_server: Res<Ass
         loser_white,
         draw_black,
         draw_white,
-    })
+    });
 }
 
 #[derive(Event, Debug)]

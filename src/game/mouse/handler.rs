@@ -1,11 +1,8 @@
 use bevy::prelude::*;
 
-use crate::{
-    debug_name,
-    game::{
-        board::{MouseSelectionEvent, Square, Tile, TilesMap},
-        consts::z,
-    },
+use crate::game::{
+    board::{MouseSelectionEvent, Square, Tile, TilesMap},
+    consts::z,
 };
 
 use super::position::{MouseBoardSquare, MouseWorldPosition};
@@ -28,12 +25,16 @@ pub(super) fn mouse_handler(
     }
 }
 
-#[derive(Component)]
-#[require(GlobalZIndex(z::G_PIECE_MOVE))]
+#[derive(Component, Clone, Default)]
 pub struct DragContainer;
 
-pub(super) fn spawn_drag_container(mut commands: Commands) {
-    commands.spawn((debug_name!("Drag Container"), DragContainer, Node::DEFAULT));
+pub(super) fn drag_container() -> impl Scene {
+    bsn! {
+        #DragContainer
+        DragContainer
+        Node
+        GlobalZIndex(z::G_PIECE_MOVE)
+    }
 }
 
 pub(super) fn update_drag_container(

@@ -1,24 +1,21 @@
 use bevy::prelude::*;
 
-use crate::{debug_name, game::ui::BoardContainer, utils::ReparentInTag};
-
-#[derive(Component)]
+#[derive(Component, Clone, Default)]
 pub struct UiBoard;
 
-pub fn spawn_board(mut commands: Commands) {
-    let entity = commands
-        .spawn((
-            debug_name!("Board"),
-            UiBoard,
-            Node {
-                width: percent(100.0),
-                height: percent(100.0),
-                aspect_ratio: Some(1.0),
-                flex_direction: FlexDirection::Row,
-                flex_wrap: FlexWrap::WrapReverse,
-                ..default()
-            },
-        ))
-        .id();
-    commands.reparent_in_tag::<BoardContainer>([entity]);
+pub fn board() -> impl Scene {
+    bsn! {
+        #Board
+        UiBoard
+        Node {
+            width: percent(100.0),
+            height: percent(100.0),
+            aspect_ratio: { Some(1.0) },
+            flex_direction: FlexDirection::Row,
+            flex_wrap: FlexWrap::WrapReverse,
+        }
+        Children [
+            { super::tiles() }
+        ]
+    }
 }

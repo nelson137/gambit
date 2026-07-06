@@ -4,12 +4,8 @@ use bevy::{
 };
 
 use crate::{
-    debug_name_f,
-    game::{
-        board::MovePiece,
-        consts::{FONT_PATH, z},
-    },
-    utils::NoopExts,
+    game::{board::MovePiece, consts::z},
+    utils::{NoopExts, text_default_font},
 };
 
 use super::{PieceColor, PieceMeta, PieceType, Square, Tile, TilesMap};
@@ -36,16 +32,13 @@ impl Plugin for PromotionPlugin {
 #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, SystemSet)]
 pub struct PromoterSystem;
 
-#[derive(Component)]
-#[require(Visibility::Hidden, GlobalZIndex(z::G_PROMOTER))]
+#[derive(Component, Clone, Default)]
 pub struct PromotionUi(PieceColor);
 
-#[derive(Component, Debug)]
-#[require(Button, FocusPolicy::Block, BackgroundColor(Color::WHITE))]
+#[derive(Component, Clone, Default, Debug)]
 pub struct PromotionButton(PieceType);
 
-#[derive(Component)]
-#[require(Button, BackgroundColor(CANCEL_BUTTON_BG_COLOR), FocusPolicy::Block)]
+#[derive(Component, Clone, Default)]
 pub struct PromotionCancelButton;
 
 /// `#f1f1f1`
@@ -56,82 +49,85 @@ const CANCEL_BUTTON_BG_COLOR: Color =
 const CANCEL_BUTTON_FG_COLOR: Color =
     Color::srgb(0x8b as f32 / 255.0, 0x89 as f32 / 255.0, 0x87 as f32 / 255.0);
 
-pub fn spawn_promoters(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    tiles_map: Res<TilesMap>,
-) {
-    let tile_entity = tiles_map.at(Square::H8);
-    let font = FontSource::Handle(asset_server.load(FONT_PATH));
-
-    for (color, (top, bottom), flex_direction) in [
+pub fn promoters() -> impl SceneList {
+    [
         (PieceColor::WHITE, (px(0.0), auto()), FlexDirection::Column),
         (PieceColor::BLACK, (auto(), px(0.0)), FlexDirection::ColumnReverse),
-    ] {
-        commands.spawn((
-            debug_name_f!("Promoter ({color})"),
-            PromotionUi(color),
-            ChildOf(tile_entity),
+    ]
+    .into_iter()
+    .map(|(color, (top, bottom), flex_direction)| {
+        Box::new(bsn! {
+            Name::new(format!("Promoter ({color})"))
+            PromotionUi(color)
+            Visibility::Hidden
+            GlobalZIndex(z::G_PROMOTER)
             Node {
                 position_type: PositionType::Absolute,
                 left: px(0.0),
                 top,
                 bottom,
                 flex_direction,
-                ..default()
-            },
-            children![
-                promoter_piece_button(&asset_server, color, PieceType::QUEEN),
-                promoter_piece_button(&asset_server, color, PieceType::KNIGHT),
-                promoter_piece_button(&asset_server, color, PieceType::ROOK),
-                promoter_piece_button(&asset_server, color, PieceType::BISHOP),
-                promoter_cancel_button(color, font.clone()),
-            ],
-        ));
+            }
+            Children [
+                promoter_piece_button(color, PieceType::QUEEN),
+                promoter_piece_button(color, PieceType::KNIGHT),
+                promoter_piece_button(color, PieceType::ROOK),
+                promoter_piece_button(color, PieceType::BISHOP),
+                promoter_cancel_button(color),
+            ]
+        })
+    })
+    .collect::<Vec<_>>()
+}
+
+fn promoter_piece_button(color: PieceColor, typ: PieceType) -> impl Scene {
+    let asset_path = PieceMeta::new(color, typ).asset_path();
+    bsn! {
+        Name::new(format!("Promotion Button ({color}) ({typ})"))
+        PromotionButton(typ)
+        Button
+        template_value(FocusPolicy::Block)
+        BackgroundColor(Color::WHITE)
+        Children [
+            (
+                Name::new(format!("Promotion Piece ({color}) ({typ})"))
+                template(move |ctx| {
+                    let asset_server = ctx.resource::<AssetServer>();
+                    Ok(ImageNode::new(asset_server.load(asset_path)))
+                })
+                Node { width: percent(100.0), height: percent(100.0) }
+                template_value(FocusPolicy::Pass)
+            )
+        ]
     }
 }
 
-fn promoter_piece_button(
-    asset_server: &AssetServer,
-    color: PieceColor,
-    typ: PieceType,
-) -> impl Bundle {
-    let asset_path = PieceMeta::new(color, typ).asset_path();
-    let texture = asset_server.load(asset_path);
-    (
-        debug_name_f!("Promotion Button ({color}) ({typ})"),
-        PromotionButton(typ),
-        children![(
-            debug_name_f!("Promotion Piece ({color}) ({typ})"),
-            ImageNode::new(texture),
-            Node { width: percent(100.0), height: percent(100.0), ..default() },
-            FocusPolicy::Pass,
-        )],
-    )
-}
-
-fn promoter_cancel_button(color: PieceColor, font: FontSource) -> impl Bundle {
-    #[cfg(not(feature = "debug"))]
-    let _ = color;
-    (
-        debug_name_f!("Promotion Cancel Button Wrapper ({color})"),
-        Node::default(),
-        children![(
-            debug_name_f!("Promotion Cancel Button ({color})"),
-            PromotionCancelButton,
-            Node {
-                justify_content: JustifyContent::Center,
-                align_items: AlignItems::Center,
-                width: percent(100.0),
-                ..default()
-            },
-            children![(
-                Text("x".to_string()),
-                TextFont { font, font_size: FontSize::Px(24.), ..default() },
-                TextColor(CANCEL_BUTTON_FG_COLOR),
-            )],
-        )],
-    )
+fn promoter_cancel_button(color: PieceColor) -> impl Scene {
+    bsn! {
+        Name::new(format!("Promotion Cancel Button Wrapper ({color})"))
+        Node
+        Children [
+            (
+                Name::new(format!("Promotion Cancel Button ({color})"))
+                PromotionCancelButton
+                Button
+                BackgroundColor(CANCEL_BUTTON_BG_COLOR)
+                template_value(FocusPolicy::Block)
+                Node {
+                    justify_content: JustifyContent::Center,
+                    align_items: AlignItems::Center,
+                    width: percent(100.0),
+                }
+                Children [
+                    (
+                        Text("x")
+                        text_default_font(24.)
+                        TextColor(CANCEL_BUTTON_FG_COLOR)
+                    )
+                ]
+            )
+        ]
+    }
 }
 
 #[derive(Component, Clone, Copy)]

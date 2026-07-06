@@ -3,11 +3,11 @@ use std::collections::{HashMap, hash_map::Entry};
 use bevy::prelude::*;
 use chess::{File, Rank};
 
-use crate::{debug_name_f, game::consts::FONT_PATH};
+use crate::utils::text_default_font;
 
-use super::{Square, UiBoard};
+use super::Square;
 
-#[derive(Component)]
+#[derive(Component, Clone, Default)]
 pub struct Tile;
 
 /// The "black" bord color.
@@ -28,12 +28,9 @@ pub const COLOR_WHITE: Color = Color::srgb(
     0xd2 as f32 / u8::MAX as f32,
 );
 
-pub fn spawn_tiles(
-    mut commands: Commands,
-    asset_server: Res<AssetServer>,
-    mut tiles_map: ResMut<TilesMap>,
-    board: Single<Entity, With<UiBoard>>,
-) {
+pub(super) fn tiles() -> impl SceneList {
+    let mut scenes = Vec::with_capacity(chess::ALL_SQUARES.len());
+
     for square in chess::ALL_SQUARES.map(Square::new) {
         let file = square.get_file();
         let rank = square.get_rank();
@@ -41,67 +38,65 @@ pub fn spawn_tiles(
         let file_rank_sum = rank.to_index() + file.to_index();
         let color = if file_rank_sum.is_multiple_of(2) { COLOR_BLACK } else { COLOR_WHITE };
 
-        let tile_entity = commands
-            .spawn((
-                debug_name_f!("Tile ({square})"),
-                Tile,
-                square,
+        let mut labels: Vec<Box<dyn Scene>> = Vec::new();
+        let text_color =
+            TextColor(if file_rank_sum.is_multiple_of(2) { COLOR_WHITE } else { COLOR_BLACK });
+
+        // File markers
+        if square.get_rank() == Rank::First {
+            labels.push(Box::new(bsn! {
+                Text({ square.file_char().to_string() })
+                text_default_font(16.)
+                template_value(text_color)
                 Node {
-                    position_type: PositionType::Relative,
-                    width: percent(100.0 / 8.0),
-                    height: percent(100.0 / 8.0),
-                    ..default()
-                },
-                BackgroundColor(color),
-            ))
-            .with_children(|cmds| {
-                pub const BOARD_TEXT_FONT_SIZE: FontSize = FontSize::Px(16.);
-
-                let text_font = TextFont {
-                    font_size: BOARD_TEXT_FONT_SIZE,
-                    font: asset_server.load(FONT_PATH).into(),
-                    ..default()
-                };
-                let text_color = TextColor(if file_rank_sum.is_multiple_of(2) {
-                    COLOR_WHITE
-                } else {
-                    COLOR_BLACK
-                });
-
-                // File markers
-                if square.get_rank() == Rank::First {
-                    cmds.spawn((
-                        Text(square.file_char().to_string()),
-                        text_font.clone(),
-                        text_color,
-                        Node {
-                            position_type: PositionType::Absolute,
-                            bottom: percent(3.5),
-                            right: percent(6.0),
-                            ..default()
-                        },
-                    ));
+                    position_type: PositionType::Absolute,
+                    bottom: percent(3.5),
+                    right: percent(6.0),
                 }
+            }));
+        }
 
-                // Rank markers
-                if square.get_file() == File::A {
-                    cmds.spawn((
-                        Text(square.rank_char().to_string()),
-                        text_font.clone(),
-                        text_color,
-                        Node {
-                            position_type: PositionType::Absolute,
-                            top: percent(1.0),
-                            left: percent(4.5),
-                            ..default()
-                        },
-                    ));
+        // Rank markers
+        if square.get_file() == File::A {
+            labels.push(Box::new(bsn! {
+                Text({ square.rank_char().to_string() })
+                text_default_font(16.)
+                template_value(text_color)
+                Node {
+                    position_type: PositionType::Absolute,
+                    top: percent(1.0),
+                    left: percent(4.5),
                 }
-            })
-            .id();
+            }));
+        }
 
-        commands.entity(*board).add_child(tile_entity);
-        tiles_map.set(square, tile_entity);
+        scenes.push(bsn! {
+            Name::new(format!("Tile ({square})"))
+            Tile
+            template_value(square)
+            Node {
+                position_type: PositionType::Relative,
+                width: percent(100.0 / 8.0),
+                height: percent(100.0 / 8.0),
+            }
+            BackgroundColor(color)
+            Children [
+                { labels },
+                super::highlight_tile(square),
+                { super::hints(square) },
+            ]
+        });
+    }
+
+    scenes
+}
+
+pub(super) fn load_tile_map(
+    q_tiles: Query<(Entity, &Square), With<Tile>>,
+    mut tiles_map: ResMut<TilesMap>,
+) {
+    for (entity, square) in &q_tiles {
+        tiles_map.set(*square, entity);
     }
 }
 
