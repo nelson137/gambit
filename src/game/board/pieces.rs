@@ -209,6 +209,7 @@ pub(super) fn spawn_pieces_on_load_game(
                 },
             ))
             .observe(super::move_piece)
+            .observe(Animating::on_remove)
             .observe(super::on_piece_captured)
             .observe(super::PromotingPiece::on_add)
             .observe(super::PromotingPiece::on_remove)
@@ -391,6 +392,25 @@ impl Animating {
     }
 }
 
+impl Animating {
+    pub(super) fn on_remove(
+        remove: On<Remove, Self>,
+        mut commands: Commands,
+        q_animating: Query<&Self>,
+        mut q_node: Query<&mut Node>,
+    ) {
+        let Ok(animating) = q_animating.get(remove.entity) else { return };
+
+        commands.entity(remove.entity).insert(ChildOf(animating.to_entity));
+
+        let mut node = q_node.get_mut(remove.entity).unwrap();
+        node.left = px(0.0);
+        node.top = px(0.0);
+        node.width = percent(100.0);
+        node.height = percent(100.0);
+    }
+}
+
 fn animate_pieces(
     mut commands: Commands,
     time: Res<Time>,
@@ -412,21 +432,4 @@ fn animate_pieces(
         node.left = px(x);
         node.top = px(y);
     }
-}
-
-pub(super) fn on_remove_animating(
-    remove: On<Remove, Animating>,
-    mut commands: Commands,
-    q_animating: Query<&Animating>,
-    mut q_node: Query<&mut Node>,
-) {
-    let Ok(animating) = q_animating.get(remove.entity) else { return };
-
-    commands.entity(remove.entity).insert(ChildOf(animating.to_entity));
-
-    let mut node = q_node.get_mut(remove.entity).unwrap();
-    node.left = px(0.0);
-    node.top = px(0.0);
-    node.width = percent(100.0);
-    node.height = percent(100.0);
 }
