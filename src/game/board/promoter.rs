@@ -19,9 +19,6 @@ pub struct PromotionPlugin;
 impl Plugin for PromotionPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            // Observers
-            .add_observer(on_add_promoting_piece)
-            .add_observer(on_remove_promoting_piece)
             // Systems
             .add_systems(Update, promotion_ui_sizes)
             .add_systems(
@@ -137,80 +134,85 @@ fn promoter_cancel_button(color: PieceColor, font: FontSource) -> impl Bundle {
     )
 }
 
-#[derive(Component, Clone, Copy, EntityEvent)]
+#[derive(Component, Clone, Copy)]
 #[component(storage = "SparseSet")]
 pub struct PromotingPiece {
-    entity: Entity,
     from_sq: Square,
     to_sq: Square,
 }
 
 impl PromotingPiece {
-    pub fn new(entity: Entity, from_sq: Square, to_sq: Square) -> Self {
-        Self { entity, from_sq, to_sq }
+    pub fn new(from_sq: Square, to_sq: Square) -> Self {
+        Self { from_sq, to_sq }
     }
 }
 
-pub fn on_add_promoting_piece(
-    add: On<Add, PromotingPiece>,
-    mut commands: Commands,
-    tiles_map: Res<TilesMap>,
-    q_promoting: Query<&PromotingPiece>,
-    q_piece_meta: Query<&PieceMeta>,
-    mut q_visibility: Query<&mut Visibility>,
-    mut q_promoters: Query<(Entity, &PromotionUi)>,
-) {
-    let Ok(&PromotingPiece { from_sq, to_sq, .. }) = q_promoting.get(add.entity) else { return };
-    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(add.entity) else { return };
-    let Ok(mut vis) = q_visibility.get_mut(add.entity) else { return };
+impl PromotingPiece {
+    pub(super) fn on_add(
+        add: On<Add, Self>,
+        mut commands: Commands,
+        tiles_map: Res<TilesMap>,
+        q_promoting: Query<&Self>,
+        q_piece_meta: Query<&PieceMeta>,
+        mut q_visibility: Query<&mut Visibility>,
+        mut q_promoters: Query<(Entity, &PromotionUi)>,
+    ) {
+        let Ok(&Self { from_sq, to_sq, .. }) = q_promoting.get(add.entity) else {
+            return;
+        };
+        let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(add.entity) else { return };
+        let Ok(mut vis) = q_visibility.get_mut(add.entity) else { return };
 
-    trace!(?color, %from_sq, %to_sq, "Start promotion");
+        trace!(?color, %from_sq, %to_sq, "Start promotion");
 
-    // Clear selection & hints
-    commands.trigger(StartPromotion);
+        // Clear selection & hints
+        commands.trigger(StartPromotion);
 
-    // Hide the piece
-    *vis = Visibility::Hidden;
+        // Hide the piece
+        *vis = Visibility::Hidden;
 
-    // Show the promoter UI
-    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
-        commands.entity(tiles_map.at(to_sq)).add_child(entity);
-        if let Ok(mut vis) = q_visibility.get_mut(entity) {
-            *vis = Visibility::Visible;
+        // Show the promoter UI
+        if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color) {
+            commands.entity(tiles_map.at(to_sq)).add_child(entity);
+            if let Ok(mut vis) = q_visibility.get_mut(entity) {
+                *vis = Visibility::Visible;
+            }
         }
     }
-}
 
-#[derive(Event)]
-pub struct StartPromotion;
+    pub(super) fn on_remove(
+        remove: On<Remove, Self>,
+        q_promoting: Query<&Self>,
+        q_piece_meta: Query<&PieceMeta>,
+        mut q_visibility: Query<&mut Visibility>,
+        mut q_promoters: Query<(Entity, &PromotionUi)>,
+    ) {
+        let Ok(&Self { from_sq, to_sq, .. }) = q_promoting.get(remove.entity) else {
+            return;
+        };
+        let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(remove.entity) else { return };
+        let Ok(mut piece_vis) = q_visibility.get_mut(remove.entity) else { return };
 
-pub fn on_remove_promoting_piece(
-    remove: On<Remove, PromotingPiece>,
-    q_promoting: Query<&PromotingPiece>,
-    q_piece_meta: Query<&PieceMeta>,
-    mut q_visibility: Query<&mut Visibility>,
-    mut q_promoters: Query<(Entity, &PromotionUi)>,
-) {
-    let Ok(&PromotingPiece { from_sq, to_sq, .. }) = q_promoting.get(remove.entity) else { return };
-    let Ok(&PieceMeta { color, .. }) = q_piece_meta.get(remove.entity) else { return };
-    let Ok(mut piece_vis) = q_visibility.get_mut(remove.entity) else { return };
+        trace!(?color, %from_sq, %to_sq, "End promotion");
 
-    trace!(?color, %from_sq, %to_sq, "End promotion");
+        // Show the piece
+        *piece_vis = Visibility::Visible;
 
-    // Show the piece
-    *piece_vis = Visibility::Visible;
-
-    // Hide the promoter UI
-    if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color)
-        && let Ok(mut vis) = q_visibility.get_mut(entity)
-    {
-        *vis = Visibility::Hidden;
+        // Hide the promoter UI
+        if let Some((entity, _)) = q_promoters.iter_mut().find(|(_, promo)| promo.0 == color)
+            && let Ok(mut vis) = q_visibility.get_mut(entity)
+        {
+            *vis = Visibility::Hidden;
+        }
     }
 }
 
 pub fn is_promoting_piece(q_promo: Query<(), With<PromotingPiece>>) -> bool {
     !q_promo.is_empty()
 }
+
+#[derive(Event)]
+pub struct StartPromotion;
 
 type PromoButtonD<'a> = (&'a ViewVisibility, &'a mut Node);
 

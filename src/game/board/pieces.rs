@@ -208,6 +208,8 @@ pub(super) fn spawn_pieces_on_load_game(
                     ..default()
                 },
             ))
+            .observe(super::PromotingPiece::on_add)
+            .observe(super::PromotingPiece::on_remove)
             .id();
 
         commands.entity(tiles_map.at(square)).add_child(piece_entity);

@@ -63,7 +63,7 @@ pub fn move_piece(
         image.image = asset_server.load(new_asset_path);
     } else if typ == PieceType::PAWN && to_sq.get_rank() == color.to_their_backrank() {
         // Start promotion
-        commands.entity(entity).insert(PromotingPiece::new(entity, from_sq, to_sq));
+        commands.entity(entity).insert(PromotingPiece::new(from_sq, to_sq));
         return;
     }
 
