@@ -1,3 +1,5 @@
+use std::borrow::Borrow;
+
 use bevy::{ecs, platform::collections::HashSet, prelude::*, state};
 
 pub trait NoopExts {
@@ -42,6 +44,50 @@ macro_rules! debug_name_f {
     ($name_fmt:literal $(, $args:expr)* $(,)?) => {
         ()
     };
+}
+
+pub trait CommandsTriggerMany {
+    #[allow(unused)]
+    fn trigger_many<'trigger, Evt>(&mut self, entities: impl IntoIterator<Item: Borrow<Entity>>)
+    where
+        Evt: From<Entity> + Event,
+        Evt::Trigger<'trigger>: ecs::event::Trigger<Evt> + Default;
+
+    #[allow(unused)]
+    fn trigger_many_with<'trigger, Evt, F>(
+        &mut self,
+        entities: impl IntoIterator<Item: Borrow<Entity>>,
+        f: F,
+    ) where
+        Evt: Event,
+        Evt::Trigger<'trigger>: ecs::event::Trigger<Evt> + Default,
+        F: Fn(Entity) -> Evt;
+}
+
+impl<'w, 's> CommandsTriggerMany for Commands<'w, 's> {
+    fn trigger_many<'trigger, Evt>(&mut self, entities: impl IntoIterator<Item: Borrow<Entity>>)
+    where
+        Evt: From<Entity> + Event,
+        Evt::Trigger<'trigger>: ecs::event::Trigger<Evt> + Default,
+    {
+        for e in entities {
+            self.trigger(<Evt as From<Entity>>::from(*e.borrow()));
+        }
+    }
+
+    fn trigger_many_with<'trigger, Evt, F>(
+        &mut self,
+        entities: impl IntoIterator<Item: Borrow<Entity>>,
+        f: F,
+    ) where
+        Evt: Event,
+        Evt::Trigger<'trigger>: ecs::event::Trigger<Evt> + Default,
+        F: Fn(Entity) -> Evt,
+    {
+        for e in entities {
+            self.trigger(f(*e.borrow()));
+        }
+    }
 }
 
 pub trait ReparentInTag {

@@ -4,7 +4,7 @@ use bevy::prelude::*;
 
 use crate::{
     game::{LoadGame, menu::MenuState, mouse::Dragging},
-    utils::NoopExts,
+    utils::{CommandsTriggerMany, NoopExts},
 };
 
 use super::{
@@ -24,7 +24,6 @@ impl Plugin for SelectionPlugin {
             // Observers
             .add_observer(Select::handle)
             .add_observer(Unselect::handle)
-            .add_observer(EnableHints::handle)
             .add_observer(EnableLastMove::handle)
             .add_observer(DisableSelectionHighlight::handle)
             .add_observer(DisableHints::handle)
@@ -296,7 +295,7 @@ impl Select {
     fn handle(select: On<Self>, mut commands: Commands) {
         commands.trigger(Unselect);
         commands.trigger(EnableSelectionHighlight(select.highlight));
-        commands.trigger(EnableHints(select.hints.clone()));
+        commands.trigger_many::<EnableHint>(&select.hints);
     }
 }
 
@@ -325,14 +324,18 @@ impl EnableSelectionHighlight {
     }
 }
 
-#[derive(Event)]
-struct EnableHints(Vec<Entity>);
+#[derive(EntityEvent)]
+pub(super) struct EnableHint(Entity);
 
-impl EnableHints {
-    fn handle(enable_hints: On<Self>, mut commands: Commands) {
-        for &entity in &enable_hints.0 {
-            commands.entity(entity).insert((ShowingIndicator, EnabledHint));
-        }
+impl From<Entity> for EnableHint {
+    fn from(value: Entity) -> Self {
+        Self(value)
+    }
+}
+
+impl EnableHint {
+    pub(super) fn handle(enable_hint: On<Self>, mut commands: Commands) {
+        commands.entity(enable_hint.0).insert((ShowingIndicator, EnabledHint));
     }
 }
 

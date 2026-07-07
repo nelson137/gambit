@@ -81,6 +81,7 @@ pub fn spawn_hints(
                     Node { width: percent(100.0 / 3.0), height: percent(100.0 / 3.0), ..default() },
                 )],
             ))
+            .observe(super::EnableHint::handle)
             .observe(super::ShowingIndicator::on_add)
             .observe(super::ShowingIndicator::on_remove)
             .id();
@@ -101,6 +102,7 @@ pub fn spawn_hints(
                     ..default()
                 },
             ))
+            .observe(super::EnableHint::handle)
             .observe(super::ShowingIndicator::on_add)
             .observe(super::ShowingIndicator::on_remove)
             .id();
