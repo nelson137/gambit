@@ -461,7 +461,7 @@ mod tests {
             fn assert_state(&self, expected: SelectionState);
             fn assert_piece_has_dragging(&mut self, piece: Square);
             fn assert_selected(&mut self, expected: Option<Square>);
-            fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>);
+            fn assert_move_hints(&mut self, expected: impl IntoIterator<Item = Square>);
             fn assert_piece_on_tile(&mut self, sq: Square, color: PieceColor, typ: PieceType);
         }
 
@@ -546,7 +546,7 @@ mod tests {
             }
 
             #[track_caller]
-            fn assert_hints(&mut self, expected: impl IntoIterator<Item = Square>) {
+            fn assert_move_hints(&mut self, expected: impl IntoIterator<Item = Square>) {
                 let hints_map = self.hints_map();
 
                 let expected = expected
@@ -601,7 +601,7 @@ mod tests {
         app.assert_state(SelectionState::SelectingDragging(Square::D2));
         app.assert_piece_has_dragging(Square::D2);
         app.assert_selected(Some(Square::D2));
-        app.assert_hints([Square::D3, Square::D4]);
+        app.assert_move_hints([Square::D3, Square::D4]);
     }
 
     #[test]
@@ -613,7 +613,7 @@ mod tests {
 
         app.assert_state(SelectionState::Unselected);
         app.assert_selected(None);
-        app.assert_hints([]);
+        app.assert_move_hints([]);
     }
 
     #[test]
@@ -625,7 +625,7 @@ mod tests {
 
         app.assert_state(SelectionState::Unselected);
         app.assert_selected(None);
-        app.assert_hints([]);
+        app.assert_move_hints([]);
     }
 
     #[test]
@@ -657,7 +657,7 @@ mod tests {
         app.assert_state(SelectionState::Selected(Square::D2));
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(Some(Square::D2));
-        app.assert_hints([Square::D3, Square::D4]);
+        app.assert_move_hints([Square::D3, Square::D4]);
     }
 
     #[test]
@@ -673,7 +673,7 @@ mod tests {
         app.assert_state(SelectionState::SelectedDragging(Square::D2));
         app.assert_piece_has_dragging(Square::D2);
         app.assert_selected(Some(Square::D2));
-        app.assert_hints([Square::D3, Square::D4]);
+        app.assert_move_hints([Square::D3, Square::D4]);
     }
 
     #[test]
@@ -704,7 +704,7 @@ mod tests {
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_piece_has_dragging(Square::H2);
         app.assert_selected(Some(Square::H2));
-        app.assert_hints([Square::H3, Square::H4]);
+        app.assert_move_hints([Square::H3, Square::H4]);
     }
 
     #[test]
@@ -719,7 +719,7 @@ mod tests {
 
         app.assert_state(SelectionState::Unselected);
         app.assert_selected(None);
-        app.assert_hints([]);
+        app.assert_move_hints([]);
     }
 
     #[test]
@@ -734,7 +734,7 @@ mod tests {
 
         app.assert_state(SelectionState::Selected(Square::D2));
         app.assert_selected(Some(Square::D2));
-        app.assert_hints([Square::D3, Square::D4]);
+        app.assert_move_hints([Square::D3, Square::D4]);
     }
 
     #[test]
@@ -751,7 +751,7 @@ mod tests {
         app.assert_state(SelectionState::Unselected);
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(None);
-        app.assert_hints([]);
+        app.assert_move_hints([]);
     }
 
     #[test]
@@ -783,7 +783,7 @@ mod tests {
         app.assert_state(SelectionState::Selected(Square::D2));
         app.assert_piece_on_tile(Square::D2, PieceColor::WHITE, PieceType::PAWN);
         app.assert_selected(Some(Square::D2));
-        app.assert_hints([Square::D3, Square::D4]);
+        app.assert_move_hints([Square::D3, Square::D4]);
     }
 
     #[test]
