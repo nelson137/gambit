@@ -38,6 +38,7 @@ pub fn spawn_highlight_tiles(
                     ..default()
                 },
             ))
+            .observe(super::EnableSelectionHighlight::handle)
             .observe(super::ShowingIndicator::on_add)
             .observe(super::ShowingIndicator::on_remove)
             .id();

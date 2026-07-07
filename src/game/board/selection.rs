@@ -30,7 +30,6 @@ impl Plugin for SelectionPlugin {
             .add_observer(mouse::on_remove_dragging_piece)
             .add_observer(Select::handle)
             .add_observer(Unselect::handle)
-            .add_observer(EnableSelectionHighlight::handle)
             .add_observer(EnableHints::handle)
             .add_observer(EnableLastMove::handle)
             .add_observer(DisableSelectionHighlight::handle)
@@ -323,11 +322,11 @@ impl Unselect {
     }
 }
 
-#[derive(Event)]
-struct EnableSelectionHighlight(Entity);
+#[derive(EntityEvent)]
+pub(super) struct EnableSelectionHighlight(Entity);
 
 impl EnableSelectionHighlight {
-    fn handle(enable_selection_highlight: On<Self>, mut commands: Commands) {
+    pub(super) fn handle(enable_selection_highlight: On<Self>, mut commands: Commands) {
         commands.entity(enable_selection_highlight.0).insert((ShowingIndicator, Selected));
     }
 }
