@@ -43,13 +43,6 @@ impl Plugin for SelectionPlugin {
                 commands.trigger(Unselect);
                 commands.trigger(DisableLastMove);
             })
-            // Observers - MovePiece
-            .add_observer(|move_piece: On<MovePiece>, mut commands: Commands| {
-                let MovePiece { from_sq, to_sq, .. } = *move_piece;
-                commands.trigger(Unselect);
-                commands.trigger(DisableLastMove);
-                commands.trigger(EnableLastMove(from_sq, to_sq));
-            })
             // Observers - StartPromotion
             .add_observer(|_start_promotion: On<StartPromotion>, mut commands: Commands| {
                 commands.trigger(Unselect);
@@ -277,6 +270,13 @@ fn on_remove_showing_indicator(
     if let Ok(mut vis) = q_vis.get_mut(remove.entity) {
         *vis = Visibility::Hidden;
     }
+}
+
+pub fn unselect_on_move_piece(move_piece: On<MovePiece>, mut commands: Commands) {
+    let MovePiece { from_sq, to_sq, .. } = *move_piece;
+    commands.trigger(Unselect);
+    commands.trigger(DisableLastMove);
+    commands.trigger(EnableLastMove(from_sq, to_sq));
 }
 
 #[derive(Event, Debug)]
