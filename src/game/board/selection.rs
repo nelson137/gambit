@@ -3,11 +3,7 @@ use std::fmt::{self, Write};
 use bevy::prelude::*;
 
 use crate::{
-    game::{
-        LoadGame,
-        menu::MenuState,
-        mouse::{self, Dragging},
-    },
+    game::{LoadGame, menu::MenuState, mouse::Dragging},
     utils::NoopExts,
 };
 
@@ -26,8 +22,6 @@ impl Plugin for SelectionPlugin {
             // Events
             .add_message::<MouseSelectionEvent>()
             // Observers
-            .add_observer(mouse::on_add_dragging_piece)
-            .add_observer(mouse::on_remove_dragging_piece)
             .add_observer(Select::handle)
             .add_observer(Unselect::handle)
             .add_observer(EnableHints::handle)

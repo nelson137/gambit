@@ -58,21 +58,23 @@ pub struct Dragging {
     pub original_square: Square,
 }
 
-pub fn on_add_dragging_piece(
-    add: On<Add, Dragging>,
-    mut commands: Commands,
-    drag_container: Single<Entity, With<DragContainer>>,
-) {
-    commands.entity(*drag_container).add_child(add.entity);
-}
+impl Dragging {
+    pub fn on_add(
+        add: On<Add, Self>,
+        mut commands: Commands,
+        drag_container: Single<Entity, With<DragContainer>>,
+    ) {
+        commands.entity(*drag_container).add_child(add.entity);
+    }
 
-pub fn on_remove_dragging_piece(
-    remove: On<Remove, Dragging>,
-    mut commands: Commands,
-    tiles_map: Res<TilesMap>,
-    q_dragging: Query<&Dragging>,
-) {
-    let Ok(dragging) = q_dragging.get(remove.entity) else { return };
-    let original_tile = tiles_map.at(dragging.original_square);
-    commands.entity(original_tile).add_child(remove.entity);
+    pub fn on_remove(
+        remove: On<Remove, Self>,
+        mut commands: Commands,
+        tiles_map: Res<TilesMap>,
+        q_dragging: Query<&Self>,
+    ) {
+        let Ok(dragging) = q_dragging.get(remove.entity) else { return };
+        let original_tile = tiles_map.at(dragging.original_square);
+        commands.entity(original_tile).add_child(remove.entity);
+    }
 }

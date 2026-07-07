@@ -208,6 +208,8 @@ pub(super) fn spawn_pieces_on_load_game(
                     ..default()
                 },
             ))
+            .observe(crate::game::mouse::Dragging::on_add)
+            .observe(crate::game::mouse::Dragging::on_remove)
             .observe(super::move_piece)
             .observe(super::unselect_on_move_piece)
             .observe(Animating::on_remove)
