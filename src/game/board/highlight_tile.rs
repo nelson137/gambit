@@ -68,8 +68,4 @@ impl HighlightTilesMap {
     pub fn at(&self, square: Square) -> Entity {
         self.0.get(&square).copied().unwrap_or_else(|| panic!("no highlight at {square}"))
     }
-
-    pub fn many<const N: usize>(&self, squares: [Square; N]) -> [Entity; N] {
-        squares.map(|s| self.at(s))
-    }
 }

@@ -353,7 +353,8 @@ impl EnableLastMove {
         highlights_map: Res<HighlightTilesMap>,
     ) {
         let Self(from_sq, to_sq) = *enable_last_move;
-        let [e1, e2] = highlights_map.many([from_sq, to_sq]);
+        let e1 = highlights_map.at(from_sq);
+        let e2 = highlights_map.at(to_sq);
         commands.entity(e1).insert((ShowingIndicator, LastMove));
         commands.entity(e2).insert((ShowingIndicator, LastMove));
     }
