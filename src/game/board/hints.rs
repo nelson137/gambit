@@ -81,6 +81,8 @@ pub fn spawn_hints(
                     Node { width: percent(100.0 / 3.0), height: percent(100.0 / 3.0), ..default() },
                 )],
             ))
+            .observe(super::ShowingIndicator::on_add)
+            .observe(super::ShowingIndicator::on_remove)
             .id();
 
         // Capture hint
@@ -99,6 +101,8 @@ pub fn spawn_hints(
                     ..default()
                 },
             ))
+            .observe(super::ShowingIndicator::on_add)
+            .observe(super::ShowingIndicator::on_remove)
             .id();
 
         hints_map.set(square, TileHints { capture_entity, move_entity });

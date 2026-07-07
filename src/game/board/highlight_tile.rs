@@ -38,6 +38,8 @@ pub fn spawn_highlight_tiles(
                     ..default()
                 },
             ))
+            .observe(super::ShowingIndicator::on_add)
+            .observe(super::ShowingIndicator::on_remove)
             .id();
 
         highlights_map.set(square, hl_tile_entity);

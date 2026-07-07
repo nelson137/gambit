@@ -36,8 +36,6 @@ impl Plugin for SelectionPlugin {
             .add_observer(DisableSelectionHighlight::handle)
             .add_observer(DisableHints::handle)
             .add_observer(DisableLastMove::handle)
-            .add_observer(on_add_showing_indicator)
-            .add_observer(on_remove_showing_indicator)
             // Observers - LoadGame
             .add_observer(|_load_game: On<LoadGame>, mut commands: Commands| {
                 commands.trigger(Unselect);
@@ -255,20 +253,19 @@ struct LastMove;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]
-struct ShowingIndicator;
+pub(super) struct ShowingIndicator;
 
-fn on_add_showing_indicator(add: On<Add, ShowingIndicator>, mut q_vis: Query<&mut Visibility>) {
-    if let Ok(mut vis) = q_vis.get_mut(add.entity) {
-        *vis = Visibility::Visible;
+impl ShowingIndicator {
+    pub(super) fn on_add(add: On<Add, Self>, mut q_vis: Query<&mut Visibility>) {
+        if let Ok(mut vis) = q_vis.get_mut(add.entity) {
+            *vis = Visibility::Visible;
+        }
     }
-}
 
-fn on_remove_showing_indicator(
-    remove: On<Remove, ShowingIndicator>,
-    mut q_vis: Query<&mut Visibility>,
-) {
-    if let Ok(mut vis) = q_vis.get_mut(remove.entity) {
-        *vis = Visibility::Hidden;
+    pub(super) fn on_remove(remove: On<Remove, Self>, mut q_vis: Query<&mut Visibility>) {
+        if let Ok(mut vis) = q_vis.get_mut(remove.entity) {
+            *vis = Visibility::Hidden;
+        }
     }
 }
 
