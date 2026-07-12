@@ -5,7 +5,7 @@ use bevy::{
 
 use crate::{
     game::{board::MovePiece, consts::z},
-    utils::{NoopExts, text_default_font},
+    utils::{NoopExts, normal_text_font},
 };
 
 use super::{PieceColor, PieceMeta, PieceType, Square, Tile, TilesMap};
@@ -121,7 +121,7 @@ fn promoter_cancel_button(color: PieceColor) -> impl Scene {
                 Children [
                     (
                         Text("x")
-                        text_default_font(24.)
+                        normal_text_font(24.)
                         TextColor(CANCEL_BUTTON_FG_COLOR)
                     )
                 ]

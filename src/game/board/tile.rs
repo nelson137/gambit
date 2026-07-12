@@ -3,7 +3,7 @@ use std::collections::{HashMap, hash_map::Entry};
 use bevy::prelude::*;
 use chess::{File, Rank};
 
-use crate::utils::text_default_font;
+use crate::utils::normal_text_font;
 
 use super::Square;
 
@@ -46,7 +46,7 @@ pub(super) fn tiles() -> impl SceneList {
         if square.get_rank() == Rank::First {
             labels.push(Box::new(bsn! {
                 Text({ square.file_char().to_string() })
-                text_default_font(16.)
+                normal_text_font(16.)
                 template_value(text_color)
                 Node {
                     position_type: PositionType::Absolute,
@@ -60,7 +60,7 @@ pub(super) fn tiles() -> impl SceneList {
         if square.get_file() == File::A {
             labels.push(Box::new(bsn! {
                 Text({ square.rank_char().to_string() })
-                text_default_font(16.)
+                normal_text_font(16.)
                 template_value(text_color)
                 Node {
                     position_type: PositionType::Absolute,

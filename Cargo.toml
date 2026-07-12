@@ -31,7 +31,7 @@ tracing = "0.1"
 tracing-subscriber = { version = "^0.3.20", features = ["local-time", "time"] }
 
 [dependencies]
-bevy = { version = "0.19", features = ["flac"] }
+bevy = { version = "0.19", features = ["flac", "bevy_feathers"] }
 bevy-inspector-egui = { version = "0.37", optional = true }
 bevy_egui = "0.40"
 chess = "3.2"

@@ -20,7 +20,9 @@ impl Plugin for GameTestPlugin {
             .add_plugins(bevy::asset::AssetPlugin::default())
             .add_plugins(bevy::state::app::StatesPlugin)
             .add_plugins(bevy::scene::ScenePlugin)
+            .add_plugins(bevy::input_focus::InputFocusPlugin)
             .add_plugins(bevy::image::ImagePlugin::default())
+            .init_asset::<bevy::shader::Shader>()
             .init_asset::<bevy::text::Font>()
             .noop();
     }

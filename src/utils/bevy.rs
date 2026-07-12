@@ -1,6 +1,6 @@
 use std::borrow::Borrow;
 
-use bevy::{ecs, prelude::*, state};
+use bevy::{ecs, feathers, prelude::*, state};
 
 use crate::game::consts;
 
@@ -13,36 +13,72 @@ pub trait NoopExts {
 impl NoopExts for App {}
 impl NoopExts for World {}
 
-pub struct TextFontBuilder {
-    path: &'static str,
-    font_size: FontSize,
+pub fn text_font(font_size: impl Into<FontSize>, game_font_weight: GameFontWeight) -> impl Scene {
+    let font_size = font_size.into();
+    template(move |ctx| {
+        let asset_server = ctx.resource::<AssetServer>();
+        let font = FontSource::Handle(asset_server.load(consts::FONT_PATH));
+        Ok(TextFont { font, font_size, weight: game_font_weight.font_weight(), ..default() })
+    })
 }
 
-impl TextFontBuilder {
-    pub fn new(path: &'static str) -> Self {
-        Self { path, font_size: FontSize::Px(12.) }
-    }
-
-    pub fn template(self) -> impl Scene {
-        template(move |ctx| {
-            let asset_server = ctx.resource::<AssetServer>();
-            let font = FontSource::Handle(asset_server.load(self.path));
-            Ok(TextFont { font, font_size: self.font_size, ..default() })
+pub fn normal_text_font(font_size: f32) -> impl Scene {
+    template(move |ctx| {
+        let asset_server = ctx.resource::<AssetServer>();
+        let font = FontSource::Handle(asset_server.load(consts::FONT_PATH));
+        Ok(TextFont {
+            font,
+            font_size: FontSize::Px(font_size),
+            weight: FontWeight::BOLD,
+            ..default()
         })
-    }
+    })
+}
 
-    pub fn font_size_px(mut self, font_size: f32) -> Self {
-        self.font_size = FontSize::Px(font_size);
-        self
+#[derive(SceneComponent, Clone, Default)]
+#[scene(GameInheritableFontProps)]
+pub struct GameInheritableFont;
+
+impl GameInheritableFont {
+    fn scene(props: GameInheritableFontProps) -> impl Scene {
+        bsn! {
+            feathers::font_styles::InheritableFont {
+                font: consts::FONT_PATH,
+                font_size: { props.font_size },
+                weight: { props.weight.font_weight() },
+            }
+        }
     }
 }
 
-pub fn text_font(path: &'static str, font_size: f32) -> impl Scene {
-    TextFontBuilder::new(path).font_size_px(font_size).template()
+#[derive(Clone, Copy)]
+pub struct GameInheritableFontProps {
+    pub font_size: FontSize,
+    pub weight: GameFontWeight,
 }
 
-pub fn text_default_font(font_size: f32) -> impl Scene {
-    TextFontBuilder::new(consts::FONT_PATH).font_size_px(font_size).template()
+impl Default for GameInheritableFontProps {
+    fn default() -> Self {
+        Self { font_size: FontSize::Px(12.), weight: Default::default() }
+    }
+}
+
+#[derive(Clone, Copy, Default)]
+pub enum GameFontWeight {
+    // Thin,
+    #[default]
+    Normal,
+    Bold,
+}
+
+impl GameFontWeight {
+    pub fn font_weight(self) -> FontWeight {
+        match self {
+            // Self::Thin => FontWeight::NORMAL,
+            Self::Normal => FontWeight::BOLD,
+            Self::Bold => FontWeight::EXTRA_BOLD,
+        }
+    }
 }
 
 pub trait CommandsTriggerMany {
@@ -87,24 +123,6 @@ impl<'w, 's> CommandsTriggerMany for Commands<'w, 's> {
             self.trigger(f(*e.borrow()));
         }
     }
-}
-
-pub fn recolor_on<const AUTO_PROPAGATE: bool, E, T>(
-    color: Color,
-) -> impl ecs::system::ObserverSystem<E, (), ()> + Clone
-where
-    E: Event
-        + EntityEvent
-        + for<'a> Event<Trigger<'a> = ecs::event::PropagateEntityTrigger<AUTO_PROPAGATE, E, T>>
-        + 'static,
-    T: ecs::traversal::Traversal<E> + 'static,
-{
-    let system = move |mut event: On<E>, mut commands: Commands| {
-        event.propagate(false);
-        let entity = event.event_target();
-        commands.entity(entity).insert(BackgroundColor(color));
-    };
-    ecs::system::IntoObserverSystem::into_system(system)
 }
 
 pub fn set_state_on<'w, 't, const AUTO_PROPAGATE: bool, S, E, T>(

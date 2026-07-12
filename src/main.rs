@@ -4,6 +4,7 @@ use bevy::prelude::*;
 use bevy_egui::EguiPlugin;
 use game::consts::*;
 
+mod assets;
 mod cli;
 mod debug_inspector;
 mod game;
@@ -33,6 +34,7 @@ fn main() {
                 }),
         )
         // Game
+        .add_plugins(assets::GameAssetsPlugin)
         .add_plugins(cli::CliPlugin)
         .add_plugins(EguiPlugin::default())
         .add_plugins(game::GameLogicPlugin)

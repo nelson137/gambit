@@ -1,6 +1,6 @@
 use bevy::{prelude::*, ui::UiSystems};
 
-use crate::utils::{NoopExts, text_default_font};
+use crate::utils::{NoopExts, normal_text_font};
 
 use super::{
     board::{CapturePlugin, CaptureState, PieceColor},
@@ -109,7 +109,7 @@ impl PanelBuilder {
                         (
                             #ProfileLabel
                             Text({ self.profile_label.to_string() })
-                            text_default_font(12.)
+                            normal_text_font(12.)
                             TextColor(Color::WHITE)
                         ),
                         (
@@ -160,7 +160,7 @@ fn spawn_captures_images(
         commands.spawn_scene(bsn! {
             MaterialAdvantageLabel({ spawn.color })
             ChildOf({ spawn.entity })
-            text_default_font(12.)
+            normal_text_font(12.)
             Text("+6")
             TextColor(Color::srgba(1.0, 1.0, 1.0, 0.5))
             Visibility::Hidden

@@ -18,9 +18,7 @@ pub const COLOR_BG: Color = Color::srgb(
     0x2b as f32 / u8::MAX as f32,
 );
 
-pub const FONT_PATH: &str = "fonts/montserrat-700.otf";
-
-pub const TITLE_FONT_PATH: &str = "fonts/montserrat-800.otf";
+pub const FONT_PATH: &str = "embedded://gambit/assets/fonts/Montserrat.ttf";
 
 pub const DEFAULT_FEN: &str = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
@@ -42,16 +40,6 @@ pub const UI_GAP: f32 = 8.0;
 pub const UI_GAP_VAL: Val = Val::Px(UI_GAP);
 
 pub const CAPTURES_PANEL_HEIGHT: f32 = 32.0;
-
-pub const MENU_WIDTH_RATIO: f32 = 544.0 / INIT_WIN_WIDTH as f32;
-pub const MENU_HEIGHT_RATIO: f32 = 448.0 / INIT_WIN_HEIGHT as f32;
-
-pub const INIT_MENU_WIDTH: f32 = MENU_WIDTH_RATIO * INIT_WIN_WIDTH as f32;
-pub const INIT_MENU_HEIGHT: f32 = MENU_HEIGHT_RATIO * INIT_WIN_HEIGHT as f32;
-
-pub const INIT_MENU_TITLE_SIZE: f32 = 128.0;
-
-pub const INIT_MENU_BUTTON_TEXT_SIZE: f32 = 48.0;
 
 pub const MIN_BOARD_SIZE: Val = Val::Px(256.0);
 
