@@ -1,4 +1,7 @@
-use bevy::{ecs::prelude::*, reflect::TypeRegistryArc};
+use bevy::{
+    ecs::{prelude::*, resource::IsResource},
+    reflect::TypeRegistryArc,
+};
 use bevy_egui::egui::{
     Align, FontFamily, FontId, Key, Label, Layout, Response, RichText, ScrollArea, Shape, TextEdit,
     TextWrapMode, Ui, UiBuilder, collapsing_header::CollapsingState, emath::Rot2, remap, vec2,
@@ -58,7 +61,9 @@ impl<'a> InspectorPaneViewer<'a> {
         ui.heading("Hierarchy");
         ui.separator();
 
-        let mut q = self.world.query_filtered::<Entity, Without<ChildOf>>();
+        let mut q = self
+            .world
+            .query_filtered::<Entity, (Without<ChildOf>, Without<IsResource>, Without<Observer>)>();
         let mut entities: Vec<_> = q.iter(self.world).collect();
         entities.sort();
 
@@ -100,9 +105,7 @@ impl<'a> InspectorPaneViewer<'a> {
             }
 
             if label.clicked() {
-                let mode = ui.input(|i| {
-                    SelectionMode::from_ctrl_shift(i.modifiers.command, i.modifiers.shift)
-                });
+                let mode = ui.input(|i| SelectionMode::from(i.modifiers));
                 self.state.selected_entities.select(mode, entity, |from, to| {
                     let is_boundary = |&e| e == from || e == to;
                     let Some(from_i) = local_generation.iter().position(is_boundary) else {
@@ -165,7 +168,7 @@ impl<'a> InspectorPaneViewer<'a> {
                 let info = reg.type_info();
                 (info.type_path_table().short_path(), info.type_id())
             })
-            .filter(|&(_, type_id)| self.world.components().get_resource_id(type_id).is_some())
+            .filter(|&(_, type_id)| self.world.components().get_id(type_id).is_some())
             .collect::<Vec<_>>();
         resources.sort_by_key(|(name, _)| *name);
 
@@ -213,7 +216,7 @@ impl<'a> InspectorPaneViewer<'a> {
             );
 
             let font_id = FontId::new(10.0, FontFamily::Monospace);
-            let text_height = ui.fonts(|f| f.row_height(&font_id));
+            let text_height = ui.fonts_mut(|f| f.row_height(&font_id));
 
             let scroll_area = ScrollArea::both().auto_shrink([false; 2]).stick_to_bottom(true);
             scroll_area.show_rows(ui, text_height, sf_comms.len(), |ui, range| {

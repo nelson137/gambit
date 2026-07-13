@@ -2,8 +2,8 @@ use std::iter;
 
 use bevy::utils::default;
 use bevy_egui::egui::{
-    Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Rect, ScrollArea, Sense,
-    SidePanel, Stroke, Ui, UiBuilder, panel::Side, pos2, vec2,
+    Align, Color32, Context, CursorIcon, Frame, Id, Layout, Margin, Panel, Rect, ScrollArea, Sense,
+    Stroke, Ui, UiBuilder, pos2, vec2,
 };
 
 struct SplitPanelStyle {
@@ -21,7 +21,7 @@ impl Default for SplitPanelStyle {
     fn default() -> Self {
         Self {
             padding: Some(Margin::same(8)),
-            border_stroke: Stroke::new(0.0, Color32::BLACK),
+            border_stroke: Stroke::new(0.0_f32, Color32::BLACK),
             pane_min_size: 64.0,
             separator_width: 2.0,
             separator_interact_expand: 4.0,
@@ -67,7 +67,7 @@ impl<Pane> PaneState<Pane> {
 
 pub struct SplitPanel<'state, Pane> {
     id: Id,
-    side: Side,
+    side: PanelSide,
     default_width: f32,
     style: SplitPanelStyle,
     state: &'state mut SplitPanelState<Pane>,
@@ -76,7 +76,7 @@ pub struct SplitPanel<'state, Pane> {
 
 #[allow(dead_code)]
 impl<'state, Pane> SplitPanel<'state, Pane> {
-    fn new(id: impl Into<Id>, side: Side, state: &'state mut SplitPanelState<Pane>) -> Self {
+    fn new(id: impl Into<Id>, side: PanelSide, state: &'state mut SplitPanelState<Pane>) -> Self {
         let n_panes = state.panes.len();
         let n_separators = n_panes - 1;
 
@@ -91,11 +91,11 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
     }
 
     pub fn left(id: impl Into<Id>, state: &'state mut SplitPanelState<Pane>) -> Self {
-        Self::new(id, Side::Left, state)
+        Self::new(id, PanelSide::Left, state)
     }
 
     pub fn right(id: impl Into<Id>, state: &'state mut SplitPanelState<Pane>) -> Self {
-        Self::new(id, Side::Right, state)
+        Self::new(id, PanelSide::Right, state)
     }
 }
 
@@ -108,34 +108,42 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
 
 impl<'state, Pane> SplitPanel<'state, Pane> {
     pub fn show(mut self, ctx: &Context, pane_viewer: &mut impl PaneViewer<Pane = Pane>) {
-        let frame =
-            Frame { inner_margin: Margin::ZERO, fill: ctx.style().visuals.panel_fill, ..default() };
-        SidePanel::new(self.side, self.id).frame(frame).default_width(self.default_width).show(
-            ctx,
-            |ui| {
-                let mut panel_rect = ui.available_rect_before_wrap();
+        let panel = match self.side {
+            PanelSide::Left => Panel::left(self.id),
+            PanelSide::Right => Panel::right(self.id),
+            // PanelSide::Top => Panel::top(self.id),
+            // PanelSide::Bottom => Panel::bottom(self.id),
+        };
 
-                ui.expand_to_include_rect(panel_rect);
+        let frame = Frame {
+            inner_margin: Margin::ZERO,
+            fill: ctx.global_style().visuals.panel_fill,
+            ..default()
+        };
 
-                let panel_border = ui.visuals().widgets.active.fg_stroke.width;
-                panel_rect.max.x -= panel_border;
-                panel_rect.min.x += panel_border;
-                ui.set_clip_rect(panel_rect);
+        panel.frame(frame).default_size(self.default_width).show(ctx, |ui| {
+            let mut panel_rect = ui.available_rect_before_wrap();
 
-                let content_rect = panel_rect.expand(-self.style.border_stroke.width / 2.0);
+            ui.expand_to_include_rect(panel_rect);
 
-                ui.allocate_rect(content_rect, Sense::hover());
+            let panel_border = ui.visuals().widgets.active.fg_stroke.width;
+            panel_rect.max.x -= panel_border;
+            panel_rect.min.x += panel_border;
+            ui.set_clip_rect(panel_rect);
 
-                let layout = Layout::top_down_justified(Align::Min);
-                let ui = &mut ui.new_child(UiBuilder::new().max_rect(content_rect).layout(layout));
+            let content_rect = panel_rect.expand(-self.style.border_stroke.width / 2.0);
 
-                self.compute_rects(content_rect);
+            ui.allocate_rect(content_rect, Sense::hover());
 
-                self.show_panes(ui, pane_viewer);
+            let layout = Layout::top_down_justified(Align::Min);
+            let ui = &mut ui.new_child(UiBuilder::new().max_rect(content_rect).layout(layout));
 
-                self.show_separators(ui, content_rect);
-            },
-        );
+            self.compute_rects(content_rect);
+
+            self.show_panes(ui, pane_viewer);
+
+            self.show_separators(ui, content_rect);
+        });
     }
 
     fn compute_rects(&mut self, content_rect: Rect) {
@@ -225,6 +233,14 @@ impl<'state, Pane> SplitPanel<'state, Pane> {
             }
         }
     }
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+enum PanelSide {
+    Left,
+    Right,
+    // Top,
+    // Bottom,
 }
 
 pub trait PaneViewer {

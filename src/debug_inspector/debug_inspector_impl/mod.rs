@@ -36,7 +36,7 @@ fn inspector_ui(world: &mut World) {
 
     let ctx = context.get_mut();
     world.resource_mut::<DebugInspectorIsUsingMouse>().0 =
-        ctx.is_pointer_over_area() || ctx.wants_pointer_input();
+        ctx.is_pointer_over_egui() || ctx.egui_wants_pointer_input();
 }
 
 #[derive(Default, Deref, Resource)]
