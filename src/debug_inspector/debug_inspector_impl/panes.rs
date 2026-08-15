@@ -180,10 +180,10 @@ impl<'a> InspectorPaneViewer<'a> {
     }
 
     fn show_stockfish(&mut self, ui: &mut Ui) {
+        let Some(sf_comms) = self.world.get_resource::<SfCommunications>() else { return };
+
         ui.heading("Stockfish");
         ui.separator();
-
-        let sf_comms = self.world.resource::<SfCommunications>();
 
         let mut user_command: Option<SfCommand> = None;
 
