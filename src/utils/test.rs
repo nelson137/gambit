@@ -24,6 +24,7 @@ impl Plugin for GameTestPlugin {
             .add_plugins(bevy::image::ImagePlugin::default())
             .init_asset::<bevy::shader::Shader>()
             .init_asset::<bevy::text::Font>()
+            .init_resource::<crate::game::menu::FenInputMenuState>()
             .noop();
     }
 }

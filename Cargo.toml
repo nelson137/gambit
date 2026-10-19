@@ -31,12 +31,11 @@ tracing = "0.1"
 tracing-subscriber = { version = "^0.3.20", features = ["local-time", "time"] }
 
 [dependencies]
-bevy = { version = "0.19", features = ["flac", "bevy_feathers"] }
+bevy = { version = "0.19", features = ["flac", "bevy_feathers", "system_clipboard"] }
 bevy-inspector-egui = { version = "0.37", optional = true }
 bevy_egui = "0.40"
 chess = "3.2"
 clap = { version = "4.1", features = ["derive", "wrap_help"] }
 crossbeam-channel = "0.5"
 dirs = "6.0"
-egui_extras = "0.34"
 libc = "0.2" # Pin transitive dependency `dirs@6.0 -> dirs-sys@0.5 -> libc@0.2` to satisfy `bevy`

@@ -4,13 +4,13 @@ use bevy::{ecs::system::QueryLens, prelude::*};
 
 use crate::{cli::CliArgs, game::LoadGame};
 
-use super::{GameMenuDimLayer, PopupState};
+use super::{FenInputMenu, FenInputMenuState, GameMenu, GameMenuDimLayer};
 
 #[derive(Clone, Copy, Debug, Default, Eq, States)]
 pub enum MenuState {
-    FenInput,
     #[default]
-    Menu,
+    Main,
+    FenInput,
     Game,
 }
 
@@ -20,7 +20,7 @@ pub(super) fn init_menu_state_from_cli(
 ) {
     next_menu_state.set(match cli_args.fen {
         Some(_) => MenuState::Game,
-        _ => MenuState::Menu,
+        _ => MenuState::Main,
     });
 }
 
@@ -49,16 +49,38 @@ impl fmt::Display for MenuState {
     }
 }
 
-pub(super) fn on_enter_menu_state_fen_input(mut fen_popup_state: ResMut<PopupState>) {
-    fen_popup_state.reset();
-}
+pub(super) struct OnEnterMenuState;
 
-pub(super) fn on_enter_menu_state_menu(mut q_menu: Query<&mut Node, With<GameMenuDimLayer>>) {
-    set_menu_display(q_menu.transmute_lens(), Display::Flex);
-}
+impl OnEnterMenuState {
+    pub(super) fn main(
+        mut q: ParamSet<(
+            Query<&mut Node, With<GameMenuDimLayer>>,
+            Query<&mut Node, With<GameMenu>>,
+            Query<&mut Node, With<FenInputMenu>>,
+        )>,
+    ) {
+        set_menu_display(q.p0().transmute_lens(), Display::Flex);
+        set_menu_display(q.p1().transmute_lens(), Display::Flex);
+        set_menu_display(q.p2().transmute_lens(), Display::None);
+    }
 
-pub(super) fn on_enter_menu_state_game(mut q_menu: Query<&mut Node, With<GameMenuDimLayer>>) {
-    set_menu_display(q_menu.transmute_lens(), Display::None);
+    pub(super) fn fen_input(
+        mut fen_popup_state: ResMut<FenInputMenuState>,
+        mut q: ParamSet<(
+            Query<&mut Node, With<GameMenuDimLayer>>,
+            Query<&mut Node, With<GameMenu>>,
+            Query<&mut Node, With<FenInputMenu>>,
+        )>,
+    ) {
+        fen_popup_state.reset();
+        set_menu_display(q.p0().transmute_lens(), Display::Flex);
+        set_menu_display(q.p1().transmute_lens(), Display::None);
+        set_menu_display(q.p2().transmute_lens(), Display::Flex);
+    }
+
+    pub(super) fn game(mut q_menu: Query<&mut Node, With<GameMenuDimLayer>>) {
+        set_menu_display(q_menu.transmute_lens(), Display::None);
+    }
 }
 
 fn set_menu_display(mut q_lens_menu: QueryLens<&mut Node>, display: Display) {

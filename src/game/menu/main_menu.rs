@@ -1,14 +1,14 @@
 use bevy::{feathers, prelude::*, text};
 
-use crate::{
-    game::consts::z,
-    utils::{GameFontWeight, GameInheritableFont, set_state_on, text_font},
-};
+use crate::utils::{GameFontWeight, GameInheritableFont, set_state_on, text_font};
 
 use super::MenuState;
 
 #[derive(Component, Clone, Default)]
 pub(super) struct GameMenuDimLayer;
+
+#[derive(Component, Clone, Default)]
+pub(super) struct GameMenu;
 
 #[derive(Component, Clone, Copy, Debug, Default)]
 enum GameMenuButton {
@@ -50,39 +50,13 @@ pub(super) const BUTTON_COLOR_PRESSED: Color = Color::srgb(
     0x5f as f32 / u8::MAX as f32,
 );
 
-pub fn game_menu() -> impl Scene {
+pub(super) fn ui() -> impl Scene {
     bsn! {
-        menu_dim_layer()
-        Children [
-            menu()
-        ]
-    }
-}
-
-fn menu_dim_layer() -> impl Scene {
-    bsn! {
-        #GameMenuDimLayer
-        GameMenuDimLayer
-        BackgroundColor(Color::srgba(0.0, 0.0, 0.0, 0.7))
-        GlobalZIndex(z::G_MENU)
-        Node {
-            position_type: PositionType::Absolute,
-            top: px(0),
-            left: px(0),
-            width: percent(100),
-            height: percent(100),
-            justify_content: JustifyContent::Center,
-            align_items: AlignItems::Center,
-        }
-    }
-}
-
-fn menu() -> impl Scene {
-    bsn! {
+        #GameMenu
+        GameMenu
         feathers::containers::pane()
         Children [
             (
-                #GameMenu
                 feathers::containers::pane_body()
                 feathers::theme::ThemeBackgroundColor({ super::tokens::GAME_MENU_BG })
                 Node {
