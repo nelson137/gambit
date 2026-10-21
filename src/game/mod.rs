@@ -51,7 +51,7 @@ impl Plugin for GameLogicPlugin {
 fn load_game_on_startup(world: &mut World) {
     let cli_args = world.resource::<CliArgs>();
     let (data, menu_state) = match cli_args.fen.as_deref().map(board::parse_fen) {
-        None => ((default(), 0, 1), MenuState::Main),
+        None => ((default(), 0, 1), MenuState::FenInput), // XXX Main
         Some(Err(err)) => {
             error!("{err}");
             return;
