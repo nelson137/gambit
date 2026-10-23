@@ -1,5 +1,3 @@
-use std::{fmt::Write, str::FromStr};
-
 use bevy::{
     color::palettes,
     ecs::system::SystemParam,
@@ -14,144 +12,13 @@ use bevy::{
 };
 
 use crate::{
-    game::{LoadGame, consts},
+    game::LoadGame,
     utils::{GameFontWeight, text_font},
 };
 
-#[derive(Resource)]
-pub struct FenInputMenuState {
-    board_builder: chess::BoardBuilder,
-    is_fen_valid: bool,
-    halfmove_clock: u8,
-    fullmove_count: u16,
-}
+pub use state::FenInputMenuState;
 
-impl Default for FenInputMenuState {
-    fn default() -> Self {
-        Self {
-            board_builder: chess::BoardBuilder::default(),
-            is_fen_valid: true,
-            halfmove_clock: 0,
-            fullmove_count: 1,
-        }
-    }
-}
-
-impl FenInputMenuState {
-    fn fen_with_counts(&self) -> String {
-        let mut fen = self.board_builder.to_string();
-
-        truncate_trailing_whitespace(&mut fen);
-
-        // Remove full-move count.
-        let i = fen.rfind(' ').unwrap_or(fen.len());
-        fen.truncate(i);
-
-        truncate_trailing_whitespace(&mut fen);
-
-        // Remove half-move clock.
-        let i = fen.rfind(' ').unwrap_or(fen.len());
-        fen.truncate(i);
-
-        truncate_trailing_whitespace(&mut fen);
-
-        write!(&mut fen, " {} {}", self.halfmove_clock, self.fullmove_count).unwrap();
-
-        fen
-    }
-
-    fn side_to_move(&self) -> chess::Color {
-        self.board_builder.get_side_to_move()
-    }
-
-    fn en_passant_file(&self) -> Option<chess::File> {
-        self.board_builder.get_en_passant().map(|sq| sq.get_file())
-    }
-
-    fn castle_rights_white(&self) -> chess::CastleRights {
-        self.board_builder.get_castle_rights(chess::Color::White)
-    }
-
-    fn castle_rights_black(&self) -> chess::CastleRights {
-        self.board_builder.get_castle_rights(chess::Color::Black)
-    }
-
-    fn try_board(&self) -> Result<chess::Board, chess::Error> {
-        self.board_builder.try_into()
-    }
-}
-
-impl FenInputMenuState {
-    pub fn reset(&mut self) {
-        *self = Self::default();
-    }
-
-    fn set_fen(&mut self, fen: String) {
-        let fen = if fen.trim().is_empty() { consts::DEFAULT_FEN } else { &fen };
-
-        self.is_fen_valid = match chess::BoardBuilder::from_str(fen) {
-            Ok(next) => {
-                self.board_builder = next;
-
-                let mut fen_iter = fen.split(' ').skip(4);
-                let halfmove = fen_iter.next().and_then(|s| s.parse().ok());
-                let fullmove = fen_iter.next().and_then(|s| s.parse().ok());
-                if let Some(halfmove) = halfmove {
-                    self.halfmove_clock = halfmove;
-                }
-                if let Some(fullmove) = fullmove {
-                    self.fullmove_count = fullmove;
-                }
-
-                true
-            }
-            Err(_) => false,
-        };
-    }
-
-    fn set_side_to_move(&mut self, color: chess::Color) -> String {
-        self.board_builder.side_to_move(color);
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-
-    fn set_en_passant(&mut self, file: Option<chess::File>) -> String {
-        self.board_builder.en_passant(file);
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-
-    fn add_castle_rights(&mut self, color: chess::Color, rights: chess::CastleRights) -> String {
-        let castle_rights = self.board_builder.get_castle_rights(color);
-        self.board_builder.castle_rights(color, castle_rights.add(rights));
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-
-    fn remove_castle_rights(&mut self, color: chess::Color, rights: chess::CastleRights) -> String {
-        let castle_rights = self.board_builder.get_castle_rights(color);
-        self.board_builder.castle_rights(color, castle_rights.remove(rights));
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-
-    fn set_halfmove_clock(&mut self, halfmove: u8) -> String {
-        self.halfmove_clock = halfmove;
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-
-    fn set_fullmove_count(&mut self, fullmoves: u16) -> String {
-        self.fullmove_count = fullmoves;
-        self.is_fen_valid = true;
-        self.fen_with_counts()
-    }
-}
-
-fn truncate_trailing_whitespace(s: &mut String) {
-    let trailing_len = s.len() - s.trim_end().len();
-    s.truncate(s.len() - trailing_len);
-}
+mod state;
 
 #[derive(Component, Clone, Default)]
 pub(super) struct FenInputMenu;
@@ -451,7 +318,7 @@ pub(super) fn update_fen_text_input_invalid_styles(
     mut commands: Commands,
 ) {
     if state.is_changed() {
-        let color = if state.is_fen_valid { Srgba::NONE } else { palettes::css::RED };
+        let color = if state.is_fen_valid() { Srgba::NONE } else { palettes::css::RED };
         let entity = *q_container_border_color;
         commands.entity(entity).insert(BorderColor::all(color));
     }
@@ -473,8 +340,8 @@ fn on_fen_text_edit_change(
 
     controls.set_castle_rights(state.castle_rights_white(), state.castle_rights_black());
 
-    controls.set_halfmove_clock(state.halfmove_clock);
-    controls.set_fullmove_count(state.fullmove_count);
+    controls.set_halfmove_clock(state.halfmove_clock());
+    controls.set_fullmove_count(state.fullmove_count());
 }
 
 fn ui_row_side_to_move() -> impl Scene {
@@ -866,11 +733,11 @@ fn on_load_button_activate(
     state: Res<FenInputMenuState>,
     mut commands: Commands,
 ) {
-    if !state.is_fen_valid {
+    if !state.is_fen_valid() {
         return;
     }
     let Ok(board) = state.try_board() else {
         return;
     };
-    commands.trigger(LoadGame::in_game(board, state.halfmove_clock, state.fullmove_count));
+    commands.trigger(LoadGame::in_game(board, state.halfmove_clock(), state.fullmove_count()));
 }
