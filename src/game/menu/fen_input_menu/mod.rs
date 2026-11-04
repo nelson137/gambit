@@ -20,6 +20,14 @@ pub use state::FenInputMenuState;
 
 mod state;
 
+pub(super) struct FenInputMenuPlugin;
+
+impl Plugin for FenInputMenuPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(Update, update_fen_text_input_invalid_styles);
+    }
+}
+
 #[derive(Component, Clone, Default)]
 pub(super) struct FenInputMenu;
 
@@ -28,6 +36,9 @@ pub(super) struct FenTextInputContainer;
 
 #[derive(Component, Clone, Copy, Default)]
 struct FenTextInput;
+
+#[derive(Component, Clone, Copy, Default)]
+struct SideToMoveRadioGroup;
 
 #[derive(Component, Clone, Copy, Default)]
 struct SideToMoveRadioButtonWhite;
@@ -40,6 +51,18 @@ struct EnPassantCheckbox;
 
 #[derive(Component, Clone, Copy, Default)]
 struct EnPassantMenu;
+
+#[derive(Component, Clone, Copy, Default)]
+struct EnPassantMenuPopup;
+
+#[derive(Component, Clone, Copy, Debug)]
+struct EnPassantMenuOption(chess::File);
+
+impl Default for EnPassantMenuOption {
+    fn default() -> Self {
+        Self(chess::File::A)
+    }
+}
 
 #[derive(Component, Clone, Copy, Default)]
 struct EnPassantFileLabel;
@@ -328,6 +351,7 @@ fn ui_row_fen() -> impl Scene {
                 FenTextInputContainer
                 @feathers::controls::FeathersTextInputContainer
                 Node { border: { px(1).all() } }
+                BorderColor
                 Children [
                     (
                         FenTextInput
@@ -340,7 +364,7 @@ fn ui_row_fen() -> impl Scene {
     }
 }
 
-pub(super) fn update_fen_text_input_invalid_styles(
+fn update_fen_text_input_invalid_styles(
     state: Res<FenInputMenuState>,
     q_container_border_color: Single<Entity, With<FenTextInputContainer>>,
     mut commands: Commands,
@@ -352,14 +376,35 @@ pub(super) fn update_fen_text_input_invalid_styles(
     }
 }
 
+/// Enables `on_fen_text_edit_change` in tests and counts how many FENs it parsed.
+#[cfg(test)]
+#[derive(Resource, Default)]
+struct FenTextEditChangeHandler {
+    parse_count: usize,
+}
+
 fn on_fen_text_edit_change(
     edit: On<text::TextEditChange>,
+    #[cfg(test)] mut handler: ResMut<FenTextEditChangeHandler>,
     q_editable_text: Query<&text::EditableText>,
     mut state: ResMut<FenInputMenuState>,
     mut controls: FenInputMenuControls,
 ) {
     let editable_text = q_editable_text.get(edit.event_target()).unwrap();
     let fen = editable_text.value().to_string();
+
+    // `TextEditChange` will fire for cursor moves, selection changes, and programmatic updates, so
+    // skip when the value already matches the state. No early return when the state is invalid so
+    // that we can detect when the input contains a valid FEN again.
+    if state.is_fen_valid() && fen == state.fen_with_counts() {
+        return;
+    }
+
+    #[cfg(test)]
+    {
+        handler.parse_count += 1;
+    }
+
     state.set_fen(fen);
 
     controls.set_side_to_move(state.side_to_move());
@@ -385,6 +430,7 @@ fn ui_row_side_to_move() -> impl Scene {
                 Node { margin: { item_gap().right() } }
             ),
             (
+                SideToMoveRadioGroup
                 ui_widgets::RadioGroup
                 on(ui_widgets::radio_self_update)
                 on(on_side_to_move_change)
@@ -438,6 +484,7 @@ fn ui_row_en_passant() -> impl Scene {
         };
 
         bsn! {
+            EnPassantMenuOption(file)
             @feathers::controls::FeathersMenuItem {
                 @caption: bsn! { Text(caption) feathers::theme::ThemedText }
             }
@@ -500,6 +547,7 @@ fn ui_row_en_passant() -> impl Scene {
                     ),
 
                     (
+                        EnPassantMenuPopup
                         @feathers::controls::FeathersMenuPopup
                         Children [
                             file_button(chess::File::A),
@@ -769,3 +817,6 @@ fn on_load_button_activate(
     };
     commands.trigger(LoadGame::in_game(board, state.halfmove_clock(), state.fullmove_count()));
 }
+
+#[cfg(test)]
+mod tests;

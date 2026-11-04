@@ -17,9 +17,9 @@ impl Plugin for GameMenuUiPlugin {
         app.noop()
             .add_plugins(feathers::FeathersPlugins)
             .add_plugins(CustomButtonThemePlugin)
+            .add_plugins(FenInputMenuPlugin)
             .insert_resource(feathers::theme::UiTheme(create_theme()))
             .add_systems(Startup, menu_ui.spawn())
-            .add_systems(Update, update_fen_text_input_invalid_styles)
             .noop();
     }
 }

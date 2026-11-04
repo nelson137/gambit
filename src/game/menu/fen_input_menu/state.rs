@@ -1,4 +1,7 @@
-use std::{fmt::Write, str::FromStr};
+use std::{
+    fmt::{self, Write},
+    str::FromStr,
+};
 
 use bevy::prelude::*;
 
@@ -22,6 +25,27 @@ impl Default for FenInputMenuState {
         }
     }
 }
+
+impl fmt::Debug for FenInputMenuState {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.debug_struct("FenInputMenuState")
+            .field("board_builder", &self.board_builder.to_string())
+            .field("is_fen_valid", &self.is_fen_valid)
+            .field("halfmove_clock", &self.halfmove_clock)
+            .field("fullmove_count", &self.fullmove_count)
+            .finish()
+    }
+}
+
+#[cfg(test)]
+impl PartialEq for FenInputMenuState {
+    fn eq(&self, other: &Self) -> bool {
+        self.fen_with_counts() == other.fen_with_counts()
+    }
+}
+
+#[cfg(test)]
+impl Eq for FenInputMenuState {}
 
 impl FenInputMenuState {
     pub(super) fn is_fen_valid(&self) -> bool {

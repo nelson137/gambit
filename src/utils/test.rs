@@ -5,6 +5,24 @@ use bevy::{
 
 use crate::utils::NoopExts;
 
+pub mod random_values {
+    use rand::random;
+
+    pub fn color() -> chess::Color {
+        if random::<bool>() { chess::Color::White } else { chess::Color::Black }
+    }
+
+    pub fn file() -> chess::File {
+        chess::File::from_index((random::<f32>() * chess::NUM_FILES as f32) as usize)
+    }
+
+    pub fn castle_rights() -> chess::CastleRights {
+        let king = random::<bool>() as usize * chess::CastleRights::KingSide.to_index();
+        let queen = random::<bool>() as usize * chess::CastleRights::QueenSide.to_index();
+        chess::CastleRights::from_index(king | queen)
+    }
+}
+
 pub struct GameTestPlugin;
 
 impl Plugin for GameTestPlugin {

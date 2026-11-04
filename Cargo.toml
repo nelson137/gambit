@@ -39,3 +39,6 @@ clap = { version = "4.1", features = ["derive", "wrap_help"] }
 crossbeam-channel = "0.5"
 dirs = "6.0"
 libc = "0.2" # Pin transitive dependency `dirs@6.0 -> dirs-sys@0.5 -> libc@0.2` to satisfy `bevy`
+
+[dev-dependencies]
+rand = "0.10"
