@@ -94,9 +94,7 @@ impl FenInputMenuControls<'_, '_> {
     fn set_fen_text_input_value(&mut self, fen: String) {
         let entity = self.q_fen_text_input.single().unwrap();
         self.commands.queue(move |world: &mut World| {
-            let mut entity = world.entity_mut(entity);
-            let mut editable = entity.get_mut::<text::EditableText>().unwrap();
-            editable.editor.set_text(&fen);
+            set_editable_text_value(world, entity, &fen);
         });
     }
 }
@@ -198,30 +196,60 @@ impl FenInputMenuControls<'_, '_> {
     fn set_halfmove_clock(&mut self, halfmoves: u8) {
         let e_number_input = self.q_halfmove_number_input.single().unwrap();
         self.commands.queue(move |world: &mut World| {
-            let mut entity = world.entity_mut({
+            let entity = {
                 let children = world.entity(e_number_input).get::<Children>().unwrap();
                 let has_editable = |c: &Entity| world.entity(*c).contains::<text::EditableText>();
                 children.iter().find(has_editable).unwrap()
-            });
-            let mut editable = entity.get_mut::<text::EditableText>().unwrap();
+            };
             let text = format!("{halfmoves}");
-            editable.editor.set_text(&text);
+            set_editable_text_value(world, entity, &text);
         });
     }
 
     fn set_fullmove_count(&mut self, fullmoves: u16) {
         let e_number_input = self.q_fullmove_number_input.single().unwrap();
         self.commands.queue(move |world: &mut World| {
-            let mut entity = world.entity_mut({
+            let entity = {
                 let children = world.entity(e_number_input).get::<Children>().unwrap();
                 let has_editable = |c: &Entity| world.entity(*c).contains::<text::EditableText>();
                 children.iter().find(has_editable).unwrap()
-            });
-            let mut editable = entity.get_mut::<text::EditableText>().unwrap();
+            };
             let text = format!("{fullmoves}");
-            editable.editor.set_text(&text);
+            set_editable_text_value(world, entity, &text);
         });
     }
+}
+
+/// Replace the contents of an `EditableText` and leave the cursor at the end of the new text.
+///
+/// Uses `PlainEditorDriver` directly instead of `PlainEditor` because the editor does not have
+/// public methods for changing the selection (`PlainEditor::set_selection`) and
+/// `PlainEditor::set_text` does not update the selection so it may be out of bounds.
+///
+/// The byte-based deletions are used rather than `PlainEditorDriver::select_all` because they work
+/// on the text buffer directly and not the text layout. This allows updates to work even in tests
+/// which have no font loaded which would cause layout-based selection logic to behave incorrectly.
+///
+/// TODO: Use `PlainEditor` if parley exposes a way to correctly setting text and update selection.
+fn set_editable_text_value(world: &mut World, entity: Entity, value: &str) {
+    world.resource_scope(|world, mut font_ctx: Mut<text::FontCx>| {
+        world.resource_scope(|world, mut layout_ctx: Mut<text::LayoutCx>| {
+            let mut entity = world.entity_mut(entity);
+            let mut editable = entity.get_mut::<text::EditableText>().unwrap();
+            if editable.value() == value {
+                return;
+            }
+            let raw_len = editable.editor.raw_text().len();
+            let mut driver = editable.editor.driver(&mut font_ctx.context, &mut layout_ctx.0);
+            // Clamps a selection left stale by any earlier direct `set_text` (e.g. `EditableText::new`).
+            driver.refresh_layout();
+            if let Some(len) = std::num::NonZeroUsize::new(raw_len) {
+                driver.delete_bytes_before_selection(len);
+                driver.delete_bytes_after_selection(len);
+            }
+            driver.insert_or_replace_selection(value);
+        });
+    });
 }
 
 fn item_gap() -> Val {
