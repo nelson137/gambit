@@ -24,7 +24,17 @@ pub(super) struct FenInputMenuPlugin;
 
 impl Plugin for FenInputMenuPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, update_fen_text_input_invalid_styles);
+        app.add_observer(FenTextInputInvalid::on_add);
+        app.add_observer(FenTextInputInvalid::on_remove);
+        app.add_systems(OnEnter(super::MenuState::FenInput), reset_fen_text_input_validation);
+        app.add_systems(Update, update_action_button_disabled_styles);
+        app.add_systems(
+            PostUpdate,
+            update_fen_text_input_invalid_live
+                .after(text::EditableTextSystems)
+                .run_if(resource_changed::<FenInputMenuState>)
+                .run_if(any_with_component::<FenTextInputLiveValidation>),
+        );
     }
 }
 
@@ -36,6 +46,29 @@ pub(super) struct FenTextInputContainer;
 
 #[derive(Component, Clone, Copy, Default)]
 struct FenTextInput;
+
+/// Marks the FEN text input container while its FEN is indicated as invalid.
+#[derive(Component, Clone, Copy, Default)]
+struct FenTextInputInvalid;
+
+impl FenTextInputInvalid {
+    fn on_add(add: On<Add, Self>, mut q_border_color: Query<&mut BorderColor>) {
+        if let Ok(mut border_color) = q_border_color.get_mut(add.entity) {
+            *border_color = BorderColor::all(palettes::css::RED);
+        }
+    }
+
+    fn on_remove(remove: On<Remove, Self>, mut q_border_color: Query<&mut BorderColor>) {
+        if let Ok(mut border_color) = q_border_color.get_mut(remove.entity) {
+            *border_color = BorderColor::all(Srgba::NONE);
+        }
+    }
+}
+
+/// Marks the FEN text input container while validation errors are indicated live: from a blur that
+/// found the FEN invalid until a blur that finds it valid.
+#[derive(Component, Clone, Copy, Default)]
+struct FenTextInputLiveValidation;
 
 #[derive(Component, Clone, Copy, Default)]
 struct SideToMoveRadioGroup;
@@ -99,6 +132,7 @@ type ControlQuery<'w, 's, Marker> = Query<'w, 's, Entity, With<Marker>>;
 struct FenInputMenuControls<'w, 's> {
     commands: Commands<'w, 's>,
     q_fen_text_input: ControlQuery<'w, 's, FenTextInput>,
+    q_fen_text_input_container: ControlQuery<'w, 's, FenTextInputContainer>,
     q_side_to_move_button_white: ControlQuery<'w, 's, SideToMoveRadioButtonWhite>,
     q_side_to_move_button_black: ControlQuery<'w, 's, SideToMoveRadioButtonBlack>,
     q_en_passant_checkbox: ControlQuery<'w, 's, EnPassantCheckbox>,
@@ -110,6 +144,7 @@ struct FenInputMenuControls<'w, 's> {
     q_castle_checkbox_black_queenside: ControlQuery<'w, 's, CastleRightsBlackQueensideCheckbox>,
     q_halfmove_number_input: ControlQuery<'w, 's, HalfmoveClockNumberInput>,
     q_fullmove_number_input: ControlQuery<'w, 's, FullmoveCountNumberInput>,
+    q_load_button: ControlQuery<'w, 's, LoadButton>,
 }
 
 // FEN Text Input
@@ -119,6 +154,26 @@ impl FenInputMenuControls<'_, '_> {
         self.commands.queue(move |world: &mut World| {
             set_editable_text_value(world, entity, &fen);
         });
+    }
+
+    fn set_fen_text_input_invalid(&mut self, invalid: bool) {
+        let entity = self.q_fen_text_input_container.single().unwrap();
+        let mut entity = self.commands.entity(entity);
+        if invalid {
+            entity.insert(FenTextInputInvalid);
+        } else {
+            entity.remove::<FenTextInputInvalid>();
+        }
+    }
+
+    fn set_fen_text_input_live_validation(&mut self, live: bool) {
+        let entity = self.q_fen_text_input_container.single().unwrap();
+        let mut entity = self.commands.entity(entity);
+        if live {
+            entity.insert(FenTextInputLiveValidation);
+        } else {
+            entity.remove::<FenTextInputLiveValidation>();
+        }
     }
 }
 
@@ -243,6 +298,19 @@ impl FenInputMenuControls<'_, '_> {
     }
 }
 
+// Action Buttons
+impl FenInputMenuControls<'_, '_> {
+    fn set_load_button_disabled(&mut self, disabled: bool) {
+        let entity = self.q_load_button.single().unwrap();
+        let mut entity = self.commands.entity(entity);
+        if disabled {
+            entity.insert(ui::InteractionDisabled);
+        } else {
+            entity.remove::<ui::InteractionDisabled>();
+        }
+    }
+}
+
 /// Replace the contents of an `EditableText` and leave the cursor at the end of the new text.
 ///
 /// Uses `PlainEditorDriver` directly instead of `PlainEditor` because the editor does not have
@@ -357,6 +425,7 @@ fn ui_row_fen() -> impl Scene {
                         FenTextInput
                         @feathers::controls::FeathersTextInput { @visible_width: 70_f32 }
                         on(on_fen_text_edit_change)
+                        on(on_fen_text_input_focus_lost)
                     ),
                 ]
             ),
@@ -364,16 +433,36 @@ fn ui_row_fen() -> impl Scene {
     }
 }
 
-fn update_fen_text_input_invalid_styles(
+// FEN Text Input Validation
+//
+// Validation is lazy by default so that error indicators are less intrusive while typing:
+// they are only made visible on blur. Once focus is regained and the input is invalid the
+// indicators begin updating live while typing. This means the input may become valid then invalid
+// multiple times and the indicators are updated in both directions, live, to indicate the current
+// state of validity. Validation indicators become lazy again when the input is blurred while valid.
+
+fn on_fen_text_input_focus_lost(
+    _: On<bevy::input_focus::FocusLost>,
     state: Res<FenInputMenuState>,
-    q_container_border_color: Single<Entity, With<FenTextInputContainer>>,
-    mut commands: Commands,
+    mut controls: FenInputMenuControls,
 ) {
-    if state.is_changed() {
-        let color = if state.is_fen_valid() { Srgba::NONE } else { palettes::css::RED };
-        let entity = *q_container_border_color;
-        commands.entity(entity).insert(BorderColor::all(color));
-    }
+    let invalid = !state.is_fen_valid();
+    controls.set_fen_text_input_invalid(invalid);
+    controls.set_fen_text_input_live_validation(invalid);
+}
+
+/// Runs on state changes while validating live.
+fn update_fen_text_input_invalid_live(
+    state: Res<FenInputMenuState>,
+    mut controls: FenInputMenuControls,
+) {
+    controls.set_fen_text_input_invalid(!state.is_fen_valid());
+}
+
+/// Returns the FEN text input to lazy validation with no error indicated.
+fn reset_fen_text_input_validation(mut controls: FenInputMenuControls) {
+    controls.set_fen_text_input_invalid(false);
+    controls.set_fen_text_input_live_validation(false);
 }
 
 /// Enables `on_fen_text_edit_change` in tests and counts how many FENs it parsed.
@@ -794,6 +883,16 @@ fn ui_row_action_buttons() -> impl Scene {
                 on(on_load_button_activate)
             ),
         ]
+    }
+}
+
+fn update_action_button_disabled_styles(
+    state: Res<FenInputMenuState>,
+    mut controls: FenInputMenuControls,
+) {
+    if state.is_changed() {
+        let disabled = !state.is_fen_valid();
+        controls.set_load_button_disabled(disabled);
     }
 }
 

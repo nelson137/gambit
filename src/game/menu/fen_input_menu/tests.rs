@@ -2,12 +2,13 @@ use std::{fmt, sync::LazyLock};
 
 use bevy::{
     ecs::system::SystemState,
+    input_focus::{FocusCause, InputFocus},
     ui_widgets::{Activate, ValueChange},
 };
 
 use crate::utils::random_values;
 
-use super::*;
+use super::{super::MenuState, *};
 
 static NONE: LazyLock<String> = LazyLock::new(|| Color::NONE.to_srgba().to_hex());
 static RED: LazyLock<String> = LazyLock::new(|| palettes::css::RED.to_hex());
@@ -109,7 +110,10 @@ impl TestBed {
         app.add_plugins(bevy::scene::ScenePlugin);
         app.add_plugins(bevy::text::TextPlugin);
         app.add_plugins(bevy::image::ImagePlugin::default());
+        app.add_plugins(bevy::state::app::StatesPlugin);
+        app.add_plugins(bevy::input_focus::InputFocusPlugin);
         app.add_plugins(FenInputMenuPlugin);
+        app.init_state::<MenuState>();
         app.init_resource::<FenInputMenuState>();
         app.init_resource::<FenTextEditChangeHandler>();
         app.add_systems(Startup, ui.spawn());
@@ -146,6 +150,22 @@ impl TestBed {
         let mut number_input = self.element_mut::<M>();
         number_input.trigger(move |source| ValueChange { source, value, is_final });
     }
+
+    fn element_set_focus<M: Component>(&mut self) {
+        let element = self.element_id::<M>();
+        let world = self.app.world_mut();
+        world.resource_mut::<InputFocus>().set(element, FocusCause::Pressed);
+    }
+
+    fn clear_focus(&mut self) {
+        let world = self.app.world_mut();
+        world.resource_mut::<InputFocus>().clear();
+    }
+
+    fn enter_fen_input_menu(&mut self) {
+        let world = self.app.world_mut();
+        world.resource_mut::<NextState<MenuState>>().set(MenuState::FenInput);
+    }
 }
 
 // State
@@ -157,8 +177,35 @@ impl TestBed {
 
 // Controls
 impl TestBed {
+    fn get_fen_input_invalid(&mut self) -> bool {
+        self.element_mut::<FenTextInputContainer>().contains::<FenTextInputInvalid>()
+    }
+
+    fn set_fen_input_invalid(&mut self, invalid: bool) {
+        let mut container = self.element_mut::<FenTextInputContainer>();
+        if invalid {
+            container.insert(FenTextInputInvalid);
+        } else {
+            container.remove::<FenTextInputInvalid>();
+        }
+    }
+
     fn get_fen_input_border_color(&mut self) -> BorderColor {
         *self.element_mut::<FenTextInputContainer>().get::<BorderColor>().unwrap()
+    }
+
+    #[track_caller]
+    fn assert_fen_input_border(&mut self, expected: &str) {
+        let border_color = self.get_fen_input_border_color();
+        let sides = [
+            ("top", border_color.top),
+            ("right", border_color.right),
+            ("bottom", border_color.bottom),
+            ("left", border_color.left),
+        ];
+        for (side, color) in sides {
+            assert_eq!(expected, color.to_srgba().to_hex(), "{side} border");
+        }
     }
 
     fn get_fen_input_value(&mut self) -> String {
@@ -170,6 +217,19 @@ impl TestBed {
         let editable = self.element_id::<FenTextInput>();
         let world = self.app.world_mut();
         set_editable_text_value(world, editable, fen);
+    }
+
+    /// Focus the FEN text input, replace its value, and run the frames the menu needs to react.
+    fn type_fen_input_value(&mut self, fen: &str) {
+        self.element_set_focus::<FenTextInput>();
+        self.update(1);
+        self.set_fen_input_value(fen);
+        self.update(1);
+    }
+
+    fn blur_fen_input(&mut self) {
+        self.clear_focus();
+        self.update(1);
     }
 
     fn get_fen_parse_count(&self) -> usize {
@@ -284,6 +344,10 @@ impl TestBed {
     fn set_fullmove_count(&mut self, fullmoves: u16, is_final: bool) {
         self.element_set_number_input::<FullmoveCountNumberInput>(fullmoves as i32, is_final);
     }
+
+    fn get_load_button_disabled(&mut self) -> bool {
+        self.element_mut::<LoadButton>().contains::<ui::InteractionDisabled>()
+    }
 }
 
 #[test]
@@ -294,22 +358,11 @@ fn default_state() {
 }
 
 #[test]
-fn default_fen_text_edit_border() {
-    let mut test_bed = TestBed::new();
-    test_bed.update(1);
-
-    let border_color = test_bed.get_fen_input_border_color();
-
-    assert_eq!(*NONE, border_color.top.to_srgba().to_hex(), "top color");
-    assert_eq!(*NONE, border_color.right.to_srgba().to_hex(), "right color");
-    assert_eq!(*NONE, border_color.bottom.to_srgba().to_hex(), "bottom color");
-    assert_eq!(*NONE, border_color.left.to_srgba().to_hex(), "left color");
-}
-
-#[test]
 fn default_controls() {
     let mut test_bed = TestBed::new();
     test_bed.update(1);
+
+    assert!(!test_bed.get_fen_input_invalid());
 
     assert!(test_bed.get_side_to_move_button_white());
     assert!(!test_bed.get_side_to_move_button_black());
@@ -325,6 +378,8 @@ fn default_controls() {
 
     assert_eq!("0", test_bed.get_halfmove_clock());
     assert_eq!("1", test_bed.get_fullmove_count());
+
+    assert!(!test_bed.get_load_button_disabled());
 }
 
 mod fen_input {
@@ -393,17 +448,90 @@ mod fen_input {
         let mut test_bed = TestBed::new();
         test_bed.update(1);
 
-        test_bed.set_fen_input_value("abc");
-        test_bed.update(2);
-
+        // Not indicated while typing.
+        test_bed.type_fen_input_value("abc");
         assert!(!test_bed.get_state().is_fen_valid());
+        assert!(!test_bed.get_fen_input_invalid());
 
-        let border_color = test_bed.get_fen_input_border_color();
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+    }
 
-        assert_eq!(*RED, border_color.top.to_srgba().to_hex(), "top border");
-        assert_eq!(*RED, border_color.right.to_srgba().to_hex(), "right border");
-        assert_eq!(*RED, border_color.bottom.to_srgba().to_hex(), "bottom border");
-        assert_eq!(*RED, border_color.left.to_srgba().to_hex(), "left border");
+    #[test]
+    fn indicates_valid_fen_after_invalid() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value("abc");
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+
+        // Indicated immediately, without a blur.
+        test_bed.type_fen_input_value(&FenBuilder::random().to_string());
+        assert!(test_bed.get_state().is_fen_valid());
+        assert!(!test_bed.get_fen_input_invalid());
+    }
+
+    #[test]
+    fn indicates_invalid_fen_live_after_blur() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value("abc");
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+
+        test_bed.type_fen_input_value(&FenBuilder::random().to_string());
+        assert!(!test_bed.get_fen_input_invalid());
+
+        // Indicated immediately, without a blur, until the next blur.
+        test_bed.type_fen_input_value("abc");
+        assert!(test_bed.get_fen_input_invalid());
+
+        test_bed.type_fen_input_value(&FenBuilder::random().to_string());
+        assert!(!test_bed.get_fen_input_invalid());
+    }
+
+    #[test]
+    fn stops_live_validation_after_valid_blur() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value("abc");
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+
+        test_bed.type_fen_input_value(&FenBuilder::random().to_string());
+        test_bed.blur_fen_input();
+        assert!(!test_bed.get_fen_input_invalid());
+
+        // Back to only indicating on blur.
+        test_bed.type_fen_input_value("abc");
+        assert!(!test_bed.get_fen_input_invalid());
+
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+    }
+
+    #[test]
+    fn resets_validation_on_enter() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value("abc");
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+        assert!(!test_bed.get_fen_input_invalid());
+
+        // Back to only indicating on blur.
+        test_bed.type_fen_input_value("def");
+        assert!(!test_bed.get_fen_input_invalid());
+
+        test_bed.blur_fen_input();
+        assert!(test_bed.get_fen_input_invalid());
     }
 
     #[test]
@@ -448,6 +576,43 @@ mod fen_input {
 
             assert_eq!(parse_count, test_bed.get_fen_parse_count(), "{control}");
         }
+    }
+}
+
+mod fen_input_invalid {
+    use super::*;
+
+    #[test]
+    fn default_border_color() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        assert!(!test_bed.get_fen_input_invalid());
+        test_bed.assert_fen_input_border(&NONE);
+    }
+
+    #[test]
+    fn sets_border_color_on_add() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.set_fen_input_invalid(true);
+        test_bed.update(1);
+
+        test_bed.assert_fen_input_border(&RED);
+    }
+
+    #[test]
+    fn resets_border_color_on_remove() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.set_fen_input_invalid(true);
+        test_bed.update(1);
+        test_bed.set_fen_input_invalid(false);
+        test_bed.update(1);
+
+        test_bed.assert_fen_input_border(&NONE);
     }
 }
 
@@ -866,5 +1031,71 @@ mod fullmove_count {
         assert_eq!(1, test_bed.get_state().fullmove_count());
         assert_eq!(FenBuilder::default(), test_bed.get_state().fen_with_counts());
         assert_eq!(fen_input_before, test_bed.get_fen_input_value());
+    }
+}
+
+mod load_button {
+    use chess::{Color::*, File::*};
+
+    use super::*;
+
+    #[test]
+    fn disabled_on_invalid_fen() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.set_fen_input_value("abc");
+        test_bed.update(2);
+
+        assert!(!test_bed.get_state().is_fen_valid());
+        assert!(test_bed.get_load_button_disabled());
+    }
+
+    #[test]
+    fn enabled_on_valid_fen() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.set_fen_input_value("abc");
+        test_bed.update(2);
+
+        assert!(!test_bed.get_state().is_fen_valid());
+        assert!(test_bed.get_load_button_disabled());
+
+        test_bed.set_fen_input_value(&FenBuilder::random().to_string());
+        test_bed.update(2);
+
+        assert!(test_bed.get_state().is_fen_valid());
+        assert!(!test_bed.get_load_button_disabled());
+    }
+
+    #[test]
+    fn enabled_on_interaction() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let cases: [(&str, fn(&mut TestBed)); 7] = [
+            ("side to move black", |t| t.select_side_to_move(Black)),
+            ("side to move white", |t| t.select_side_to_move(White)),
+            ("en passant enabled", |t| t.set_en_passant_checkbox(true)),
+            ("en passant B", |t| t.set_en_passant_file(B)),
+            ("castle rights", |t| t.set_castle_rights_w_k(false)),
+            ("halfmove clock", |t| t.set_halfmove_clock(50, true)),
+            ("fullmove count", |t| t.set_fullmove_count(100, true)),
+        ];
+
+        for (control, act) in cases {
+            test_bed.set_fen_input_value("abc");
+            test_bed.update(2);
+
+            assert!(!test_bed.get_state().is_fen_valid());
+            assert!(test_bed.get_load_button_disabled(), "{control}");
+
+            act(&mut test_bed);
+            test_bed.update(1);
+
+            assert!(test_bed.get_state().is_fen_valid(), "{control}");
+            assert!(!test_bed.get_load_button_disabled(), "{control}");
+        }
     }
 }
