@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
 use super::{
+    LoadGame,
     board::{GameStatus, ShowCheckmateIcons, ShowDrawIcons},
-    menu::MenuState,
 };
 
 pub struct GameOverPlugin;
@@ -17,12 +17,7 @@ impl Plugin for GameOverPlugin {
 pub struct GameOver;
 
 impl GameOver {
-    fn handle(
-        _game_over: On<Self>,
-        mut commands: Commands,
-        game_status: Res<GameStatus>,
-        mut next_menu_state: ResMut<NextState<MenuState>>,
-    ) {
+    fn handle(_game_over: On<Self>, mut commands: Commands, game_status: Res<GameStatus>) {
         trace!("Game over");
 
         match *game_status {
@@ -35,6 +30,11 @@ impl GameOver {
             }
         }
 
-        next_menu_state.set(MenuState::DoGameOver);
+        commands.delayed().secs(2.).queue(Self::execute);
+    }
+
+    fn execute(world: &mut World) {
+        trace!("Reset game");
+        world.trigger(LoadGame::in_menu());
     }
 }

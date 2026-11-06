@@ -44,7 +44,6 @@ impl Plugin for GameMenuLogicPlugin {
         app.noop()
             // Resources
             .init_resource::<PopupState>()
-            .init_resource::<GameOverTimer>()
             // States
             .init_state::<MenuState>()
             // Observers
@@ -54,9 +53,7 @@ impl Plugin for GameMenuLogicPlugin {
             .add_systems(OnEnter(MenuState::FenInput), on_enter_menu_state_fen_input)
             .add_systems(OnEnter(MenuState::Menu), on_enter_menu_state_menu)
             .add_systems(OnEnter(MenuState::Game), on_enter_menu_state_game)
-            .add_systems(OnEnter(MenuState::DoGameOver), on_enter_menu_state_do_game_over)
             .add_systems(Update, fen_menu.run_if(in_state(MenuState::FenInput)))
-            .add_systems(Update, game_over.run_if(in_state(MenuState::DoGameOver)))
             .noop();
     }
 }

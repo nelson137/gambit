@@ -12,7 +12,6 @@ pub enum MenuState {
     #[default]
     Menu,
     Game,
-    DoGameOver,
 }
 
 pub(super) fn init_menu_state_from_cli(
@@ -62,31 +61,6 @@ pub(super) fn on_enter_menu_state_game(mut q_menu: Query<&mut Node, With<GameMen
     set_menu_display(q_menu.transmute_lens(), Display::None);
 }
 
-pub(super) fn on_enter_menu_state_do_game_over(mut game_over_timer: ResMut<GameOverTimer>) {
-    *game_over_timer = default();
-}
-
 fn set_menu_display(mut q_lens_menu: QueryLens<&mut Node>, display: Display) {
     q_lens_menu.query().iter_mut().for_each(|mut node| node.display = display);
-}
-
-#[derive(Resource)]
-pub(super) struct GameOverTimer(Timer);
-
-impl Default for GameOverTimer {
-    fn default() -> Self {
-        Self(Timer::from_seconds(2.0, TimerMode::Once))
-    }
-}
-
-pub(super) fn game_over(
-    mut commands: Commands,
-    time: Res<Time>,
-    mut game_over_timer: ResMut<GameOverTimer>,
-) {
-    game_over_timer.0.tick(time.delta());
-    if game_over_timer.0.just_finished() {
-        trace!("Reset game");
-        commands.trigger(LoadGame::in_menu());
-    }
 }
