@@ -40,17 +40,16 @@ pub(super) fn drag_container() -> impl Scene {
 pub(super) fn update_drag_container(
     mouse_world_pos: Res<MouseWorldPosition>,
     q_tiles: Query<&ComputedNode, With<Tile>>,
-    mut q_container: Query<&mut Node, With<DragContainer>>,
+    mut q_container: Single<&mut Node, With<DragContainer>>,
 ) {
     let Some(tile_computed_node) = q_tiles.iter().next() else { return };
     let inverse_scale_factor = tile_computed_node.inverse_scale_factor();
     let Vec2 { x: width, y: height } = tile_computed_node.size() * inverse_scale_factor;
-    if let Ok(mut node) = q_container.single_mut() {
-        node.width = px(width);
-        node.height = px(height);
-        node.top = px(mouse_world_pos.y - height / 2.0);
-        node.left = px(mouse_world_pos.x - width / 2.0);
-    }
+    let node = &mut **q_container;
+    node.width = px(width);
+    node.height = px(height);
+    node.top = px(mouse_world_pos.y - height / 2.0);
+    node.left = px(mouse_world_pos.x - width / 2.0);
 }
 
 #[derive(Component, Clone, Copy, Debug, PartialEq, Eq)]

@@ -267,16 +267,11 @@ pub fn promotion_result_handler(
     In(promotion_result): In<Option<PromotionResult>>,
     mut commands: Commands,
     tiles_map: Res<TilesMap>,
-    q_promo: Query<(Entity, &PieceMeta, &PromotingPiece), Without<PromotionUi>>,
+    q_promo: Single<(Entity, &PieceMeta, &PromotingPiece), Without<PromotionUi>>,
 ) {
     let Some(result) = promotion_result else { return };
 
-    let Ok((entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq, .. })) =
-        q_promo.single()
-    else {
-        warn!("Ignoring promotion event as no piece is awaiting promotion");
-        return;
-    };
+    let (entity, &PieceMeta { color, .. }, &PromotingPiece { from_sq, to_sq, .. }) = *q_promo;
 
     trace!(?color, %from_sq, %to_sq, ?result, "Finish promotion");
 
