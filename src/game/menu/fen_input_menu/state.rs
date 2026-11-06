@@ -85,7 +85,8 @@ impl FenInputMenuState {
     }
 
     pub(super) fn set_fen(&mut self, fen: String) {
-        let fen = if fen.trim().is_empty() { consts::DEFAULT_FEN } else { &fen };
+        let fen = fen.trim();
+        let fen = if fen.is_empty() { consts::DEFAULT_FEN } else { fen };
 
         self.is_fen_valid = match chess::BoardBuilder::from_str(fen) {
             Ok(next) => {
