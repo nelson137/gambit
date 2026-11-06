@@ -1,4 +1,4 @@
-use bevy::{math::vec2, platform::collections::HashSet, prelude::*, window::PrimaryWindow};
+use bevy::{ecs::entity::EntityHashSet, math::vec2, prelude::*, window::PrimaryWindow};
 
 use super::state::InspectorState;
 
@@ -13,7 +13,7 @@ pub(super) fn configure_gizmos(mut config_store: ResMut<GizmoConfigStore>) {
 }
 
 pub(super) fn draw_entity_hover_gizmo(
-    mut drawn_entities: Local<HashSet<Entity>>,
+    mut drawn_entities: Local<EntityHashSet>,
     mut inspector_state: ResMut<InspectorState>,
     win: Single<&Window, With<PrimaryWindow>>,
     q_global_transf: Query<&UiGlobalTransform>,
