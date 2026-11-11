@@ -1,5 +1,5 @@
 use std::{
-    fs::{create_dir_all, File},
+    fs::{File, create_dir_all},
     io::Write,
     path::Path,
     process::ExitCode,
@@ -8,7 +8,7 @@ use std::{
 use anyhow::{Context, Result};
 use stockfish_fetch::{consts::*, core::StockfishBuilder, utils::LogWriter};
 use tracing::error;
-use tracing_subscriber::fmt::{time::LocalTime, SubscriberBuilder};
+use tracing_subscriber::fmt::{SubscriberBuilder, time::LocalTime};
 
 fn main() -> ExitCode {
     println!("cargo:rerun-if-changed=build.rs");
