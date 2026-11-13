@@ -24,9 +24,13 @@ pub(super) struct FenInputMenuPlugin;
 
 impl Plugin for FenInputMenuPlugin {
     fn build(&self, app: &mut App) {
+        app.init_resource::<FenInputMenuState>();
+        #[cfg(test)]
+        app.init_resource::<FenTextEditChangeHandler>();
+
         app.add_observer(FenTextInputInvalid::on_add);
         app.add_observer(FenTextInputInvalid::on_remove);
-        app.add_systems(OnEnter(super::MenuState::FenInput), reset_fen_text_input_validation);
+        app.add_systems(OnEnter(super::MenuState::FenInput), reset_fen_input_menu);
         app.add_systems(Update, update_action_button_disabled_styles);
         app.add_systems(
             PostUpdate,
@@ -298,6 +302,21 @@ impl FenInputMenuControls<'_, '_> {
     }
 }
 
+// Position Controls
+impl FenInputMenuControls<'_, '_> {
+    /// Sets every control other than the FEN text input from the state.
+    fn set_position_controls(&mut self, state: &FenInputMenuState) {
+        self.set_side_to_move(state.side_to_move());
+
+        self.set_en_passant(state.en_passant_file());
+
+        self.set_castle_rights(state.castle_rights_white(), state.castle_rights_black());
+
+        self.set_halfmove_clock(state.halfmove_clock());
+        self.set_fullmove_count(state.fullmove_count());
+    }
+}
+
 // Action Buttons
 impl FenInputMenuControls<'_, '_> {
     fn set_load_button_disabled(&mut self, disabled: bool) {
@@ -353,6 +372,20 @@ fn column_gap() -> Val {
 
 fn item_border_radius() -> BorderRadius {
     BorderRadius::all(px(4))
+}
+
+/// Reset the menu to its default state when it is entered by `MenuState`.
+///
+/// Resets the `FenInputMenuState`, the FEN text input and its validation, and all position
+/// controls to the default starting board position.
+fn reset_fen_input_menu(mut state: ResMut<FenInputMenuState>, mut controls: FenInputMenuControls) {
+    state.reset();
+
+    controls.set_fen_text_input_value(String::new());
+    controls.set_fen_text_input_invalid(false);
+    controls.set_fen_text_input_live_validation(false);
+
+    controls.set_position_controls(&state);
 }
 
 pub(super) fn ui() -> impl Scene {
@@ -459,17 +492,11 @@ fn update_fen_text_input_invalid_live(
     controls.set_fen_text_input_invalid(!state.is_fen_valid());
 }
 
-/// Returns the FEN text input to lazy validation with no error indicated.
-fn reset_fen_text_input_validation(mut controls: FenInputMenuControls) {
-    controls.set_fen_text_input_invalid(false);
-    controls.set_fen_text_input_live_validation(false);
-}
-
-/// Enables `on_fen_text_edit_change` in tests and counts how many FENs it parsed.
+/// Counts how many times `on_fen_text_edit_change` changed the state in tests.
 #[cfg(test)]
 #[derive(Resource, Default)]
 struct FenTextEditChangeHandler {
-    parse_count: usize,
+    update_count: usize,
 }
 
 fn on_fen_text_edit_change(
@@ -483,27 +510,19 @@ fn on_fen_text_edit_change(
     let fen = editable_text.value().to_string();
 
     // `TextEditChange` will fire for cursor moves, selection changes, and programmatic updates, so
-    // skip when the value already matches the state. No early return when the state is invalid so
-    // that we can detect when the input contains a valid FEN again.
-    if state.is_fen_valid() && fen == state.fen_with_counts() {
+    // only mark the state as changed when the FEN actually changes it.
+    let mut next_state = state.clone();
+    next_state.set_fen(fen);
+    if !state.set_if_neq(next_state) {
         return;
     }
 
     #[cfg(test)]
     {
-        handler.parse_count += 1;
+        handler.update_count += 1;
     }
 
-    state.set_fen(fen);
-
-    controls.set_side_to_move(state.side_to_move());
-
-    controls.set_en_passant(state.en_passant_file());
-
-    controls.set_castle_rights(state.castle_rights_white(), state.castle_rights_black());
-
-    controls.set_halfmove_clock(state.halfmove_clock());
-    controls.set_fullmove_count(state.fullmove_count());
+    controls.set_position_controls(&state);
 }
 
 fn ui_row_side_to_move() -> impl Scene {
@@ -703,6 +722,7 @@ fn ui_row_castle_rights() -> impl Scene {
                     @feathers::controls::FeathersCheckbox {
                         @caption: bsn! { Text("Kingside (O-O)") feathers::theme::ThemedText },
                     }
+                    ui::Checked
                     on(ui_widgets::checkbox_self_update)
                     on(move |change: On<ui_widgets::ValueChange<bool>>,
                              mut state: ResMut<FenInputMenuState>,
@@ -721,6 +741,7 @@ fn ui_row_castle_rights() -> impl Scene {
                     @feathers::controls::FeathersCheckbox {
                         @caption: bsn! { Text("Queenside (O-O-O)") feathers::theme::ThemedText },
                     }
+                    ui::Checked
                     on(ui_widgets::checkbox_self_update)
                     on(move |change: On<ui_widgets::ValueChange<bool>>,
                              mut state: ResMut<FenInputMenuState>,

@@ -114,8 +114,6 @@ impl TestBed {
         app.add_plugins(bevy::input_focus::InputFocusPlugin);
         app.add_plugins(FenInputMenuPlugin);
         app.init_state::<MenuState>();
-        app.init_resource::<FenInputMenuState>();
-        app.init_resource::<FenTextEditChangeHandler>();
         app.add_systems(Startup, ui.spawn());
 
         Self { app }
@@ -166,6 +164,11 @@ impl TestBed {
         let world = self.app.world_mut();
         world.resource_mut::<NextState<MenuState>>().set(MenuState::FenInput);
     }
+
+    fn leave_fen_input_menu(&mut self) {
+        let world = self.app.world_mut();
+        world.resource_mut::<NextState<MenuState>>().set(MenuState::Main);
+    }
 }
 
 // State
@@ -177,6 +180,29 @@ impl TestBed {
 
 // Controls
 impl TestBed {
+    #[track_caller]
+    fn assert_default_controls(&mut self) {
+        assert_eq!("", self.get_fen_input_value(), "FEN input");
+        assert!(!self.get_fen_input_invalid(), "FEN input invalid");
+
+        assert!(self.get_side_to_move_button_white(), "side to move white");
+        assert!(!self.get_side_to_move_button_black(), "side to move black");
+
+        assert!(!self.get_en_passant_checkbox(), "en passant checkbox");
+        assert_eq!(Visibility::Hidden, self.get_en_passant_file_menu_vis(), "en passant menu");
+        assert_eq!(Visibility::Hidden, self.get_en_passant_file_label_vis(), "en passant label");
+
+        assert!(self.get_castle_rights_w_k(), "white kingside");
+        assert!(self.get_castle_rights_w_q(), "white queenside");
+        assert!(self.get_castle_rights_b_k(), "black kingside");
+        assert!(self.get_castle_rights_b_q(), "black queenside");
+
+        assert_eq!("0", self.get_halfmove_clock(), "halfmove clock");
+        assert_eq!("1", self.get_fullmove_count(), "fullmove count");
+
+        assert!(!self.get_load_button_disabled(), "load button disabled");
+    }
+
     fn get_fen_input_invalid(&mut self) -> bool {
         self.element_mut::<FenTextInputContainer>().contains::<FenTextInputInvalid>()
     }
@@ -232,8 +258,8 @@ impl TestBed {
         self.update(1);
     }
 
-    fn get_fen_parse_count(&self) -> usize {
-        self.app.world().resource::<FenTextEditChangeHandler>().parse_count
+    fn get_fen_update_count(&self) -> usize {
+        self.app.world().resource::<FenTextEditChangeHandler>().update_count
     }
 
     fn get_side_to_move_button_white(&mut self) -> bool {
@@ -362,24 +388,107 @@ fn default_controls() {
     let mut test_bed = TestBed::new();
     test_bed.update(1);
 
-    assert!(!test_bed.get_fen_input_invalid());
+    test_bed.enter_fen_input_menu();
+    test_bed.update(1);
 
-    assert!(test_bed.get_side_to_move_button_white());
-    assert!(!test_bed.get_side_to_move_button_black());
+    test_bed.assert_default_controls();
+}
 
-    assert!(!test_bed.get_en_passant_checkbox());
-    assert_eq!(Visibility::Hidden, test_bed.get_en_passant_file_menu_vis());
-    assert_eq!(Visibility::Hidden, test_bed.get_en_passant_file_label_vis());
+mod on_enter {
+    use super::*;
 
-    assert!(test_bed.get_castle_rights_w_k());
-    assert!(test_bed.get_castle_rights_w_q());
-    assert!(test_bed.get_castle_rights_b_k());
-    assert!(test_bed.get_castle_rights_b_q());
+    /// A FEN that moves the state and every control away from their defaults.
+    fn non_default_fen() -> String {
+        FenBuilder::default()
+            .side_to_move(chess::Color::Black)
+            .en_passant(Some(chess::File::E))
+            .castle_rights(chess::CastleRights::NoRights, chess::CastleRights::NoRights)
+            .halfmove_clock(5)
+            .fullmove_count(10)
+            .to_string()
+    }
 
-    assert_eq!("0", test_bed.get_halfmove_clock());
-    assert_eq!("1", test_bed.get_fullmove_count());
+    #[test]
+    fn resets_state() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
 
-    assert!(!test_bed.get_load_button_disabled());
+        let expected_fen = non_default_fen();
+
+        test_bed.type_fen_input_value(&expected_fen);
+        assert_eq!(expected_fen, test_bed.get_state().fen_with_counts());
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+        assert_eq!(&FenInputMenuState::default(), test_bed.get_state());
+    }
+
+    #[test]
+    fn resets_fen_input() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let expected_fen = non_default_fen();
+
+        test_bed.type_fen_input_value(&expected_fen);
+        assert_eq!(expected_fen, test_bed.get_fen_input_value());
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+        assert_eq!("", test_bed.get_fen_input_value());
+    }
+
+    #[test]
+    fn resets_controls() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value(&non_default_fen());
+        assert!(test_bed.get_side_to_move_button_black());
+        assert!(test_bed.get_en_passant_checkbox());
+        assert!(!test_bed.get_castle_rights_w_k());
+        assert_eq!("5", test_bed.get_halfmove_clock());
+        assert_eq!("10", test_bed.get_fullmove_count());
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+        test_bed.assert_default_controls();
+    }
+
+    #[test]
+    fn resets_invalid_fen() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value("abc");
+        test_bed.update(1);
+        assert!(!test_bed.get_state().is_fen_valid());
+        assert!(test_bed.get_load_button_disabled());
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+        assert!(test_bed.get_state().is_fen_valid());
+        test_bed.assert_default_controls();
+    }
+
+    #[test]
+    fn resets_on_every_enter() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+
+        test_bed.type_fen_input_value(&non_default_fen());
+
+        test_bed.leave_fen_input_menu();
+        test_bed.update(1);
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+
+        assert_eq!(&FenInputMenuState::default(), test_bed.get_state());
+        test_bed.assert_default_controls();
+    }
 }
 
 mod fen_input {
@@ -539,18 +648,43 @@ mod fen_input {
         let mut test_bed = TestBed::new();
         test_bed.update(1);
 
-        let parse_count = test_bed.get_fen_parse_count();
+        let update_count = test_bed.get_fen_update_count();
 
         test_bed.set_fen_input_value(&FenBuilder::random().to_string());
         test_bed.update(1);
 
-        assert_eq!(parse_count + 1, test_bed.get_fen_parse_count());
+        assert_eq!(update_count + 1, test_bed.get_fen_update_count());
 
         // Nothing syncs `EditableTextGeneration` in the test bed, so the FEN input reports a
         // text edit every frame even though its text has not changed.
         test_bed.update(1);
 
-        assert_eq!(parse_count + 1, test_bed.get_fen_parse_count());
+        assert_eq!(update_count + 1, test_bed.get_fen_update_count());
+    }
+
+    #[test]
+    fn ignores_unchanged_invalid_fen() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let update_count = test_bed.get_fen_update_count();
+
+        test_bed.set_fen_input_value("abc");
+        test_bed.update(1);
+
+        assert!(!test_bed.get_state().is_fen_valid());
+        assert_eq!(update_count + 1, test_bed.get_fen_update_count());
+
+        // The state is already invalid, so re-reading the same text does not change it.
+        test_bed.update(3);
+
+        assert_eq!(update_count + 1, test_bed.get_fen_update_count());
+
+        // Neither does a different invalid FEN.
+        test_bed.set_fen_input_value("def");
+        test_bed.update(1);
+
+        assert_eq!(update_count + 1, test_bed.get_fen_update_count());
     }
 
     #[test]
@@ -568,13 +702,13 @@ mod fen_input {
             ("fullmove count", |t| t.set_fullmove_count(100, true)),
         ];
 
-        let parse_count = test_bed.get_fen_parse_count();
+        let update_count = test_bed.get_fen_update_count();
 
         for (control, act) in cases {
             act(&mut test_bed);
             test_bed.update(1);
 
-            assert_eq!(parse_count, test_bed.get_fen_parse_count(), "{control}");
+            assert_eq!(update_count, test_bed.get_fen_update_count(), "{control}");
         }
     }
 }

@@ -4,7 +4,7 @@ use bevy::{ecs::system::QueryLens, prelude::*};
 
 use crate::{cli::CliArgs, game::LoadGame};
 
-use super::{FenInputMenu, FenInputMenuState, GameMenu, GameMenuDimLayer};
+use super::{FenInputMenu, GameMenu, GameMenuDimLayer};
 
 #[derive(Clone, Copy, Debug, Default, Eq, States)]
 pub enum MenuState {
@@ -65,14 +65,12 @@ impl OnEnterMenuState {
     }
 
     pub(super) fn fen_input(
-        mut fen_popup_state: ResMut<FenInputMenuState>,
         mut q: ParamSet<(
             Query<&mut Node, With<GameMenuDimLayer>>,
             Query<&mut Node, With<GameMenu>>,
             Query<&mut Node, With<FenInputMenu>>,
         )>,
     ) {
-        fen_popup_state.reset();
         set_menu_display(q.p0().transmute_lens(), Display::Flex);
         set_menu_display(q.p1().transmute_lens(), Display::None);
         set_menu_display(q.p2().transmute_lens(), Display::Flex);

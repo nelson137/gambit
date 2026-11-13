@@ -7,7 +7,7 @@ use bevy::prelude::*;
 
 use crate::game::consts;
 
-#[derive(Resource)]
+#[derive(Resource, Clone)]
 pub struct FenInputMenuState {
     board_builder: chess::BoardBuilder,
     is_fen_valid: bool,
@@ -37,14 +37,13 @@ impl fmt::Debug for FenInputMenuState {
     }
 }
 
-#[cfg(test)]
+/// `chess::BoardBuilder` has no `PartialEq`, so the position is compared through its FEN.
 impl PartialEq for FenInputMenuState {
     fn eq(&self, other: &Self) -> bool {
-        self.fen_with_counts() == other.fen_with_counts()
+        self.is_fen_valid == other.is_fen_valid && self.fen_with_counts() == other.fen_with_counts()
     }
 }
 
-#[cfg(test)]
 impl Eq for FenInputMenuState {}
 
 impl FenInputMenuState {
@@ -104,7 +103,7 @@ impl FenInputMenuState {
 }
 
 impl FenInputMenuState {
-    pub fn reset(&mut self) {
+    pub(super) fn reset(&mut self) {
         *self = Self::default();
     }
 

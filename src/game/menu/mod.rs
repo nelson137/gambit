@@ -4,7 +4,7 @@ use crate::{game::consts::z, utils::NoopExts};
 
 use self::{fen_input_menu::*, main_menu::*};
 
-pub use self::{fen_input_menu::FenInputMenuState, state::*};
+pub use self::state::*;
 
 mod fen_input_menu;
 mod main_menu;
@@ -206,8 +206,6 @@ pub struct GameMenuLogicPlugin;
 impl Plugin for GameMenuLogicPlugin {
     fn build(&self, app: &mut App) {
         app.noop()
-            // Resources
-            .init_resource::<fen_input_menu::FenInputMenuState>()
             // States
             .init_state::<MenuState>()
             // Observers

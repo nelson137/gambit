@@ -40,9 +40,8 @@ impl Plugin for GameTestPlugin {
             .add_plugins(bevy::scene::ScenePlugin)
             .add_plugins(bevy::input_focus::InputFocusPlugin)
             .add_plugins(bevy::image::ImagePlugin::default())
+            .add_plugins(bevy::text::TextPlugin)
             .init_asset::<bevy::shader::Shader>()
-            .init_asset::<bevy::text::Font>()
-            .init_resource::<crate::game::menu::FenInputMenuState>()
             .noop();
     }
 }
