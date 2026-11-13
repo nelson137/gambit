@@ -459,6 +459,8 @@ fn ui_row_fen() -> impl Scene {
                         @feathers::controls::FeathersTextInput { @visible_width: 70_f32 }
                         on(on_fen_text_edit_change)
                         on(on_fen_text_input_focus_lost)
+                        on(on_fen_text_input_focus_lost_rewrite_capped)
+                        on(on_fen_text_input_focus_lost_set_controls)
                     ),
                 ]
             ),
@@ -484,6 +486,30 @@ fn on_fen_text_input_focus_lost(
     controls.set_fen_text_input_live_validation(invalid);
 }
 
+/// When the FEN text input loses focus and the last halfmove clock or fullmove count was capped by
+/// the state, rewrite the text input value with the capped values.
+fn on_fen_text_input_focus_lost_rewrite_capped(
+    _: On<bevy::input_focus::FocusLost>,
+    editable_text: Single<&text::EditableText, With<FenTextInput>>,
+    state: Res<FenInputMenuState>,
+    mut controls: FenInputMenuControls,
+) {
+    let fen = editable_text.value().to_string();
+
+    if state.is_fen_valid() && FenInputMenuState::fen_has_capped_move_counts(&fen) {
+        controls.set_fen_text_input_value(state.fen_with_counts());
+    }
+}
+
+/// When the FEN text input loses focus sync the position controls with the current state.
+fn on_fen_text_input_focus_lost_set_controls(
+    _: On<bevy::input_focus::FocusLost>,
+    state: Res<FenInputMenuState>,
+    mut controls: FenInputMenuControls,
+) {
+    controls.set_position_controls(&state);
+}
+
 /// Runs on state changes while validating live.
 fn update_fen_text_input_invalid_live(
     state: Res<FenInputMenuState>,
@@ -504,25 +530,23 @@ fn on_fen_text_edit_change(
     #[cfg(test)] mut handler: ResMut<FenTextEditChangeHandler>,
     q_editable_text: Query<&text::EditableText>,
     mut state: ResMut<FenInputMenuState>,
-    mut controls: FenInputMenuControls,
 ) {
     let editable_text = q_editable_text.get(edit.event_target()).unwrap();
     let fen = editable_text.value().to_string();
 
+    // Only the state follows the FEN as it is typed, which keeps the load button and the live
+    // validation current. The controls are set when the FEN text input loses focus.
+    //
     // `TextEditChange` will fire for cursor moves, selection changes, and programmatic updates, so
     // only mark the state as changed when the FEN actually changes it.
     let mut next_state = state.clone();
     next_state.set_fen(fen);
-    if !state.set_if_neq(next_state) {
-        return;
+    if state.set_if_neq(next_state) {
+        #[cfg(test)]
+        {
+            handler.update_count += 1;
+        }
     }
-
-    #[cfg(test)]
-    {
-        handler.update_count += 1;
-    }
-
-    controls.set_position_controls(&state);
 }
 
 fn ui_row_side_to_move() -> impl Scene {
@@ -807,7 +831,7 @@ fn ui_row_counts() -> impl Scene {
                         @feathers::controls::FeathersNumberInput {
                             @number_format: feathers::controls::NumberFormat::I32,
                         }
-                        Node { width: vh(4) }
+                        Node { width: vh(5.5) }
                         on(on_halfmove_input_change)
                     ),
                 ]
@@ -829,7 +853,7 @@ fn ui_row_counts() -> impl Scene {
                         @feathers::controls::FeathersNumberInput {
                             @number_format: feathers::controls::NumberFormat::I32,
                         }
-                        Node { width: vh(4) }
+                        Node { width: vh(5.5) }
                         on(on_fullmove_input_change)
                     ),
                 ]
@@ -844,8 +868,14 @@ fn on_halfmove_input_change(
     mut controls: FenInputMenuControls,
 ) {
     if change.is_final {
-        let new_fen = state.set_halfmove_clock(change.value as u8);
-        controls.set_fen_text_input_value(new_fen);
+        // A negative value is not a move count, so it is ignored.
+        if let Ok(halfmove) = u64::try_from(change.value) {
+            let new_fen = state.set_halfmove_clock(halfmove);
+            controls.set_fen_text_input_value(new_fen);
+        }
+
+        // The value may have been capped or ignored, so the input must show what the state holds.
+        controls.set_halfmove_clock(state.halfmove_clock());
     }
 }
 
@@ -855,8 +885,14 @@ fn on_fullmove_input_change(
     mut controls: FenInputMenuControls,
 ) {
     if change.is_final {
-        let new_fen = state.set_fullmove_count(change.value as u16);
-        controls.set_fen_text_input_value(new_fen);
+        // A negative value is not a move count, so it is ignored.
+        if let Ok(fullmoves) = u64::try_from(change.value) {
+            let new_fen = state.set_fullmove_count(fullmoves);
+            controls.set_fen_text_input_value(new_fen);
+        }
+
+        // The value may have been capped or ignored, so the input must show what the state holds.
+        controls.set_fullmove_count(state.fullmove_count());
     }
 }
 

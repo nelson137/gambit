@@ -107,6 +107,17 @@ impl FenInputMenuState {
         *self = Self::default();
     }
 
+    /// Return whether the given FEN has a valid halfmove clock and fullmove count.
+    ///
+    /// `set_fen` automatically caps each to its max if the value is a valid `u64` so the state may
+    /// hold a different value than the given FEN.
+    pub(super) fn fen_has_capped_move_counts(fen: &str) -> bool {
+        let (halfmove, fullmove) = parse_move_counts(fen.trim());
+        halfmove.is_some_and(|halfmove| cap_halfmove_clock(halfmove) as u64 != halfmove)
+            || fullmove.is_some_and(|fullmove| cap_fullmove_count(fullmove) as u64 != fullmove)
+    }
+
+    /// Move counts over their max are capped.
     pub(super) fn set_fen(&mut self, fen: String) {
         let fen = fen.trim();
         let fen = if fen.is_empty() { consts::DEFAULT_FEN } else { fen };
@@ -115,14 +126,12 @@ impl FenInputMenuState {
             Ok(next) => {
                 self.board_builder = next;
 
-                let mut fen_iter = fen.split(' ').skip(4);
-                let halfmove = fen_iter.next().and_then(|s| s.parse().ok());
-                let fullmove = fen_iter.next().and_then(|s| s.parse().ok());
+                let (halfmove, fullmove) = parse_move_counts(fen);
                 if let Some(halfmove) = halfmove {
-                    self.halfmove_clock = halfmove;
+                    self.halfmove_clock = cap_halfmove_clock(halfmove);
                 }
                 if let Some(fullmove) = fullmove {
-                    self.fullmove_count = fullmove;
+                    self.fullmove_count = cap_fullmove_count(fullmove);
                 }
 
                 true
@@ -165,17 +174,35 @@ impl FenInputMenuState {
         self.fen_with_counts()
     }
 
-    pub(super) fn set_halfmove_clock(&mut self, halfmove: u8) -> String {
-        self.halfmove_clock = halfmove;
+    /// A halfmove clock over its max is capped.
+    pub(super) fn set_halfmove_clock(&mut self, halfmove: u64) -> String {
+        self.halfmove_clock = cap_halfmove_clock(halfmove);
         self.is_fen_valid = true;
         self.fen_with_counts()
     }
 
-    pub(super) fn set_fullmove_count(&mut self, fullmoves: u16) -> String {
-        self.fullmove_count = fullmoves;
+    /// A fullmove count over its max is capped.
+    pub(super) fn set_fullmove_count(&mut self, fullmoves: u64) -> String {
+        self.fullmove_count = cap_fullmove_count(fullmoves);
         self.is_fen_valid = true;
         self.fen_with_counts()
     }
+}
+
+/// The move counts of a FEN as they are written, which may not fit their types.
+fn parse_move_counts(fen: &str) -> (Option<u64>, Option<u64>) {
+    let mut fen_iter = fen.split(' ').skip(4);
+    let halfmove = fen_iter.next().and_then(|s| s.parse().ok());
+    let fullmove = fen_iter.next().and_then(|s| s.parse().ok());
+    (halfmove, fullmove)
+}
+
+fn cap_halfmove_clock(halfmove: u64) -> u8 {
+    halfmove.min(u64::from(u8::MAX)) as u8
+}
+
+fn cap_fullmove_count(fullmoves: u64) -> u16 {
+    fullmoves.min(u64::from(u16::MAX)) as u16
 }
 
 fn truncate_trailing_whitespace(s: &mut String) {

@@ -97,6 +97,17 @@ impl PartialEq<&str> for FenBuilder {
     }
 }
 
+/// A FEN that moves the state and every control away from their defaults.
+fn non_default_fen() -> String {
+    FenBuilder::default()
+        .side_to_move(chess::Color::Black)
+        .en_passant(Some(chess::File::E))
+        .castle_rights(chess::CastleRights::NoRights, chess::CastleRights::NoRights)
+        .halfmove_clock(5)
+        .fullmove_count(10)
+        .to_string()
+}
+
 struct TestBed {
     app: App,
 }
@@ -149,6 +160,30 @@ impl TestBed {
         number_input.trigger(move |source| ValueChange { source, value, is_final });
     }
 
+    /// The text input inside a number input.
+    fn element_number_input_editable<M: Component>(&mut self) -> Entity {
+        let world = self.app.world_mut();
+        let mut state = SystemState::<(
+            Single<&Children, With<M>>,
+            Query<Entity, With<text::EditableText>>,
+        )>::new(world);
+        let (input_children, q_editable) = state.get(world).unwrap();
+        q_editable.iter_many(*input_children).next().unwrap()
+    }
+
+    /// Focus a number input, replace its text, and blur it so that the widget reports the text
+    /// as its final value.
+    fn element_type_number_input<M: Component>(&mut self, text: &str) {
+        let editable = self.element_number_input_editable::<M>();
+        let world = self.app.world_mut();
+        world.resource_mut::<InputFocus>().set(editable, FocusCause::Pressed);
+        self.update(1);
+        set_editable_text_value(self.app.world_mut(), editable, text);
+        self.update(1);
+        self.clear_focus();
+        self.update(1);
+    }
+
     fn element_set_focus<M: Component>(&mut self) {
         let element = self.element_id::<M>();
         let world = self.app.world_mut();
@@ -185,6 +220,14 @@ impl TestBed {
         assert_eq!("", self.get_fen_input_value(), "FEN input");
         assert!(!self.get_fen_input_invalid(), "FEN input invalid");
 
+        self.assert_default_position_controls();
+
+        assert!(!self.get_load_button_disabled(), "load button disabled");
+    }
+
+    /// Every control other than the FEN text input and the action buttons.
+    #[track_caller]
+    fn assert_default_position_controls(&mut self) {
         assert!(self.get_side_to_move_button_white(), "side to move white");
         assert!(!self.get_side_to_move_button_black(), "side to move black");
 
@@ -199,8 +242,6 @@ impl TestBed {
 
         assert_eq!("0", self.get_halfmove_clock(), "halfmove clock");
         assert_eq!("1", self.get_fullmove_count(), "fullmove count");
-
-        assert!(!self.get_load_button_disabled(), "load button disabled");
     }
 
     fn get_fen_input_invalid(&mut self) -> bool {
@@ -353,8 +394,12 @@ impl TestBed {
         q_editable.iter_many(*input_children).next().unwrap().value().to_string()
     }
 
-    fn set_halfmove_clock(&mut self, halfmoves: u8, is_final: bool) {
-        self.element_set_number_input::<HalfmoveClockNumberInput>(halfmoves as i32, is_final);
+    fn set_halfmove_clock(&mut self, halfmoves: impl Into<i32>, is_final: bool) {
+        self.element_set_number_input::<HalfmoveClockNumberInput>(halfmoves.into(), is_final);
+    }
+
+    fn type_halfmove_clock(&mut self, text: &str) {
+        self.element_type_number_input::<HalfmoveClockNumberInput>(text);
     }
 
     fn get_fullmove_count(&mut self) -> String {
@@ -367,8 +412,12 @@ impl TestBed {
         q_editable.iter_many(*input_children).next().unwrap().value().to_string()
     }
 
-    fn set_fullmove_count(&mut self, fullmoves: u16, is_final: bool) {
-        self.element_set_number_input::<FullmoveCountNumberInput>(fullmoves as i32, is_final);
+    fn set_fullmove_count(&mut self, fullmoves: impl Into<i32>, is_final: bool) {
+        self.element_set_number_input::<FullmoveCountNumberInput>(fullmoves.into(), is_final);
+    }
+
+    fn type_fullmove_count(&mut self, text: &str) {
+        self.element_type_number_input::<FullmoveCountNumberInput>(text);
     }
 
     fn get_load_button_disabled(&mut self) -> bool {
@@ -396,17 +445,6 @@ fn default_controls() {
 
 mod on_enter {
     use super::*;
-
-    /// A FEN that moves the state and every control away from their defaults.
-    fn non_default_fen() -> String {
-        FenBuilder::default()
-            .side_to_move(chess::Color::Black)
-            .en_passant(Some(chess::File::E))
-            .castle_rights(chess::CastleRights::NoRights, chess::CastleRights::NoRights)
-            .halfmove_clock(5)
-            .fullmove_count(10)
-            .to_string()
-    }
 
     #[test]
     fn resets_state() {
@@ -444,6 +482,7 @@ mod on_enter {
         test_bed.update(1);
 
         test_bed.type_fen_input_value(&non_default_fen());
+        test_bed.blur_fen_input();
         assert!(test_bed.get_side_to_move_button_black());
         assert!(test_bed.get_en_passant_checkbox());
         assert!(!test_bed.get_castle_rights_w_k());
@@ -512,7 +551,24 @@ mod fen_input {
     }
 
     #[test]
-    fn updates_controls() {
+    fn keeps_controls_while_typing() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.enter_fen_input_menu();
+        test_bed.update(1);
+
+        let fen = non_default_fen();
+        test_bed.type_fen_input_value(&fen);
+        test_bed.update(2);
+
+        // Only the state follows the FEN.
+        assert_eq!(fen, test_bed.get_state().fen_with_counts());
+        test_bed.assert_default_position_controls();
+    }
+
+    #[test]
+    fn updates_controls_on_blur() {
         let mut test_bed = TestBed::new();
         test_bed.update(1);
 
@@ -530,8 +586,8 @@ mod fen_input {
         let expected_halfmoves = builder.halfmove_clock.to_string();
         let expected_fullmoves = builder.fullmove_count.to_string();
 
-        test_bed.set_fen_input_value(&expected_fen);
-        test_bed.update(1);
+        test_bed.type_fen_input_value(&expected_fen);
+        test_bed.blur_fen_input();
 
         assert_eq!(expected_white_to_move, test_bed.get_side_to_move_button_white());
         assert_eq!(expected_black_to_move, test_bed.get_side_to_move_button_black());
@@ -710,6 +766,115 @@ mod fen_input {
 
             assert_eq!(update_count, test_bed.get_fen_update_count(), "{control}");
         }
+    }
+
+    /// The default FEN with move counts that do not have to fit their types.
+    fn fen_with_counts(halfmove: u64, fullmove: u64) -> String {
+        let fen = FenBuilder::default().to_string();
+        let position = fen.strip_suffix(" 0 1").unwrap();
+        format!("{position} {halfmove} {fullmove}")
+    }
+
+    /// Typed halfmove and fullmove counts, then the counts they are capped at.
+    const CAPPED_COUNTS: [(u64, u64, u8, u16); 4] = [
+        (256, 1, u8::MAX, 1),
+        (0, 65536, 0, u16::MAX),
+        (300, 70000, u8::MAX, u16::MAX),
+        (u64::MAX, u64::MAX, u8::MAX, u16::MAX),
+    ];
+
+    #[test]
+    fn caps_move_counts() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        for (i, (halfmove, fullmove, expected_halfmove, expected_fullmove)) in
+            CAPPED_COUNTS.into_iter().enumerate()
+        {
+            test_bed.type_fen_input_value(&fen_with_counts(halfmove, fullmove));
+
+            assert_eq!(expected_halfmove, test_bed.get_state().halfmove_clock(), "{i}");
+            assert_eq!(expected_fullmove, test_bed.get_state().fullmove_count(), "{i}");
+
+            test_bed.blur_fen_input();
+            assert_eq!(expected_halfmove.to_string(), test_bed.get_halfmove_clock(), "{i}");
+            assert_eq!(expected_fullmove.to_string(), test_bed.get_fullmove_count(), "{i}");
+        }
+    }
+
+    #[test]
+    fn rewrites_capped_fen_on_blur() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        for (i, (halfmove, fullmove, expected_halfmove, expected_fullmove)) in
+            CAPPED_COUNTS.into_iter().enumerate()
+        {
+            let typed = fen_with_counts(halfmove, fullmove);
+            let expected_fen = FenBuilder::default()
+                .halfmove_clock(expected_halfmove)
+                .fullmove_count(expected_fullmove);
+
+            // Left as typed while the input has focus.
+            test_bed.type_fen_input_value(&typed);
+            test_bed.update(2);
+            assert_eq!(typed, test_bed.get_fen_input_value(), "{i}");
+
+            test_bed.blur_fen_input();
+            assert_eq!(expected_fen, test_bed.get_fen_input_value(), "{i}");
+        }
+    }
+
+    #[test]
+    fn rewrites_capped_fen_on_blur_when_state_is_unchanged() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let expected_fen = FenBuilder::default().halfmove_clock(u8::MAX).fullmove_count(u16::MAX);
+
+        test_bed.type_fen_input_value(&expected_fen.to_string());
+        let update_count = test_bed.get_fen_update_count();
+
+        let typed = fen_with_counts(256, 65536);
+        test_bed.type_fen_input_value(&typed);
+        assert_eq!(update_count, test_bed.get_fen_update_count());
+        assert_eq!(typed, test_bed.get_fen_input_value());
+
+        test_bed.blur_fen_input();
+        assert_eq!(expected_fen, test_bed.get_fen_input_value());
+    }
+
+    #[test]
+    fn keeps_uncapped_fen_as_typed() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        // Valid, but not how the state would write it.
+        let typed = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR b - -";
+        test_bed.type_fen_input_value(typed);
+        test_bed.update(1);
+
+        assert!(test_bed.get_state().is_fen_valid());
+        assert_eq!(typed, test_bed.get_fen_input_value());
+
+        test_bed.blur_fen_input();
+        assert_eq!(typed, test_bed.get_fen_input_value());
+    }
+
+    #[test]
+    fn keeps_invalid_fen_with_capped_counts_as_typed() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let typed = "abc def ghi jkl 300 70000";
+        test_bed.type_fen_input_value(typed);
+        test_bed.update(1);
+
+        assert!(!test_bed.get_state().is_fen_valid());
+        assert_eq!(typed, test_bed.get_fen_input_value());
+
+        test_bed.blur_fen_input();
+        assert_eq!(typed, test_bed.get_fen_input_value());
     }
 }
 
@@ -1092,6 +1257,53 @@ mod halfmove_clock {
         assert_eq!(FenBuilder::default(), test_bed.get_state().fen_with_counts());
         assert_eq!(fen_input_before, test_bed.get_fen_input_value());
     }
+
+    #[test]
+    fn updates_state_on_typing() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        for expected in HALFMOVES {
+            let expected_fen = FenBuilder::default().halfmove_clock(expected);
+
+            test_bed.type_halfmove_clock(&expected.to_string());
+
+            assert_eq!(expected, test_bed.get_state().halfmove_clock(), "{expected}");
+            assert_eq!(expected_fen, test_bed.get_fen_input_value(), "{expected}");
+        }
+    }
+
+    #[test]
+    fn caps_at_max() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let expected_fen = FenBuilder::default().halfmove_clock(u8::MAX);
+
+        for typed in [u8::MAX.to_string(), i32::MAX.to_string()] {
+            test_bed.type_halfmove_clock(&typed);
+
+            assert_eq!(u8::MAX, test_bed.get_state().halfmove_clock(), "{typed}");
+            assert_eq!(u8::MAX.to_string(), test_bed.get_halfmove_clock(), "{typed}");
+            assert_eq!(expected_fen, test_bed.get_fen_input_value(), "{typed}");
+        }
+    }
+
+    #[test]
+    fn ignores_negative_value() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_halfmove_clock("7");
+        assert_eq!(7, test_bed.get_state().halfmove_clock());
+        let fen_input_before = test_bed.get_fen_input_value();
+
+        test_bed.type_halfmove_clock("-1");
+
+        assert_eq!(7, test_bed.get_state().halfmove_clock());
+        assert_eq!("7", test_bed.get_halfmove_clock());
+        assert_eq!(fen_input_before, test_bed.get_fen_input_value());
+    }
 }
 
 mod fullmove_count {
@@ -1164,6 +1376,53 @@ mod fullmove_count {
 
         assert_eq!(1, test_bed.get_state().fullmove_count());
         assert_eq!(FenBuilder::default(), test_bed.get_state().fen_with_counts());
+        assert_eq!(fen_input_before, test_bed.get_fen_input_value());
+    }
+
+    #[test]
+    fn updates_state_on_typing() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        for expected in FULLMOVES {
+            let expected_fen = FenBuilder::default().fullmove_count(expected);
+
+            test_bed.type_fullmove_count(&expected.to_string());
+
+            assert_eq!(expected, test_bed.get_state().fullmove_count(), "{expected}");
+            assert_eq!(expected_fen, test_bed.get_fen_input_value(), "{expected}");
+        }
+    }
+
+    #[test]
+    fn caps_at_max() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        let expected_fen = FenBuilder::default().fullmove_count(u16::MAX);
+
+        for typed in [u16::MAX.to_string(), i32::MAX.to_string()] {
+            test_bed.type_fullmove_count(&typed);
+
+            assert_eq!(u16::MAX, test_bed.get_state().fullmove_count(), "{typed}");
+            assert_eq!(u16::MAX.to_string(), test_bed.get_fullmove_count(), "{typed}");
+            assert_eq!(expected_fen, test_bed.get_fen_input_value(), "{typed}");
+        }
+    }
+
+    #[test]
+    fn ignores_negative_value() {
+        let mut test_bed = TestBed::new();
+        test_bed.update(1);
+
+        test_bed.type_fullmove_count("7");
+        assert_eq!(7, test_bed.get_state().fullmove_count());
+        let fen_input_before = test_bed.get_fen_input_value();
+
+        test_bed.type_fullmove_count("-1");
+
+        assert_eq!(7, test_bed.get_state().fullmove_count());
+        assert_eq!("7", test_bed.get_fullmove_count());
         assert_eq!(fen_input_before, test_bed.get_fen_input_value());
     }
 }
